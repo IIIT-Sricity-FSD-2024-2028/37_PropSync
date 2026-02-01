@@ -25,6 +25,7 @@ The overall purpose of the *Property Maintenance and Service Coordination System
    6\. Improved Property Value & Satisfaction.
 
 **3\. Key Terms Used by Domain Experts and Their Meanings :**   
+
    **1\. Maintenance Request :** A formal report of an issue related to property infrastructure requiring repair or service.  
    **2\. Priority Level :**   
 Categorizes issues as low, medium, or high priority for faster resolution.  
@@ -38,15 +39,15 @@ Ability of Property Systems to Function without Failure.
 Visibility of maintenance activities to stakeholders.
 
 **Actors and Responsibilities :**   
- **1\. Owner**   
+
+**1\. Owner**   
 **Role:** Property Stakeholder / Asset Owner  
 **Responsibilities:**  
    Owns the property and authorizes maintenance policies.  
    Views maintenance status, costs, and service history.  
    Approves major or high-cost maintenance activities.
 
-### **2\. Admin**
-
+**2\. Admin**
 **Role:** System Administrator  
 **Responsibilities:**  
     Manages system configuration and user accounts.  
@@ -54,8 +55,7 @@ Visibility of maintenance activities to stakeholders.
     Maintains master data (properties, categories, vendors).  
     Monitors overall system usage and performance.
 
-### **3\. Maintenance Manager**
-
+**3\. Maintenance Manager**
 **Role:** Operational Controller  
 **Responsibilities:**  
     Reviews and approves maintenance requests.  
@@ -130,9 +130,7 @@ These define boundaries of operation.
 These are situations where normal rules are bypassed.
 
 1. **Emergency Maintenance**
-
-          Immediate action without prior approval (fire, water leakage, power failure).
-
+   Immediate action without prior approval (fire, water leakage, power failure).
 2. **Service Provider Rejection**  
    The assigned provider may reject due to unavailability or skill mismatch.  
 3. **Cost Overrun**  
@@ -140,8 +138,7 @@ These are situations where normal rules are bypassed.
 4. **SLA Breach**  
    Service delay triggers escalation to higher authority.  
 5. **Partial Completion**
-
-           Work completed in stages due to dependency on materials or approvals.
+   Work completed in stages due to dependency on materials or approvals.
 
 **Situations Where Things Go Wrong**  
 These are typical real-life pain points.
@@ -164,9 +161,9 @@ These are typical real-life pain points.
       4.Maintenance history is poorly documented or lost over time.  
       5.Cost tracking is reactive rather than controlled.
 
-### **2\. Most Difficult or Inefficient Parts of the Process**
+**2\. Most Difficult or Inefficient Parts of the Process**
 
-### **Most Problematic Stages** 
+   **Most Problematic Stages** 
 
 1. **Request Approval Stage**
          Requests wait for a decision due to unavailability of approvers.  
@@ -192,31 +189,31 @@ These are typical real-life pain points.
 
 
 
-# **4\. Hardest Information to Track or Manage Today**
+**4\. Hardest Information to Track or Manage Today**
 
-1. # **Real-Time Status of Maintenance Requests**     
+1. **Real-Time Status of Maintenance Requests**     
      Manual tracking leads to uncertainty about the current state.
-2. # **Service Provider Performance History**     
+2. **Service Provider Performance History**     
      Decisions are based on memory instead of data.
-3. # **Actual vs Estimated Maintenance Cost**     
+3. **Actual vs Estimated Maintenance Cost**     
      Cost overruns are discovered too late.
-4. # **Maintenance History by Asset**     
+4. **Maintenance History by Asset**     
      No centralized asset-wise service records.
-5. # **Accountability Records**    
+5. **Accountability Records**    
      Difficult to identify who approved, delayed, or closed a task.
 
-# **5\. Assumptions and Clarifications**
+**5\. Assumptions and Clarifications**
 
-1. #  **Assumptions Made by the Team That Were Confirmed** 
+ **A. Assumptions Made by the Team That Were Confirmed** 
 
-1.  **Maintenance coordination is mostly manual**  
+1. **Maintenance coordination is mostly manual**  
     Confirmed through domain discussions and observation.  
 2. **Delays are more administrative than technical**  
     Most issues are caused by approvals and communication, not repair complexity.  
 3. **Service provider quality varies significantly**  
     Reliable performance data is rarely maintained.
 
-#      **B.  Assumptions That Were Corrected** 
+ **B.  Assumptions That Were Corrected** 
 
 1. **Assumption:** Tenants always raise maintenance requests      
    **Correction:** In many cases, managers or owners raise requests directly.
@@ -229,7 +226,7 @@ These are typical real-life pain points.
 
    
 
-# **Open Questions That Need Follow-Up**
+**Open Questions That Need Follow-Up**
 
 **These are important unresolved domain questions.**
 
