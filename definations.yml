@@ -1,0 +1,146 @@
+# Domain: Real Estate & Property Management
+# Problem Statement: Property Maintenance & Service Coordination System
+# Last Updated: 2026-02-01
+
+Owner:
+  definition: >
+    A property resident who reports maintenance issues, confirms service completion, and pays approved service charges.
+  examples:
+    - A flat owner reports a water leak and pays the plumber after approval.
+  aliases:
+    - Resident
+    - FlatOwner
+
+MaintenanceManager:
+  definition: >
+    The authority responsible for assigning service providers, overseeing maintenance work, and approving service charges.
+  examples:
+    - A manager assigns an electrician and approves the service bill.
+  aliases:
+    - SocietyManager
+    - FacilityManager
+
+ServiceProvider:
+  definition: >
+    An individual or agency that performs assigned maintenance work and submits service charges after completion.
+  examples:
+    - A plumber fixes a pipe leakage and submits a bill.
+  aliases:
+    - Vendor
+    - Technician
+
+Admin:
+  definition: >
+    The authority responsible for managing roles and governing the overall operation of the platform.
+  examples:
+    - An admin assigns maintenance manager responsibilities.
+  aliases:
+    - SystemAdmin
+   
+Complaint:
+  definition: >
+    A reported maintenance issue raised by an owner that requires corrective action.
+  examples:
+    - Reporting an electrical power failure in a flat.
+  aliases:
+    - MaintenanceRequest
+    - ServiceRequest
+
+ComplaintStatus:
+  definition: >
+    The current condition of a complaint during its journey from reporting to resolution.
+  examples:
+    - A complaint marked as "In Progress".
+  aliases:
+    - IssueState
+    - ResolutionStage
+
+ServiceCategory:
+  definition: >
+    A grouping used to identify the type of maintenance work required.
+  examples:
+    - Plumbing, Electrical, Cleaning.
+  aliases:
+    - MaintenanceType
+    - WorkCategory
+
+ServiceTask:
+  definition: >
+    The maintenance activity carried out to resolve a reported issue.
+  examples:
+    - Replacing a damaged water pipe.
+  aliases:
+    - Job
+    - WorkOrder
+
+Assignment:
+  definition: >
+    The allocation of a maintenance issue to a service provider for resolution.
+  examples:
+    - Assigning a plumbing issue to a plumber.
+  aliases:
+    - JobAssignment
+    - WorkAllocation
+
+ServiceBill:
+  definition: >
+    A statement of charges issued after completion of maintenance work.
+  examples:
+    - A bill issued for electrical repair work.
+  aliases:
+    - Invoice
+    - MaintenanceBill
+
+BillApproval:
+  definition: >
+    Confirmation that submitted service charges are valid and acceptable.
+  examples:
+    - Approval of a plumbing bill by the manager.
+  aliases:
+    - ServiceApproval
+    - ChargeVerification
+
+Payment:
+  definition: >
+    The settlement of approved service charges by the owner.
+  examples:
+    - Paying an approved maintenance bill.
+  aliases:
+    - Settlement
+    - ServicePayment
+
+Rating:
+  definition: >
+    A score expressing satisfaction with completed maintenance work.
+  examples:
+    - Rating a service provider 5 for timely repair.
+  aliases:
+    - ServiceScore
+    - EvaluationScore
+
+Feedback:
+  definition: >
+    A written opinion describing the service experience.
+  examples:
+    - "The repair was completed quickly."
+  aliases:
+    - Review
+    - Remark
+
+Notification:
+  definition: >
+    A message informing involved parties about important maintenance events.
+  examples:
+    - Informing an owner that a complaint is resolved.
+  aliases:
+    - Alert
+    - Notice
+
+Role:
+  definition: >
+    A defined responsibility that determines authority within the society.
+  examples:
+    - Assigning the maintenance manager role.
+  aliases:
+    - Responsibility
+    - Authority
