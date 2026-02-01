@@ -169,47 +169,41 @@ These are typical real-life pain points.
 ### **Most Problematic Stages** 
 
 1. **Request Approval Stage**
-
          Requests wait for a decision due to unavailability of approvers.  
          No clear priority mechanism exists.
-
-   **  2\. Service Provider Assignment**  
+2. **Service Provider Assignment**  
         Matching the right vendor to the issue is time-consuming.  
         Availability and skill information is often outdated or assumed.
-
-    **3\. Work Completion Verification**  
+3. **Work Completion Verification**  
       No standard method to confirm quality of work.  
        Disputes arise due to lack of evidence or documentation.
 
 **3\. Where Delays, Errors, or Misunderstandings Usually Occur**
 
 1. **Delays**
-
      Waiting for approval from owners or senior managers.  
      Vendor response delays due to poor communication.
-
 2. **Errors**
-
      Assigning the wrong service provider due to unclear issue description.  
      Duplicate maintenance work caused by poor tracking.  
-     **3\.** **Misunderstandings**  
+3. **Misunderstandings**  
      Scope of work not clearly communicated to service providers.  
      Cost expectations not aligned before work starts.
 
-|  |
-| :---- |
+
 
 # **4\. Hardest Information to Track or Manage Today**
 
-1. # **Real-Time Status of Maintenance Requests**     Manual tracking leads to uncertainty about the current state.
-
-2. # **Service Provider Performance History**     Decisions are based on memory instead of data.
-
-3. # **Actual vs Estimated Maintenance Cost**     Cost overruns are discovered too late.
-
-4. # **Maintenance History by Asset**     No centralized asset-wise service records.
-
-5. # **Accountability Records**     Difficult to identify who approved, delayed, or closed a task.
+1. # **Real-Time Status of Maintenance Requests**     
+     Manual tracking leads to uncertainty about the current state.
+2. # **Service Provider Performance History**     
+     Decisions are based on memory instead of data.
+3. # **Actual vs Estimated Maintenance Cost**     
+     Cost overruns are discovered too late.
+4. # **Maintenance History by Asset**     
+     No centralized asset-wise service records.
+5. # **Accountability Records**    
+     Difficult to identify who approved, delayed, or closed a task.
 
 # **5\. Assumptions and Clarifications**
 
@@ -224,14 +218,16 @@ These are typical real-life pain points.
 
 #      **B.  Assumptions That Were Corrected** 
 
-1. # **Assumption:** Tenants always raise maintenance requests      **Correction:** In many cases, managers or owners raise requests directly.
+1. **Assumption:** Tenants always raise maintenance requests      
+   **Correction:** In many cases, managers or owners raise requests directly.
 
-2. # **Assumption:** Cost is discussed before work starts     **Correction:** Costs are often finalized after work completion
+2. **Assumption:** Cost is discussed before work starts    
+   **Correction:** Costs are often finalized after work completion
 
-3. # **Assumption:** Maintenance closure means work satisfaction     **Correction:** Closure often happens without proper verification.
+3. **Assumption:** Maintenance closure means work satisfaction 
+   **Correction:** Closure often happens without proper verification.
 
-   #
-
+   
 
 # **Open Questions That Need Follow-Up**
 
