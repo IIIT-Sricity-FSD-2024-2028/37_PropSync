@@ -1,0 +1,166 @@
+# Domain: Real Estate & Property Management 
+# Problem Statement: Property Maintenanace & Service Coordination System
+# Last Updated: <2026-02-01>
+Owner:
+  definition: >
+    A property resident who initiates maintenance complaints, monitors
+    service progress, confirms service completion, and is responsible
+    for paying approved service bills related to the property.
+  examples:
+    - A flat owner reports a water leakage and pays the plumber’s bill after approval.
+  aliases:
+    - Resident
+    - FlatOwner
+
+MaintenanceManager:
+  definition: >
+    An operational authority responsible for coordinating maintenance
+    activities by assigning service providers, monitoring complaint
+    progress, verifying completed work, and approving service bills.
+  examples:
+    - A manager assigns an electrician to a power issue and approves the submitted bill.
+  aliases:
+    - SocietyManager
+    - FacilityManager
+
+ServiceProvider:
+  definition: >
+    A professional or service agency that accepts assigned maintenance
+    tasks, performs the required service work, and submits service bills
+    after completion.
+  examples:
+    - A plumbing service provider fixes a pipe leakage and generates a service bill.
+  aliases:
+    - Vendor
+    - Technician
+
+Admin:
+  definition: >
+    The system authority responsible for managing user roles, controlling
+    system configurations, and overseeing platform governance without
+    participating in daily maintenance operations.
+  examples:
+    - An admin assigns the maintenance manager role to a user and deactivates inactive accounts.
+  aliases:
+    - SystemAdmin
+    - PlatformAdmin
+
+Complaint:
+  definition: >
+    A formal maintenance request raised by an owner to report an issue
+    within the property that requires service intervention.
+  examples:
+    - An owner raises a complaint for electrical power failure in the flat.
+  aliases:
+    - MaintenanceRequest
+    - ServiceRequest
+
+ComplaintStatus:
+  definition: >
+    The current lifecycle stage of a complaint indicating its progress
+    from initiation to closure.
+  examples:
+    - A complaint marked as "Assigned" after a service provider is allocated.
+  aliases:
+    - RequestStatus
+    - IssueState
+
+ServiceCategory:
+  definition: >
+    A classification that identifies the type of maintenance service
+    required to resolve a complaint.
+  examples:
+    - Plumbing, Electrical, Cleaning.
+  aliases:
+    - MaintenanceType
+    - ServiceType
+
+ServiceTask:
+  definition: >
+    The maintenance work performed by a service provider in response to
+    an assigned complaint.
+  examples:
+    - Repairing a leaking pipe in a bathroom.
+  aliases:
+    - Job
+    - WorkOrder
+
+Assignment:
+  definition: >
+    The act of allocating a complaint to a suitable service provider by
+    the maintenance manager for resolution.
+  examples:
+    - A complaint is assigned to a plumbing service provider.
+  aliases:
+    - TaskAllocation
+    - JobAssignment
+
+ServiceBill:
+  definition: >
+    A cost statement submitted by a service provider after completing a
+    service task, detailing the charges for the work performed.
+  examples:
+    - A service bill of ₹1500 generated for electrical repair work.
+  aliases:
+    - Invoice
+    - MaintenanceBill
+
+BillApproval:
+  definition: >
+    The verification process carried out by the maintenance manager to
+    validate the correctness and authenticity of a submitted service bill.
+  examples:
+    - A manager approves a plumbing bill after checking service details.
+  aliases:
+    - BillVerification
+    - ApprovalRecord
+
+Payment:
+  definition: >
+    The monetary settlement made by the owner to the service provider
+    after a service bill has been approved.
+  examples:
+    - The owner pays the approved service bill through the platform.
+  aliases:
+    - Settlement
+    - ServicePayment
+
+Rating:
+  definition: >
+    A numerical evaluation provided by an owner to assess the quality of
+    service delivered by a service provider.
+  examples:
+    - An owner rates a service provider 4 out of 5 for timely work.
+  aliases:
+    - Score
+    - ServiceRating
+
+Feedback:
+  definition: >
+    A qualitative response provided by an owner describing their
+    experience with the completed service.
+  examples:
+    - "The plumber was punctual and fixed the issue quickly."
+  aliases:
+    - Review
+    - Comment
+
+Notification:
+  definition: >
+    A message delivered to stakeholders to inform them about key events
+    such as complaint assignment, status updates, or bill approval.
+  examples:
+    - A notification sent to the owner when the complaint status changes.
+  aliases:
+    - Alert
+    - Message
+
+Role:
+  definition: >
+    A predefined responsibility profile that determines the actions and
+    permissions available to a system participant.
+  examples:
+    - Assigning the MaintenanceManager role to a user account.
+  aliases:
+    - PermissionSet
+ 
