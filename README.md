@@ -1,4 +1,4 @@
-**PropSync**  
+## **PropSync**  
 Property Management and Service Coordination System
 
 ## **1. Problem Statement \-** 
