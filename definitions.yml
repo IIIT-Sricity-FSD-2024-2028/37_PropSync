@@ -4,7 +4,7 @@
 
 Owner:
   definition: >
-    A property resident who reports maintenance issues, confirms service completion, and pays approved service charges.
+    A property resident who reports maintenance issues, confirms service completion, and rate service providers.
   examples:
     - A flat owner reports a water leak and pays the plumber after approval.
   aliases:
@@ -13,7 +13,7 @@ Owner:
 
 MaintenanceManager:
   definition: >
-    The authority responsible for assigning service providers, overseeing maintenance work, and approving service charges.
+    The authority responsible for assigning service providers, overseeing maintenance work, approves and pays service charges.
   examples:
     - A manager assigns an electrician and approves the service bill.
   aliases:
@@ -22,7 +22,7 @@ MaintenanceManager:
 
 ServiceProvider:
   definition: >
-    An individual or agency that performs assigned maintenance work and submits service charges after completion.
+    An individual who performs assigned maintenance work and submits service charges after completion.
   examples:
     - A plumber fixes a pipe leakage and submits a bill.
   aliases:
@@ -39,7 +39,7 @@ Admin:
    
 Complaint:
   definition: >
-    A reported maintenance issue raised by an owner that requires corrective action.
+    A reported maintenance issue raised by an owner that requires action.
   examples:
     - Reporting an electrical power failure in a flat.
   aliases:
@@ -102,7 +102,7 @@ BillApproval:
 
 Payment:
   definition: >
-    The settlement of approved service charges by the owner.
+    The settlement of approved service charges.
   examples:
     - Paying an approved maintenance bill.
   aliases:
@@ -129,7 +129,7 @@ Feedback:
 
 Notification:
   definition: >
-    A message informing involved parties about important maintenance events.
+    A message informing involved parties about maintenance updates.
   examples:
     - Informing an owner that a complaint is resolved.
   aliases:
