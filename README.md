@@ -9,52 +9,25 @@ Additionally, there is limited transparency regarding service provider performan
 
 **Propsync**  aims to address these challenges by providing a centralized digital platform that streamlines maintenance request handling, improves coordination among stakeholders, ensures accountability, ensures maintenance requests are processed within defined time limits, with visibility into delays and pending actions and enhances overall property management efficiency while keeping all decision-making authority with designated management roles.
 
+
 **2.Identified actors**
 
 1. **Owner**  
    **Role**\- Primary Service Requester  
    Residents are individuals living within the property who interact with the system to report maintenance-related issues and track their resolution
 
-         **Responsibilities:**
-
-* Raise maintenance requests with issue details and priority   
-* Pay maintenance bill  
-* Track the status of submitted complaints  
-* Receive notifications regarding approvals, progress, and completion  
-* View maintenance history related to their unit  
-* Rate the service provider
-
-  ### 
-
+      
 2. ### **Maintenance Manager**
 
      **Role:** Operational Supervisor  
            The maintenance manager is responsible for reviewing, approving, and coordinating                   maintenance activities across the property.
 
-**Responsibilities:**
-
-* Review maintenance requests submitted by residents  
-* Approve or reject requests based on validity and set deadline   
-* Assign suitable service providers to approved requests   
-* Review and approve estimated service costs  
-* Monitor work progress and confirm task completion  
-* Ensure timely resolution and service quality  
-* Payment of cost
-
-  ### 
 
 3. ### **Service Provider**
 
 **Role:** Maintenance Executor  
 Service providers are registered vendors or technicians responsible for executing maintenance tasks.
 
-**Responsibilities:**
-
-* Accept or reject assigned complaints  
-* Submit cost estimates for approval  
-* Perform on-site maintenance or repair work  
-* Update task status and mark work as completed  
-* Maintain service history and performance records
 
 ## **4.Admin (System Administrator)**
 
@@ -63,12 +36,7 @@ Service providers are registered vendors or technicians responsible for executin
 **Description:**  
 The Admin is responsible for managing the overall system configuration and user access for the Property Maintenance & Service Coordination System. The Admin does not participate in maintenance request handling or service execution but ensures that the platform operates securely and correctly.
 
-**Responsibilities:**
 
-* Register, activate, and remove users (residents, maintenance managers, and service providers)  
-* Assign roles and manage access permissions  
-* Maintain system-level configurations and master data  
-* Monitor system usage and ensure secure operation
 
 ## **3\. Planned Features**
 
