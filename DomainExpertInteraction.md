@@ -45,7 +45,6 @@ Visibility of maintenance activities to stakeholders.
 **Responsibilities:**  
    Owns the property and authorizes maintenance policies.  
    Views maintenance status, costs, and service history.  
-   Approves major or high-cost maintenance activities.
 
 **2\. Admin**
 **Role:** System Administrator  
@@ -60,8 +59,10 @@ Visibility of maintenance activities to stakeholders.
 **Responsibilities:**  
     Reviews and approves maintenance requests.  
     Assigns service providers to maintenance tasks.  
+    Approve or Reject Maintenance Cost.
     Monitors work progress and ensures SLA compliance.  
     Verifies service completion and closes requests.
+    
 
 **4\. Service Provider**  
 **Role:** Maintenance Executor  
@@ -74,7 +75,7 @@ Visibility of maintenance activities to stakeholders.
 **Core workflows**  
 **Workflow 1:** Maintenance Request → Approval → Closure  
 **Trigger:**  
- Tenant or Owner raises a maintenance request for a property issue.  
+ Owner raises a maintenance request for a property issue.  
 **Steps:**
 
 1. Requests are submitted through the system with issue details.  
@@ -94,10 +95,11 @@ Visibility of maintenance activities to stakeholders.
 
 1. The maintenance manager selects an appropriate service provider from registered vendors.  
 2. Assigns tasks along with priority, deadline, and instructions.  
-   Service provider accepts or rejects tasks.  
-3. Provider executes maintenance work at the property site.  
-4. Updates task status, uploads reports/photos, and notes any additional costs.  
-5. The maintenance manager reviews completion reports and confirms task closure.  
+   Service provider accepts or rejects tasks. If accepts, provider will submit the service cost Estimate.
+3. Maintenance Manager will approve or reject the service cost Estimate.
+4. If approved Service Provider executes maintenance work at the property site.  
+5. Updates task status, uploads reports/photos, and notes any additional costs.  
+6. The maintenance manager reviews completion reports and confirms task closure.  
    **End / Outcome:**  
     Work is completed, validated, and service provider performance is recorded.  
      
@@ -166,14 +168,14 @@ These are typical real-life pain points.
    **Most Problematic Stages** 
 
 1. **Request Approval Stage**
-         Requests wait for a decision due to unavailability of approvers.  
-         No clear priority mechanism exists.
+   Requests wait for a decision due to unavailability of approvers.  
+   No clear priority mechanism exists.
 2. **Service Provider Assignment**  
-        Matching the right vendor to the issue is time-consuming.  
-        Availability and skill information is often outdated or assumed.
+   Matching the right vendor to the issue is time-consuming.  
+   Availability and skill information is often outdated or assumed.
 3. **Work Completion Verification**  
-      No standard method to confirm quality of work.  
-       Disputes arise due to lack of evidence or documentation.
+   No standard method to confirm quality of work.  
+   Disputes arise due to lack of evidence or documentation.
 
 **3\. Where Delays, Errors, or Misunderstandings Usually Occur**
 
