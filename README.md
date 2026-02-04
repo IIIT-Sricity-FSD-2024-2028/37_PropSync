@@ -65,7 +65,10 @@ Review submitted maintenance requests and approve or reject them based on urgenc
 
  **Work Monitoring & Closure**  
  Track ongoing maintenance tasks and confirm completion before closure.
-
+ 
+ **Deadline-Based Task Execution and Penalty Handling**
+  The system supports deadline-based maintenance tasks with penalty adjustments for delayed service completion.
+ 
  **Operational Oversight**  
  Ensure accountability, timely execution, and service quality across all maintenance activities.
 
