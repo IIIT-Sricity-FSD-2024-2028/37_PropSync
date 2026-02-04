@@ -64,13 +64,13 @@ ServiceCategory:
     - MaintenanceType
     - WorkCategory
 
-ServiceTask:
+MaintainenceTask:
   definition: >
     The maintenance activity carried out to resolve a reported issue.
   examples:
     - Replacing a damaged water pipe.
   aliases:
-    - Job
+    - ServiceTask
     - WorkOrder
 
 Assignment:
