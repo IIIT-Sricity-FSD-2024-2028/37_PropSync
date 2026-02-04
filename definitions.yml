@@ -1,12 +1,12 @@
 # Domain: Real Estate & Property Management
 # Problem Statement: Property Maintenance & Service Coordination System
-# Last Updated: 2026-02-01
+# Last Updated: 2026-02-03
 
 Owner:
   definition: >
     A property resident who reports maintenance issues, confirms service completion, and rate service providers.
   examples:
-    - A flat owner reports a water leak and pays the plumber after approval.
+    - A flat owner reports a water leak .
   aliases:
     - Resident
     - FlatOwner
@@ -82,6 +82,15 @@ Assignment:
     - JobAssignment
     - WorkAllocation
 
+ServiceEstimate:
+  definition: >
+    An approximate cost proposed by a service provider for resolving a reported maintenance issue before the actual work begins.
+  examples:
+    - A plumber provides an estimate of ₹1200 to fix a water leakage.
+  aliases:
+    - CostEstimate
+    - RepairEstimate
+    
 ServiceBill:
   definition: >
     A statement of charges issued after completion of maintenance work.
