@@ -1,7 +1,7 @@
-**PropSync**  
+## **PropSync**  
 Property Management and Service Coordination System
 
-**Problem Statement \-** 
+## **1. Problem Statement \-** 
 
 In many residential societies and gated communities, property maintenance and service coordination are still handled through informal channels such as phone calls, WhatsApp messages, or manual registers. Maintenance requests raised by residents often lack proper tracking, priority handling, and accountability. This results in delayed responses, poor coordination between maintenance managers and service providers, unclear cost approvals, and dissatisfaction among residents.
 
@@ -10,31 +10,24 @@ Additionally, there is limited transparency regarding service provider performan
 **Propsync**  aims to address these challenges by providing a centralized digital platform that streamlines maintenance request handling, improves coordination among stakeholders, ensures accountability, ensures maintenance requests are processed within defined time limits, with visibility into delays and pending actions and enhances overall property management efficiency while keeping all decision-making authority with designated management roles.
 
 
-**2.Identified actors**
+## **2.Identified actors**
 
 1. **Owner**  
    **Role**\- Primary Service Requester  
    Residents are individuals living within the property who interact with the system to report maintenance-related issues and track their resolution
+    
+2. **Maintenance Manager**
+   **Role:** Operational Supervisor  
+    The maintenance manager is responsible for reviewing, approving, and coordinating maintenance activities across the property.
 
-      
-2. ### **Maintenance Manager**
+3. **Service Provider**
+   **Role:** Maintenance Executor  
+   Service providers are registered vendors or technicians responsible for executing maintenance tasks.
 
-     **Role:** Operational Supervisor  
-           The maintenance manager is responsible for reviewing, approving, and coordinating                   maintenance activities across the property.
-
-
-3. ### **Service Provider**
-
-**Role:** Maintenance Executor  
-Service providers are registered vendors or technicians responsible for executing maintenance tasks.
-
-
-## **4.Admin (System Administrator)**
-
-**Role:** Platform Administrator
-
-**Description:**  
-The Admin is responsible for managing the overall system configuration and user access for the Property Maintenance & Service Coordination System. The Admin does not participate in maintenance request handling or service execution but ensures that the platform operates securely and correctly.
+4. **Admin (System Administrator)**
+   **Role:** Platform Administrator
+   **Description:**  
+   The Admin is responsible for managing the overall system configuration and user access for the Property Maintenance & Service Coordination System. The Admin does not        participate in maintenance request handling or service execution but ensures that the platform operates securely and correctly.
 
 
 
@@ -72,7 +65,10 @@ Review submitted maintenance requests and approve or reject them based on urgenc
 
  **Work Monitoring & Closure**  
  Track ongoing maintenance tasks and confirm completion before closure.
-
+ 
+ **Deadline-Based Task Execution and Penalty Handling**
+  The system supports deadline-based maintenance tasks with penalty adjustments for delayed service completion.
+ 
  **Operational Oversight**  
  Ensure accountability, timely execution, and service quality across all maintenance activities.
 
