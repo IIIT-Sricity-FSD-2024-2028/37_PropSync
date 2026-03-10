@@ -1,6 +1,6 @@
 # Domain: Real Estate & Property Management
 # Problem Statement: Property Maintenance & Service Coordination System
-# Last Updated: 2026-02-03
+# Last Updated: 2026-03-10
 
 Owner:
   definition: >
@@ -29,13 +29,13 @@ ServiceProvider:
     - Vendor
     - Technician
 
-Admin:
+Administrator:
   definition: >
     The authority responsible for managing roles and governing the overall operation of the platform.
   examples:
     - An admin assigns maintenance manager responsibilities.
   aliases:
-    - SystemAdmin
+    - SystemAdmin,President
    
 Complaint:
   definition: >
@@ -81,6 +81,7 @@ Assignment:
   aliases:
     - JobAssignment
     - WorkAllocation
+    -ServiceAssignment
 
 ServiceEstimate:
   definition: >
