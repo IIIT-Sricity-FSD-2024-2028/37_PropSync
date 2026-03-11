@@ -10,6 +10,7 @@ Owner:
   aliases:
     - Resident
     - FlatOwner
+    - Requester
 
 MaintenanceManager:
   definition: >
@@ -119,6 +120,16 @@ Payment:
     - Settlement
     - ServicePayment
 
+MaintenanceCost:
+  definition: >
+    A fixed monthly amount contributed by property owners to support routine maintenance, operational expenses, and service coordination within the residential property.
+  examples:
+    - Each owner contributes ₹2000 per month as maintenance cost for
+      building upkeep and service management.
+  aliases:
+    - MaintenanceFee
+    - MonthlyMaintenance
+    
 Rating:
   definition: >
     A score expressing satisfaction with completed maintenance work.
