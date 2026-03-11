@@ -1,7 +1,7 @@
 CREATE DATABASE PropSync; 
 USE PropSync; 
  
- 1.Administrator 
+
 CREATE TABLE Administrator ( 
     admin_id INT AUTO_INCREMENT PRIMARY KEY, 
     name VARCHAR(100) NOT NULL, 
@@ -10,7 +10,7 @@ CREATE TABLE Administrator (
     password VARCHAR(255) NOT NULL 
 ); 
  
-  2.Users 
+
 CREATE TABLE Users ( 
     user_id INT AUTO_INCREMENT PRIMARY KEY, 
     name VARCHAR(100) NOT NULL, 
@@ -22,7 +22,7 @@ CREATE TABLE Users (
 Administrator(admin_id) 
 ); 
  
- 3.Maintenance_Manager 
+
 CREATE TABLE Maintenance_Manager ( 
     manager_id INT PRIMARY KEY, 
     community_name VARCHAR(150), 
@@ -30,7 +30,7 @@ CREATE TABLE Maintenance_Manager (
 Users(user_id) 
 ); 
  
- 4.Owner 
+
 CREATE TABLE Owner ( 
     owner_id INT PRIMARY KEY, 
     community_name VARCHAR(150), 
@@ -39,14 +39,16 @@ CREATE TABLE Owner (
     CONSTRAINT fk_owner_user FOREIGN KEY (owner_id) REFERENCES Users(user_id) 
 ); 
  
- 5.Service_Provider 
+ 
+
 CREATE TABLE Service_Provider ( 
     provider_id INT PRIMARY KEY, 
     category VARCHAR(100) NOT NULL, 
     CONSTRAINT fk_provider_user FOREIGN KEY (provider_id) REFERENCES Users(user_id) 
 ); 
  
- 6.Complaint 
+
+
 CREATE TABLE Complaint ( 
     complaint_id INT AUTO_INCREMENT PRIMARY KEY, 
     owner_id INT NOT NULL, 
@@ -62,7 +64,8 @@ Owner(owner_id),
 Maintenance_Manager(manager_id) 
 ); 
  
- 7.Service_Assignment 
+
+
 CREATE TABLE Service_Assignment ( 
     assignment_id INT AUTO_INCREMENT PRIMARY KEY, 
     complaint_id INT NOT NULL, 
@@ -77,7 +80,8 @@ Service_Provider(provider_id),
 Maintenance_Manager(manager_id) 
 ); 
  
- 8.Service_Estimate 
+
+
 CREATE TABLE Service_Estimate ( 
     assignment_id INT PRIMARY KEY, 
     estimated_cost DECIMAL(10, 2) NOT NULL, 
@@ -86,7 +90,8 @@ CREATE TABLE Service_Estimate (
 Service_Assignment(assignment_id) 
 ); 
  
- 9.Rating 
+
+
 CREATE TABLE Rating ( 
     owner_id INT NOT NULL, 
     complaint_id INT NOT NULL, 
@@ -99,7 +104,8 @@ CREATE TABLE Rating (
 Complaint(complaint_id) 
 ); 
  
- 10.Service_Bill 
+ 
+
 CREATE TABLE Service_Bill ( 
     bill_id INT AUTO_INCREMENT PRIMARY KEY, 
     complaint_id INT NOT NULL, 
@@ -110,7 +116,8 @@ CREATE TABLE Service_Bill (
 Complaint(complaint_id) 
 ); 
  
- 11.Payment 
+
+
 CREATE TABLE Payment ( 
     payment_id INT AUTO_INCREMENT PRIMARY KEY, 
     bill_id INT NOT NULL, 
@@ -119,7 +126,8 @@ CREATE TABLE Payment (
     CONSTRAINT fk_payment_bill FOREIGN KEY (bill_id) REFERENCES Service_Bill(bill_id) 
 ); 
  
- 12.Maintenance_Cost_Payment 
+
+
 CREATE TABLE Maintenance_Cost_Payment ( 
     maintenance_id INT AUTO_INCREMENT PRIMARY KEY, 
     owner_id INT NOT NULL, 
@@ -131,7 +139,8 @@ CREATE TABLE Maintenance_Cost_Payment (
 Maintenance_Manager(manager_id) 
 ); 
  
- 13.Notification 
+
+
 CREATE TABLE Notification ( 
     notification_id INT AUTO_INCREMENT PRIMARY KEY, 
     user_id INT NOT NULL, 
