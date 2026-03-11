@@ -6,7 +6,6 @@ CREATE TABLE Administrator (
     admin_id INT AUTO_INCREMENT PRIMARY KEY, 
     name VARCHAR(100) NOT NULL, 
     email VARCHAR(150) UNIQUE NOT NULL, 
-    community_name VARCHAR(150), 
     password VARCHAR(255) NOT NULL 
 ); 
  
