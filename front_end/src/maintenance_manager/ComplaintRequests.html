@@ -63,7 +63,7 @@
   .sidebar {
     position: fixed; top: 0; left: -300px;
     width: 280px; height: 100%;
-    background: var(--sidebar-bg);
+    background:  #F3F4F6;
     transition: 0.4s cubic-bezier(0.4,0,0.2,1);
     z-index: 1000; padding: 20px 0;
   }
@@ -98,11 +98,28 @@
   margin-left: -20px;
 }
   .menu-list { display: flex; flex-direction: column;margin-top: -40px }
-  .menu-item {
-    display: flex; align-items: center; gap: 15px;
-    padding: 15px 25px; color: white; text-decoration: none;
-    font-size: 15px; transition: 0.3s;
-  }
+ 
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 15px 25px;
+  color: #1c2947;
+  text-decoration: none;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+.menu-item:hover {
+  background: #e6f4ea;  
+}
+.menu-item.active {
+  background: #e6f4ea;  
+}
+.menu-item.active {
+  color: #28a745;
+  font-weight: 700;
+}
   .menu-item i {
     width: 35px; height: 35px; display: flex;
     align-items: center; justify-content: center;
@@ -113,8 +130,7 @@
   .ic-purple { background: #9013fe; }
   .ic-cyan { background: #50e3c2; }
   .ic-red { background: #d0021b; }
-  .menu-item:hover { background: rgba(255,255,255,0.1); }
-  .logout { color: #ffcccc; }
+  .logout { color: #c62e2e; }
 
   .main-wrapper { min-height: 100vh; }
   .container { max-width: 1250px; margin: 24px auto; padding: 0 20px; }
@@ -235,18 +251,18 @@
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
   <div class="logo-container">
-    <img src="../Images/PropSync.png" class="sidebar-logo">
+    <img src="../../public/Images/PropSync.png" class="sidebar-logo">
   </div>
   <i class="fa-solid fa-xmark close-icon" onclick="toggleMenu()"></i>
 </div>
   <nav class="menu-list">
-    <a href="#" class="menu-item"><i class="fa-solid fa-house ic-blue"></i> Dashboard</a>
-    <a href="../Maintenance_manager.html/Complaint requests.html" class="menu-item"><i class="fa-solid fa-file-invoice ic-orange"></i> Complaint Requests</a>
-    <a href="#" class="menu-item"><i class="fa-solid fa-money-bill-transfer ic-purple"></i> Service Bills & Payments</a>
-    <a href="#" class="menu-item"><i class="fa-solid fa-chart-simple ic-cyan"></i> Service Provider Performance</a>
-    <a href="#" class="menu-item"><i class="fa-solid fa-comments ic-orange"></i> Communication Center</a>
-    <a href="#" class="menu-item"><i class="fa-solid fa-bell ic-red"></i> Notifications</a>
-    <a href="#" class="menu-item logout"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+    <a href="../maintenance_manager/dashboard.html" class="menu-item"><i class="fa-solid fa-house ic-blue"></i> Dashboard</a>
+    <a href="../maintenance_manager/ComplaintRequests.html" class="menu-item"><i class="fa-solid fa-file-invoice ic-orange"></i> Complaint Requests</a>
+    <a href="../maintenance_manager/service-bills.html" class="menu-item"><i class="fa-solid fa-money-bill-transfer ic-purple"></i> Service Bills & Payments</a>
+    <a href="../maintenance_manager/provider-performance.html" class="menu-item"><i class="fa-solid fa-chart-simple ic-cyan"></i> Service Provider Performance</a>
+    <a href="../maintenance_manager/communication.html" class="menu-item"><i class="fa-solid fa-comments ic-orange"></i> Communication Center</a>
+    <a href="../maintenance_manager/notifications.html" class="menu-item"><i class="fa-solid fa-bell ic-red"></i> Notifications</a>
+    <a href="../login_signup.html" class="menu-item logout"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
   </nav>
 </aside>
 
@@ -254,17 +270,17 @@
   <header class="top-header">
     <div class="header-left">
       <i class="fa-solid fa-bars menu-trigger" onclick="toggleMenu()"></i>
-     <img src="../images/PropSync.png" alt="PropSync Logo" class="logo-img">
+     <img src="../../public/Images/PropSync.png" alt="PropSync Logo" class="logo-img">
     </div>
     <div class="header-right">
-      <div class="notif-wrapper">
-        <i class="fa-solid fa-bell bell-icon"></i>
-        <span class="badge">1</span>
-      </div>
-      <div class="profile-pill">
-        <i class="fa-solid fa-circle-user profile-icon"></i>
-        <span class="user-role">Maintenance Manager</span>
-      </div>
+    <div class="notif-wrapper" onclick="window.location.href='../maintenance_manager/notifications.html'">
+  <i class="fa-solid fa-bell bell-icon"></i>
+  <span class="badge">1</span>
+</div>
+      <div class="profile-pill" onclick="window.location.href='../maintenance_manager/profile.html'" style="cursor:pointer;">
+  <i class="fa-solid fa-circle-user profile-icon"></i>
+  <span class="user-role">Maintenance Manager</span>
+</div>
     </div>
   </header>
 
@@ -769,6 +785,15 @@ function closeModal(){
   }
 
   renderAllTabs();
+const currentPage = window.location.pathname.split("/").pop();
+
+document.querySelectorAll(".menu-item").forEach(link => {
+  const linkPage = link.getAttribute("href").split("/").pop();
+
+  if (linkPage === currentPage) {
+    link.classList.add("active");
+  }
+});
 </script>
 </body>
 </html>

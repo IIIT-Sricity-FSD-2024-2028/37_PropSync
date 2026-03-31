@@ -1,13 +1,983 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PropSync</title>
-    <link rel="icon" type="image/png" href="./public/favicon.png" />
-    <link rel="stylesheet" href="">
-  </head>
-  <body>
-    <!--Landing page code here-->
-  </body>
-</html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PropSync Landing</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family: 'Inter',sans-serif;;-webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;}
+body{background:#f5f6f8;}
+
+.container{max-width:1300px;margin:auto;padding:20px}
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  padding: 15px 40px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+.logo {
+  height: 40px;           
+  display: flex;
+  align-items: center;
+  overflow: visible;         
+}
+
+.logo img {
+  height: 100%;
+  transform: scale(0.3);     
+  transform-origin: left ;
+}
+.nav {
+  display: flex;
+  gap: 25px;
+  align-items: center;
+  margin-left: -400px;
+}
+.nav a {
+  text-decoration: none;
+  color: #1c2947;
+  font-size: 15px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+.nav a:hover {
+  color: #34A853;
+}
+.btn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer}
+.login{background:#34A853;color:#fff;border-radius:25px;padding:12px 28px;border: 1px solid #34A853;font-weight: bold;}
+.signup{border: 1px solid #34A853;color: #34A853;border-radius:25px;padding:12px 24px;background:#fff;font-weight: bold;}
+.btn, .login, .signup, .btn-login {
+  border-radius: 25px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.3s ease;
+}
+
+.nav a.active,
+a.login.active,
+a.signup.active,
+a.btn.active,
+.btn-login.active {
+  background-color: #34A853;
+  color: #fff !important;
+  font-weight: bold;
+  border-radius: 25px;
+
+} 
+.nav a.active {
+  background-color:#2E9449;
+  color: #fff !important;
+  border-radius: 25px;
+} 
+.btn:hover, .login:hover, .signup:hover, .btn-login:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(52, 168, 83, 0.3);
+}
+
+.hero {background: #34a668;color: #fff;border-radius: 10px;padding: 50px 10px;text-align: center;width: 100%;box-sizing: border-box;}
+.hero h1 {font-size: 39px;margin-bottom: 10px;display: flex;justify-content: center;align-items: center;gap: 12px;line-height: 1.2;}
+.hero p {margin-bottom: 20px;font-size: 24px;font-weight: 300;}
+.features {display: flex;justify-content: center;gap: 30px;font-size: 16px;opacity: 0.9;}
+.scroll-wrapper {height: 50px;overflow: hidden;display: inline-block;position: relative;}
+.scroll-track {display: flex;flex-direction: column;animation: wordRotation 10s infinite ease-in-out;}
+.scroll-track span {display: block;height: 50px;line-height: 50px;font-weight: 800;color: #1c2947;text-align: right;}
+@keyframes wordRotation {
+    0%, 20%   { transform: translateY(0); }       
+    25%, 45%  { transform: translateY(-50px); }   
+    50%, 70%  { transform: translateY(-100px); }  
+    75%, 95%  { transform: translateY(-150px); }  
+    100%      { transform: translateY(0); }        
+}
+@media (max-width: 768px) {
+    .hero h1 {
+        flex-direction: column;
+        font-size: 32px;
+        gap: 0;
+    }
+    .scroll-wrapper { height: 40px;}
+    .scroll-track span {height: 40px;line-height: 40px;text-align: center;}
+    @keyframes wordRotation {
+        0%, 20%   { transform: translateY(0); }
+        25%, 45%  { transform: translateY(-40px); }
+        50%, 70%  { transform: translateY(-80px); }
+        75%, 95%  { transform: translateY(-120px); }
+        100%      { transform: translateY(0); }
+    }
+    .features {flex-direction: column;gap: 10px;}
+}
+
+.intro{display:flex;align-items:center;gap:60px}
+.intro-text{width:50%;padding-left:60px}
+.intro-text h2{font-size:32px;color:#1c2947;line-height:1.4;margin-bottom:15px;margin-top: 20px;}
+.intro-text p{font-size:19px;line-height:1.6;color:#555;margin-bottom:23px;}
+.btn {
+  background: #34A853;
+  color: #fff;
+  border-radius: 25px;
+  padding: 12px 28px;
+  border: 1px solid #34A853;
+  font-weight: bold;
+  text-decoration: none;
+  margin-left: 100px;
+}
+.intro-image{width:50%}
+.intro-image img{width:100%;border-radius:20px}
+
+:root {--indigo-primary: #1e3a8a;--indigo-light: #e0e7ff;--text-slate: #475569;--bg-light: #f8fafc;}
+.challenges-container {display: flex;align-items: center;gap: 3rem;padding: 4rem 10%;background-color: #f5f6f8;border-radius: 20px;margin-top: -10px;}
+.image-side {flex: 1;height: 500px;}
+.image-placeholder {position: relative;width: 100%;height: 100%;border-radius: 20px;overflow: hidden;box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);}
+.image-placeholder img {width: 100%;height: 100%;object-fit: cover;}
+.scroll-side {flex: 1.2;}
+.scroll-header h2 {color: #1c2947;font-size: 2.5rem;margin-bottom: 0.5rem;}
+.scroll-header p {color: #1c2947;margin-bottom: 2rem;}
+.marquee-viewport {height: 380px;overflow: hidden;position: relative;mask-image: linear-gradient(transparent, black 15%, black 85%, transparent);}
+.marquee-content {display: flex;flex-direction: column;gap: 1.5rem;animation: scroll-vertical 12s linear infinite;}
+.marquee-viewport:hover .marquee-content {animation-play-state: paused;}
+.card {background: var(--bg-light);border: 1px solid var(--indigo-light);padding: 1.5rem;border-radius: 12px;transition: transform 0.3s ease;}
+.card h3 {color: #1c2947;margin-bottom: 0.75rem;font-size: 1.25rem;}
+.card p {color: #555;line-height: 1.6;}
+@keyframes scroll-vertical {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-50%); } 
+}
+@media (max-width: 992px) {
+    .challenges-container {
+        flex-direction: column;
+    }
+    .image-side {
+        width: 100%;
+        height: 300px;
+    }
+}
+
+.section{margin-top:-40px;text-align:center;margin-bottom:15px}
+.section h2{font-size:32px;color:#1c2947;margin-bottom :50px;line-height:1.4;margin-top:80px;}
+.section p{font-size:19px;margin-top:-30px;color: #555;}
+.boxes{display:grid;grid-template-columns:repeat(5,1fr);margin-top:45px;gap:15px;margin:25px auto;width:100%;height:200;margin-top: 20px;}
+
+.box {
+  padding: 30px 20px;
+  border-radius: 24px;
+  width: 100%;
+  text-align: center;
+  transition: all 0.4s ease;
+  cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  height: 200;
+}
+
+.box i {
+  margin-top: 35px;
+  font-size: 40px;
+  margin-bottom: 80px;
+  color: #1c2947;
+}
+
+.box h5 {
+  font-size: 18px;
+  margin-bottom: 40px;
+  color: #1c2947;
+}
+
+.box p {
+  font-size: 15px;
+  line-height: 1.6;
+  color:#555;
+  margin-bottom: 20px;
+}
+.box:hover {transform: translateY(-12px) scale(1.02); box-shadow: 0 20px 40px rgba(28, 41, 71, 0.15); }
+.box:nth-child(1){background:#d1d2ec;}
+.box:nth-child(2){background:#dfd5c3}
+.box:nth-child(3){background:#c6d6dc}
+.box:nth-child(4){background:#e2caca}
+.box:nth-child(5){background:#d1d2ec}  
+@media (max-width: 1024px) {
+    .boxes { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 768px) {
+    .boxes { grid-template-columns: 1fr; width: 80%; }
+}
+
+.maintenance-section {display: flex;align-items: center;padding: 60px 10%;background-color: #f8f9fb;gap: 50px; margin-top: 70px;margin-bottom: 40px;}
+.diagram-column { flex: 1.2; position: relative; }
+.diagram-grid {position: relative;width: 450px;height: 450px;}
+.connecting-arrows {position: absolute;top: 0;left: 0;width: 100%;height: 100%; z-index: 1;pointer-events: none; }
+.center-logo { position: absolute;top: 50%;left: 44.5%;transform: translate(-50%, -50%);width: 120px; z-index: 10;}
+.node { position: absolute; text-align: center; width: 120px;z-index: 10; }
+.node p { font-weight: bold; font-size: 14px; margin-top: 8px; }
+.circle-img {width: 120px; height: 120px;border-radius: 50%;overflow: hidden;background: #fff;box-shadow: 0 4px 12px rgba(0,0,0,0.1);}
+.circle-img img { width: 100%; height: 100%; object-fit: cover; }
+.node-top-left { top: -7px; left: -23px; }
+.node-top-right { top: -9px; right: -23px; }
+.node-bottom-left { bottom: -7px; left: -23px; }
+.node-bottom-right { bottom: -20px; right: -25px; }
+.content-column { flex: 1; }
+.heading { font-size: 32px; color:#1c2947 ; line-height: 1.2; margin-bottom: 20px;}
+.description { font-size: 18px; color: #666; margin-bottom: 40px; }
+.card-viewport {height: 200px; overflow: hidden;border: 1px solid #e0e0e0;border-radius: 12px;background: white;box-shadow: 0 8px 24px rgba(0,0,0,0.05);}
+.card-track {display: flex;flex-direction: column; animation: slideUp 12s infinite ease-in-out;}
+.info-card {display: flex;align-items: center;padding: 25px;height: 200px;box-sizing: border-box;gap: 20px;flex-shrink: 0;}
+.card-circle {width: 100px;height: 100px;border-radius: 50%;flex-shrink: 0;overflow: hidden;}
+.card-circle img { width: 100%; height: 100%; object-fit: cover; }
+.card-text p { color:#1c2947; font-size: 15px; margin-bottom: 5px; line-height: 1.4; }
+.card-text h3 { font-size: 20px; margin: 0; color: #1c2947 }
+@keyframes slideUp {
+    0%, 20% { transform: translateY(0); }
+    25%, 45% { transform: translateY(-200px); }
+    50%, 70% { transform: translateY(-400px); }
+    75%, 95% { transform: translateY(-600px); }
+    100% { transform: translateY(0); }
+}
+
+.workflow {display: flex;align-items: center;justify-content: center;gap: 10px;flex-wrap: nowrap;max-width:1100;margin-top: 90px;}
+.step {width: 185px;height: 230px;background: #fff;border-radius: 10px;padding: 20px;text-align: center; max-width:1100;margin-top: -20px;margin-bottom: 110px;}
+.step h4{font-size: 16px;color: #2E9449;}
+.step p{font-size: 14.5px;margin-top: 1px;color:#1c2947;line-height:1.4;margin-bottom: 20px;}
+.step img {width: 120px;height: 110px;display: block;margin: 10px auto;}
+.arrow {position:relative;width: 60px;height: 29px;background: white;display: flex; align-items: center;justify-content: center;z-index: 1; margin-left: -20px; margin-top: -85px;  transform: translateY(15px);}
+.arrow::after {content: "";position: absolute;right: -18px;top: 50%;transform: translateY(-50%);border-left: 27px solid white;border-top: 27px solid transparent;border-bottom: 27px solid transparent;z-index: 1;border-radius: 4px;}
+.arrow-inner {position: relative;width: 52px;height: 15px;background:#82C29F;right:-1px;z-index: 2;}
+.arrow-inner::after { content: "";position: absolute;right: -13px;top: 50%;transform: translateY(-50%);border-left: 17px solid #82C29F;border-top: 14px solid transparent;border-bottom: 14px solid transparent;z-index: 3;}
+
+.stats-container{text-align:center;background:#1c2947;padding:70px 20px;border-radius:20px;margin:60px auto;width:85%;margin-top:0px;}
+.stats-container h2{font-size: 32px;font-weight: 700;margin-bottom: 40px;color:#fff ;}
+.stats-row{display: flex;justify-content: space-between;align-items: center;gap:20px;flex-wrap: nowrap;}
+.stats-box{flex:1;text-align: center;}
+.stats-box h3{font-size: 32px;color:#34A853;Margin-bottom:15px}
+.stats-box p{font-size: 15px;line-height:1.6;color:#dfdada;letter-spacing: 0.2px;}
+
+
+.testimonials {padding: 80px 20px;text-align: center;margin-top: -50px;}
+.testimonials h2 {font-size: 34px;color:#1c2947;}
+.subtitle {color: #555;margin-top: 20px;margin-bottom: 50px;font-size: 19px;}
+.testimonial-grid {display: grid;grid-template-columns: repeat(3, 1fr);gap: 30px;align-items: stretch;}
+.secondary-card{display:flex;flex-direction: column;justify-content: space-between;background: #d5f7db;padding: 30px;border-radius: 22px;text-align: left;box-shadow: 0 10px 30px rgba(0,0,0,0.05);transition: 0.3s;height:100%;overflow:visible;}
+.card:hover {transform: translateY(-6px);}
+.quote {font-size: 60px;color: #2563eb;line-height: 1;margin-bottom: 10px;}
+.stars {font-size: 26px;color: #facc15;letter-spacing: 3px;margin-bottom: 15px;}
+.message {font-size: 15px;color: #334155;line-height: 1.6; margin-bottom: 22px;}
+.user {display: flex;align-items: center;}
+.user h4 {font-size: 14px;color: #0f172a;}
+.user span {font-size: 13px;color: #555;}
+@media (max-width: 900px) {
+  .testimonial-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .testimonial-grid {
+    grid-template-columns: 1fr;
+  }
+  }
+
+.cta-section {background-color: #1c2947; color: #ffffff; padding: 70px 15px;text-align: center;width:100%;border-radius: 20px; margin: 0 auto;margin-top:40px}
+.cta-container {max-width: 800px;margin: 0 auto;}
+h2 {font-size: 2.5rem; margin-bottom: 30px; font-weight: 500;}
+.cta-subtext {font-size: 1.1rem;line-height: 1.6;opacity: 0.9;margin-bottom: 40px;color:#e2d9d9}
+.cta-actions {display: flex;justify-content: center;align-items: center; gap: 30px;margin-bottom: 40px;}
+.register {color: #2ecc71;text-decoration: none;font-size: 1.5rem;font-weight: 600;display: flex; align-items: center;transition: opacity 0.3s ease;}
+.cta-arrow {color: #fff;font-size: 1.8rem;}
+.btn-login {color:#fff;background:  #34A853;text-decoration: none;font-size: 1.2rem;padding: 12px 40px;border-radius: 6px;transition: all 0.3s ease;font-weight: bold;}
+.btn-login:hover {background-color: #fff;color: #082A63;}
+.cta-footer {font-size: 1.1rem;line-height: 1.5;opacity: 0.8;color:#e2d9d9}
+
+:root {
+  --footer-bg: #ffffff;
+  --footer-text: #1c2947;
+  --footer-accent: #34A853;
+  --footer-muted: #555555;
+  --footer-border: #e2e8f0;
+}
+.propsync-footer {
+  background-color: var(--footer-bg);
+  color: var(--footer-text);
+  padding: 80px 0 40px 0;
+  border-top: 1px solid var(--footer-border);
+  font-family: 'Inter', sans-serif;
+}
+.footer-container {
+  max-width: 1300px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1.2fr 3fr;
+  gap: 80px;
+  padding: 0 40px;
+}
+.footer-brand-section {
+  display: flex;
+  flex-direction: column;
+}
+.footer-logo-img {
+  height: 150px; 
+  width: auto;
+  margin-bottom: 1px;
+  margin-top: -60px;
+}
+.brand-tagline {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--footer-accent);
+  margin-bottom: 15px;
+}
+.brand-bio {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--footer-muted);
+  margin-bottom: 30px;
+}
+.newsletter-block h4 {
+  font-size: 15px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.newsletter-form {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--footer-border);
+  border-radius: 30px;
+  padding: 4px;
+  background: #f8fafc;
+  transition: border-color 0.3s;
+}
+.newsletter-form:focus-within {
+  border-color: var(--footer-accent);
+}
+.newsletter-form input {
+  background: transparent;
+  border: none;
+  padding: 10px 20px;
+  flex: 1;
+  outline: none;
+  font-size: 14px;
+}
+.newsletter-form button {
+  background: var(--footer-accent);
+  color: #fff;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.footer-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+.nav-col h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 25px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.nav-col ul {
+  list-style: none;
+  padding: 0;
+}
+.nav-col li {
+  margin-bottom: 12px;
+}
+.nav-col a {
+  text-decoration: none;
+  color: var(--footer-muted);
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+.nav-col a:hover {
+  color: var(--footer-accent);
+  padding-left: 5px;
+}
+.footer-social-row {
+  max-width: 1300px;
+  margin: 60px auto 40px;
+  padding: 30px 40px;
+  border-top: 1px solid var(--footer-border);
+  border-bottom: 1px solid var(--footer-border);
+}
+.social-wrapper {
+  display: flex;
+  justify-content: center;
+  gap: 35px;
+  flex-wrap: wrap;
+}
+.social-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--footer-text);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: 0.3s;
+}
+.social-link i {
+  font-size: 18px;
+  color: var(--footer-accent);
+}
+.social-link:hover {
+  transform: translateY(-3px);
+  color: var(--footer-accent);
+}
+.footer-bottom {
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 40px;
+}
+.bottom-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--footer-muted);
+  font-size: 13px;
+}
+.utility-links a {
+  color: var(--footer-muted);
+  text-decoration: none;
+  margin-left: 20px;
+  transition: 0.2s;
+}
+.utility-links a:hover {
+  color: var(--footer-accent);
+}
+@media (max-width: 1024px) {
+  .footer-container { grid-template-columns: 1fr; gap: 50px; }
+  .footer-nav-grid { grid-template-columns: repeat(2, 1fr); }
+  .footer-brand-section { align-items: center; text-align: center; }
+  .brand-bio { max-width: 100%; }
+}
+@media (max-width: 600px) {
+  .footer-nav-grid { grid-template-columns: 1fr; text-align: center; }
+  .nav-col { align-items: center; }
+  .bottom-content { flex-direction: column; gap: 15px; }
+  .utility-links { margin-top: 10px; }
+  .utility-links a:first-child { margin-left: 0; }
+}
+
+.btn, .login, .signup, .btn-login, .newsletter-form button {
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:hover, .login:hover, .signup:hover, .btn-login:hover, .newsletter-form button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 20px rgba(52, 168, 83, 0.3);
+}
+
+.btn:active, .login:active, .signup:active, .btn-login:active, .newsletter-form button:active {
+  transform: scale(0.95);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+}
+.btn::after, .login::after, .signup::after, .btn-login::after, .newsletter-form button::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  background: rgba(255,255,255,0.4);
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.btn:active::after,
+.login:active::after,
+.signup:active::after,
+.btn-login:active::after,
+.newsletter-form button:active::after {
+  width: 200px;
+  height: 200px;
+}
+html {
+  scroll-behavior: smooth;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+  <a href="#home">
+    <img src="../front_end/public/Images/PropSync.png" alt="PropSync Logo">
+  </a>
+</div>
+<div class="nav">
+  <a href="#home">Home</a>
+  <a href="#solutions">Solutions</a>
+  <a href="#workflow">How it works</a>
+  <a href="#reviews">Reviews</a>
+  <a href="#contact">Contact</a>
+</div>
+<div>
+<a href="login.html" class="login">Log in</a>
+<a href="signup.html" class="signup">Sign Up</a>
+</div>
+</div>
+
+   <div class="container">
+  <section class="hero" id="home">
+<h1>
+  <div class="scroll-wrapper">
+  <div class="scroll-track">
+  <span>Smarter</span>
+  <span>Faster</span>
+  <span>Efficient</span>
+   <span>Reliable</span>
+</div>
+</div>
+   Property Maintenance starts here
+</h1>
+<p>Fast, organized, and reliable maintenance</p>
+<div class="features">
+ <span>Easy Requests</span>
+ <span>Quick Resolution</span>
+ <span>Real-Time Tracking</span>
+  <span>Service Coordination</span>
+  </div>
+</section>
+</div>
+
+<div class="intro">
+  <div class="intro-text">
+<h2>Maintenance shouldn’t slow your property down — it should keep your property moving forward.</h2>
+<p>Empowering property managers with a smart platform to streamline maintenance operations and coordinate services efficiently </p>
+<a href="signup.html" class="btn">Register Now</a>
+</div>
+<div class="intro-image">
+ <img src="your-image.png">
+</div>
+</div>
+
+<section class="challenges-container">
+    <div class="image-side">
+        <div class="image-placeholder">
+<img src="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80" alt="Modern Building Community">
+        </div>
+    </div>
+
+    <div class="scroll-side">
+        <div class="scroll-header">
+            <h2>Real-World Challenges</h2>
+            <p>Maintenance Operations Are Often Slowed Down by Outdated Processes</p>
+        </div>
+
+<div class="marquee-viewport">
+<div class="marquee-content">
+ <div class="card">
+      <h3>Unorganized Maintenance Requests</h3>
+      <p>Maintenance issues can come from different sources, making them difficult to track and prioritize effectively.</p>
+   </div>
+ <div class="card">
+ <h3>Difficult Service Coordination</h3>
+ <p>Assigning and managing service providers without a centralized system can slow down operations.</p>
+</div>
+ <div class="card">
+ <h3>Limited Visibility of Ongoing Tasks</h3>
+ <p>Stakeholders may struggle to monitor the status and progress of maintenance activities.</p>
+</div>
+<div class="card">
+  <h3>Delayed Problem Resolution</h3>
+  <p>Without proper coordination and tracking, maintenance tasks may take longer to complete.</p>
+ </div>
+
+<div class="card" aria-hidden="true">
+<h3>Unorganized Maintenance Requests</h3>
+<p>Maintenance issues can come from different sources, making them difficult to track.</p>
+</div>
+<div class="card" aria-hidden="true">
+<h3>Difficult Service Coordination</h3>
+<p>Assigning and managing service providers without a centralized system.</p>
+</div>
+  </div>
+     </div>
+    </div>
+</section>
+
+<div class="section" id="solutions">
+    <div class="container">
+<h2>A Unified Platform for Smarter<br> Maintenance Management</h2>
+<div class="boxes">
+<div class="box">
+    <i class="fas fa-tools"></i>
+    <h5>Centralized Maintenance Requests</h5>
+<p>All maintenance issues are organized in one platform for easier tracking and management</p></div>
+<div class="box">
+    <i class="fas fa-user-cog"></i>
+    <h5>Efficient Service Coordination</h5>
+<p>Maintenance managers can assign and monitor service providers more effectively.</p></div>
+<div class="box">
+  <i class="fas fa-chart-line"></i>
+    <h5>Real-Time Task Tracking</h5>
+<p>Stay updated on the progress of maintenance work at every stage.</p></div>
+<div class="box">
+  <i class="fas fa-comments"></i>
+    <h5>Improved Communication</h5>
+<p>Ensure smooth collaboration between all roles involved in maintenance operations.</p></div>
+<div class="box">
+    <i class="fas fa-bolt"></i>
+    <h5>Better Operational Efficiency</h5>
+<p>Reduce delays and maintain properties with greater control and organization.</p></div>
+</div>
+</div>
+</div>
+
+<section class="maintenance-section">
+    <div class="diagram-column">
+        <div class="diagram-grid">
+            <div class="center-logo">
+                <img src="../front_end/public/Images/logo.jpeg" alt="Logo">
+            </div>
+
+            <div class="node node-top-left">
+                <div class="circle-img">
+                    <img src="../front_end/public/Images/Owner.png" alt="Owner">
+                </div>
+                <p>Owner</p>
+            </div>
+
+            <div class="node node-top-right">
+                <div class="circle-img">
+                    <img src="../front_end/public/Images/Admin.png" alt="Admin">
+                </div>
+                <p>Admin</p>
+            </div>
+
+            <div class="node node-bottom-left">
+                <div class="circle-img">
+                    <img src="../front_end/public/Images/Service Provider.png" alt="Service Provider">
+                </div>
+                <p>Service Provider</p>
+            </div>
+
+            <div class="node node-bottom-right">
+                <div class="circle-img">
+                    <img src="../front_end/public/Images/Maintenance manager.png" alt="Maintenance Manager">
+                </div>
+                <p>Maintenance Manager</p>
+            </div>
+            
+   <svg class="connecting-arrows" viewBox="0 0 450 450">
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+        refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#000" />
+        </marker>
+    </defs>
+    <line x1="180" y1="180" x2="100" y2="100" 
+          stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+    
+    <line x1="270" y1="180" x2="350" y2="100" 
+          stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+    
+    <line x1="180" y1="270" x2="100" y2="350" 
+          stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+    
+    <line x1="270" y1="270" x2="350" y2="350" 
+          stroke="#000" stroke-width="2" marker-end="url(#arrowhead)" />
+</svg>
+        </div>
+    </div>
+
+    <div class="content-column">
+        <h1 class="heading">Maintenance That Works for Everyone</h1>
+        <p class="description">Bring all stakeholders onto one Platform, and watch efficiency, clarity and collaboration thrive.</p>
+
+  <div class="card-viewport">
+    <div class="card-track">
+      <div class="info-card">
+         <div class="card-circle">
+      <img src="../front_end/public/Images/Admin.png" alt="Admin">
+    </div>
+<div class="card-text">
+     <p>Manage users, oversee operations, and ensure the system runs smoothly.</p>
+     <h3>Admin</h3>
+     </div>
+   </div>
+  <div class="info-card">
+  <div class="card-circle">
+    <img src="../front_end/public/Images/Owner.png" alt="Owner">
+      </div>
+      <div class="card-text">
+     <p>Raise maintenance requests and stay updated on repair progress to ensure their properties are well maintained.</p>
+     <h3>Owner</h3>
+      </div>
+   </div>
+    <div class="info-card">
+   <div class="card-circle">
+     <img src="../front_end/public/Images/Maintenance manager.png  " alt="Manager">
+                    </div>
+   <div class="card-text">
+   <p>They receive and manage all maintenance requests, assign tasks and ensure repairs are completed efficiently.</p>
+  <h3>Maintenance Manager</h3>
+    </div>
+      </div>
+     <div class="info-card">
+    <div class="card-circle">
+  <img src="../front_end/public/Images/Service Provider.png" alt="Provider">
+     </div>
+  <div class="card-text">
+  <p>They are the technicians or contractors who carry out the maintenance work and update system on task progress.</p>
+   <h3>Service Provider</h3>
+    </div>
+       </div>
+   </div>
+  </div>
+</div>
+</section>
+
+
+
+<div class="section" id="workflow">
+    <div class="container">
+  <h2>How the Maintenance Workflow operates</h2>
+  <p>Simple, step-by-step process to manage maintenance efficiently</p>
+  <div class="workflow">
+    <div class="step">
+      <h4>1. Submit Request</h4>
+      <img src="../front_end/public/Images/Submit-Request.png" width="150">
+      <p>Report maintenance issue</p>
+    </div>
+    <div class="arrow"><div class="arrow-inner"></div></div>
+    <div class="step">
+      <h4>2. Review Request</h4>
+        <img src="../front_end/public/Images/Review-Request.png" width="150">
+      <p>Manager reviews the request</p>
+    </div>
+    <div class="arrow"><div class="arrow-inner"></div></div>
+    <div class="step">
+      <h4>3. Assign Provider</h4>
+        <img src="../front_end/public/Images/Assign-Provider.png" width="150">
+      <p>Assign to service provider</p>
+    </div>
+    <div class="arrow"><div class="arrow-inner"></div></div>
+    <div class="step">
+      <h4>4. Track Progress</h4>
+        <img src="../front_end/public/Images/Track-Progress.png" width="170">
+      <p>Monitor task<br> status</p>
+    </div>
+    <div class="arrow"><div class="arrow-inner"></div></div>
+    <div class="step">
+      <h4>5. Resolve Issue</h4>
+        <img src="../front_end/public/Images/Reslove-Issue.png" width="150">
+      <p>Complete and close task</p>
+    </div>
+  </div>
+  </div>
+</div>
+
+  <div class="container">
+<div class="stats-container">
+     <h2>Get results that matter</h2>
+      <div class="stats-row">
+    <div class="stats-box">
+    <h3>35%<h3>
+        <p>Faster Issue <br> Resolution</p>
+        </div>
+        <div class="stats-box">
+    <h3>50%<h3>
+        <p>Less Manual<br> Work</p>
+        </div>  
+         <div class="stats-box">
+    <h3>40%<h3>
+        <p>Better Team<br>Coordination</p>
+        </div>  
+         <div class="stats-box">
+    <h3>24/7<h3>
+        <p>Request Tracking</p>
+        </div>  
+</div>
+</div>
+</div>
+</div>
+
+    
+<section class="testimonials" id="reviews">
+<div class="container">
+<h2>What Our Users Say</h2>
+<p class="subtitle">Real feedback from property owners and managers</p>
+
+<div class="testimonial-grid">
+<div class="card secondary-card">
+<div class="quote">“</div>
+<div class="stars">★★★★★</div>
+<p class="message">Managing maintenance requests has never been this easy. Everything is streamlined and stress-free.</p>
+<div class="user">
+    <div>
+<h4>Ravi Kumar</h4>
+<span>Property Owner</span>
+</div>
+</div>
+</div>
+
+<div class="card secondary-card">
+<div class="quote">“</div>
+<div class="stars">★★★★★</div>
+<p class="message">The service coordination is incredibly fast. I can assign and track tasks in seconds.</p>
+<div class="user">
+    <div>
+<h4>Anjali Mehta</h4>
+<span>Maintenance manager</span>
+</div>
+</div>
+</div>
+
+<div class="card secondary-card">
+<div class="quote">“</div>
+<div class="stars">★★★★★</div>
+<p class="message">Clear communication and zero confusion. This system saves us hours every week.</p>
+<div class="user">
+<div>
+<h4>Rahul Sharma</h4>
+<span>Service Provider</span>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</section>
+
+<section class="cta-section">
+  <div class="cta-container">
+    <h2>Ready to Simplify Property Maintenance?</h2>
+    <p class="cta-subtext">
+      Streamline maintenance requests, track tasks in real time, <br>
+      and improve coordination across all your properties.
+    </p>
+
+    <div class="cta-actions">
+      <div class="register">
+        Register Now </div>
+        <span class="cta-arrow">→</span>
+      <a href="login.html" class="btn-login">Login</a>
+    </div>
+  
+
+    <p class="cta-footer">
+      Start managing maintenance smarter today. <br>
+      <span>No credit card required.</span>
+    </p>
+  </div>
+</section>
+
+<footer class="propsync-footer" id="contact">
+  <div class="footer-container">
+    <div class="footer-brand-section">  
+      <a href="#" class="logo-link">
+        <img src="../front_end/public/Images/PropSync.png" alt="PropSync Logo" class="footer-logo-img">
+      </a>
+      <p class="brand-tagline">
+        Property Maintenance and Service Coordination
+      </p>
+      <p class="brand-bio">
+        The complete property maintenance platform designed for managers, technicians, and property owners. Track, assign, and monitor operations seamlessly.
+      </p>
+      <div class="newsletter-block">
+        <h4>Subscribe to our newsletter</h4>
+        <form class="newsletter-form">
+     <input type="email" placeholder="Enter your email" required>
+     <button type="submit">Subscribe</button>
+        </form>
+      </div>
+
+    </div>
+    <div class="footer-nav-grid">
+
+      <div class="nav-col">
+        <h3>Features</h3>
+ <ul>
+     <li><a href="#">Smart Scheduling</a></li>
+     <li><a href="#">Service Tracking</a></li>
+     <li><a href="#">Issue Reporting</a></li>
+     <li><a href="#">Vendor Management</a></li>
+     <li><a href="#">Work Orders</a></li>
+     <li><a href="#">Real-Time Updates</a></li>
+ </ul>
+      </div>
+
+      <div class="nav-col">
+        <h3>Company</h3>
+<ul>
+     <li><a href="#">About Us</a></li>
+     <li><a href="#">Careers</a></li>
+     <li><a href="#">Blog</a></li>
+     <li><a href="#">Press</a></li>
+     <li><a href="#">Contact</a></li>
+     </ul>
+    </div>
+<div class="nav-col">
+     <h3>Resources</h3>
+        <ul>
+     <li><a href="#">Documentation</a></li>
+     <li><a href="#">Help Center</a></li>
+     <li><a href="#">API Reference</a></li>
+     <li><a href="#">Community</a></li>
+     <li><a href="#">Webinars</a></li>
+     </ul>
+    </div>
+
+      <div class="nav-col">
+        <h3>Legal</h3>
+        <ul>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Cookie Policy</a></li>
+          <li><a href="#">Security</a></li>
+          <li><a href="#">Compliance</a></li>
+        </ul>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-social-row">
+    <div class="social-wrapper">
+      <a href="#" class="social-link"><i class="fab fa-facebook-f"></i><span>Facebook</span></a>
+      <a href="#" class="social-link"><i class="fab fa-linkedin-in"></i><span>LinkedIn</span></a>
+      <a href="#" class="social-link"><i class="fab fa-twitter"></i><span>Twitter</span></a>
+      <a href="#" class="social-link"><i class="fab fa-instagram"></i><span>Instagram</span></a>
+      <a href="#" class="social-link"><i class="fab fa-github"></i><span>GitHub</span></a>
+      <a href="#" class="social-link"><i class="fab fa-youtube"></i><span>YouTube</span></a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <div class="bottom-content">
+      <p>&copy; 2026 PropSync. All rights reserved.</p>
+      <div class="utility-links">
+        <a href="#">Sitemap</a>
+        <a href="#">Accessibility</a>
+        <a href="#">System Status</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const links = document.querySelectorAll(".nav a");
+
+  links.forEach(link => {
+    link.addEventListener("click", function () {
+      links.forEach(l => l.classList.remove("active"));
+      this.classList.add("active");
+    });
+  });
+</script>
+
+ </body>
+ </html>
