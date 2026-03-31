@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<title>Complaints - PropSync</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f1f3f6; }
+
+  .top-header {
+    height: 70px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+     border-bottom: 2px solid #e6f4ea;
+  }
+  .header-left { display: flex; align-items: center; gap: 20px; }
+  :root {
+  --primary-green: #28a745;
+  --sidebar-bg: #415a94;
+  --notif-red: #ff4d4d;
+}
+
+.menu-trigger {
+  font-size: 22px;
+  color: var(--primary-green);
+  cursor: pointer;
+}
+
+.logo-img {
+  height: 100px;
+  width: auto;
+  object-fit: contain;
+}
+
+.top-header {
+  border-bottom: 2px solid #e6f4ea;
+}
+  .header-right { display: flex; align-items: center; gap: 25px; }
+  .notif-wrapper { position: relative; cursor: pointer; }
+  .bell-icon { font-size: 26px; color: var(--notif-red); }
+  .badge {
+    position: absolute; top: -5px; right: -5px;
+    background: var(--notif-red); color: white;
+    font-size: 11px; padding: 2px 5px;
+    border-radius: 50%; border: 2px solid white;
+  }
+  .profile-pill {
+    display: flex; align-items: center; gap: 10px;
+    background: #eef2ff; padding: 8px 16px; border-radius: 30px;
+  }
+  .profile-icon { font-size: 28px; color:#34A853; }
+  .user-role { font-weight: 600; font-size: 14px; color: #333; }
+
+  .sidebar {
+    position: fixed; top: 0; left: -300px;
+    width: 280px; height: 100%;
+    background: var(--sidebar-bg);
+    transition: 0.4s cubic-bezier(0.4,0,0.2,1);
+    z-index: 1000; padding: 20px 0;
+  }
+  .sidebar.open { left: 0; }
+  .sidebar-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.3); z-index: 999;
+  }
+  .sidebar-overlay.active { display: block; }
+.sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; 
+  padding: 15px 20px;
+}
+
+.sidebar-logo {
+  height: 160px;   
+  width: auto;
+  object-fit: contain;
+}
+  .close-icon {
+  color: white;
+  font-size: 22px;
+  cursor: pointer;
+  margin-top: 5px;
+}
+.logo-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  margin-left: -20px;
+}
+  .menu-list { display: flex; flex-direction: column;margin-top: -40px }
+  .menu-item {
+    display: flex; align-items: center; gap: 15px;
+    padding: 15px 25px; color: white; text-decoration: none;
+    font-size: 15px; transition: 0.3s;
+  }
+  .menu-item i {
+    width: 35px; height: 35px; display: flex;
+    align-items: center; justify-content: center;
+    border-radius: 8px; color: white;
+  }
+  .ic-blue { background: #4a90e2; }
+  .ic-orange { background: #f5a623; }
+  .ic-purple { background: #9013fe; }
+  .ic-cyan { background: #50e3c2; }
+  .ic-red { background: #d0021b; }
+  .menu-item:hover { background: rgba(255,255,255,0.1); }
+  .logout { color: #ffcccc; }
+
+  .main-wrapper { min-height: 100vh; }
+  .container { max-width: 1250px; margin: 24px auto; padding: 0 20px; }
+
+ 
+  .banner {
+  background: #28a745;
+  color: white;
+  padding: 20px 25px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+
+  display: flex;
+  justify-content: space-between;  
+  align-items: center;
+  flex-wrap: wrap;
+}
+  .banner h2 { font-size: 22px; margin-bottom: 4px; }
+  .banner p { opacity: 0.88; font-size: 14px; }
+ .search-box {
+  background: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 220px;
+}
+
+.search-box input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  width: 100%;
+}
+  
+  .tabs { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .tab {
+    padding: 10px 18px; border-radius: 8px;
+    background: #e8eaed; cursor: pointer;
+    font-size: 14px; font-weight: 500;
+    border: none; transition: background 0.2s, color 0.2s;
+    color: #444;
+  }
+  .tab:hover { background: #dde0e5; }
+  .tab.active { background: #ffd166; color: #333; font-weight: 600; }
+
+  .table-card {
+    background: white; border-radius: 12px;
+    padding: 20px; box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .table-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: #222; }
+
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 12px 10px; text-align: left; font-size: 13px; }
+  th { color: #555; font-weight: 600; border-bottom: 2px solid #f0f0f0; }
+  tr { border-bottom: 1px solid #f5f5f5; }
+  tr:last-child { border-bottom: none; }
+  td { color: #333; }
+
+ 
+  .priority, .status-badge {
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 500; display: inline-block;
+  }
+  .priority-high { background: #f8d7da; color: #c82333; }
+  .priority-medium { background: #fff3cd; color: #856404; }
+  .priority-low { background: #d4edda; color: #155724; }
+
+  .status-pending { background: #fff3cd; color: #856404; }
+  .status-approved { background: #ced3ef; color: #2539b6; }
+  .status-approved-waiting { background: #f5a623; color: white; }
+  .status-inprogress { background: #e2d9f3; color: #5a2ca0; }
+  .status-rejected { background: #f0d9c8; color: #e86d34; }
+  .status-completed { background: #b7dfbf; color: #155724; }
+
+  .btn {
+    padding: 6px 14px; border-radius: 20px;
+    font-size: 12px; font-weight: 600;
+    border: none; cursor: pointer; transition: opacity 0.2s;
+    margin-right: 6px;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-approve { background: #28a745; color: white; }
+  .btn-reject { background: #dc3545; color: white; }
+  .btn-assign { background: #28a745; color: white; }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .empty-state {
+    text-align: center; padding: 40px 20px; color: #aaa;
+    font-size: 14px;
+  }
+  .empty-state i { font-size: 40px; display: block; margin-bottom: 10px; color: #ddd; }
+
+</style>
+</head>
+  <div id="detailsModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;">
+  <div style="background:white;padding:20px;border-radius:10px;width:350px;">
+    <h3>Complaint Details</h3>
+    <p id="detailsContent"></p>
+    <button onclick="closeModal()" class="btn btn-assign">Close</button>
+  </div>
+</div>
+<div id="providerModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;">
+  <div style="background:white;padding:20px;border-radius:10px;width:420px;max-height:400px;overflow:auto;">
+    
+    <h3>Accepted Providers (Queue - Top Rated)</h3>
+
+    <div id="providerList"></div>
+
+    <button onclick="closeProviderModal()" class="btn btn-reject">Close</button>
+  </div>
+</div>
+<body>
+
+<div class="sidebar-overlay" id="overlay" onclick="toggleMenu()"></div>
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+  <div class="logo-container">
+    <img src="../Images/PropSync.png" class="sidebar-logo">
+  </div>
+  <i class="fa-solid fa-xmark close-icon" onclick="toggleMenu()"></i>
+</div>
+  <nav class="menu-list">
+    <a href="#" class="menu-item"><i class="fa-solid fa-house ic-blue"></i> Dashboard</a>
+    <a href="../Maintenance_manager.html/Complaint requests.html" class="menu-item"><i class="fa-solid fa-file-invoice ic-orange"></i> Complaint Requests</a>
+    <a href="#" class="menu-item"><i class="fa-solid fa-money-bill-transfer ic-purple"></i> Service Bills & Payments</a>
+    <a href="#" class="menu-item"><i class="fa-solid fa-chart-simple ic-cyan"></i> Service Provider Performance</a>
+    <a href="#" class="menu-item"><i class="fa-solid fa-comments ic-orange"></i> Communication Center</a>
+    <a href="#" class="menu-item"><i class="fa-solid fa-bell ic-red"></i> Notifications</a>
+    <a href="#" class="menu-item logout"><i class="fa-solid fa-right-from-bracket"></i> Log Out</a>
+  </nav>
+</aside>
+
+<div class="main-wrapper">
+  <header class="top-header">
+    <div class="header-left">
+      <i class="fa-solid fa-bars menu-trigger" onclick="toggleMenu()"></i>
+     <img src="../images/PropSync.png" alt="PropSync Logo" class="logo-img">
+    </div>
+    <div class="header-right">
+      <div class="notif-wrapper">
+        <i class="fa-solid fa-bell bell-icon"></i>
+        <span class="badge">1</span>
+      </div>
+      <div class="profile-pill">
+        <i class="fa-solid fa-circle-user profile-icon"></i>
+        <span class="user-role">Maintenance Manager</span>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+<div class="banner" id="mainBanner">
+
+  <div>
+    <h2>Complaints</h2>
+    <p>View and manage all complaint requests</p>
+  </div>
+
+  <div class="search-box">
+    <i class="fa-solid fa-search"></i>
+<input type="text" placeholder="Search..." onkeyup="searchComplaints(this.value)">
+  </div>
+
+</div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('all', this)">All Complaints</button>
+      <button class="tab" onclick="switchTab('pending', this)">Pending Complaints</button>
+      <button class="tab" onclick="switchTab('approved', this)">Approved Complaints</button>
+      <button class="tab" onclick="switchTab('estimate', this)">Estimate Approval</button>
+      <button class="tab" onclick="switchTab('inprogress', this)">InProgress Work</button>
+      <button class="tab" onclick="switchTab('completed', this)">Completed Work</button>
+      <button class="tab" onclick="switchTab('rejected', this)">Rejected Complaints</button>
+    </div>
+
+    <div class="tab-content active" id="tab-all">
+      <div class="table-card">
+        <h3>All Complaints</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Complaint ID</th><th>Issue</th><th>Location</th>
+              <th>Priority</th><th>Status</th><th>Assigned Provider</th>
+              <th>Submission Date</th><th>Deadline</th>
+            </tr>
+          </thead>
+          <tbody id="allBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-pending">
+      <div class="table-card">
+        <h3>Pending Complaints</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Complaint ID</th><th>Issue</th><th>Location</th>
+              <th>Priority</th><th>Action</th><th>Submission Date</th><th>Deadline</th>
+            </tr>
+          </thead>
+          <tbody id="pendingBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-approved">
+      <div class="table-card">
+        <h3>Approved Complaints</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Complaint ID</th><th>Issue</th><th>Location</th>
+              <th>Priority</th><th>Status</th><th>Submission Date</th>
+              <th>Deadline</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="approvedBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-estimate">
+  <div class="table-card">
+    <h3>Estimate Approval</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Complaint ID</th>
+          <th>Issue</th>
+          <th>Estimated Cost</th>
+          <th>Provider</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="estimateBody"></tbody>
+    </table>
+  </div>
+</div>
+
+    <div class="tab-content" id="tab-inprogress">
+      <div class="table-card">
+        <h3>InProgress Work</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Complaint ID</th><th>Issue</th><th>Location</th>
+              <th>Priority</th><th>Status</th><th>Assigned Provider</th>
+              <th>Submission Date</th><th>Deadline</th>
+            </tr>
+          </thead>
+          <tbody id="inprogressBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-completed">
+      <div class="table-card">
+        <h3>Completed Work</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Complaint ID</th><th>Issue</th><th>Location</th>
+              <th>Priority</th><th>Status</th><th>Assigned Provider</th>
+              <th>Submission Date</th><th>Deadline</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="completedBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="tab-content" id="tab-rejected">
+      <div class="table-card">
+        <h3>Rejected Complaints</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Complaint ID</th><th>Issue</th><th>Location</th>
+              <th>Priority</th><th>Status</th><th>Submission Date</th><th>Deadline</th>
+            </tr>
+          </thead>
+          <tbody id="rejectedBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let complaints = [
+    { id:'C-2410', issue:'Water Leakage',    location:'Tower A, Apt 102', priority:'High',   status:'Pending',         provider:'-',                    submitted:'2024-09-18', deadline:'-' },
+    { id:'C-2409', issue:'AC Not Cooling',   location:'Tower B, Apt 303', priority:'Medium', status:'Approved',        provider:'-',                    submitted:'2024-09-10', deadline:'2024-09-12' },
+    { id:'C-2408', issue:'Electrical Issue', location:'Tower C, Apt 501', priority:'High',   status:'InProgress',      provider:'ElectroFix Solutions', submitted:'2024-09-25', deadline:'2024-09-26' },
+    { id:'C-2407', issue:'Pipe Leakage',     location:'Tower D, Apt 345', priority:'Low',    status:'Completed',       provider:'QuickFix Plumbing',    submitted:'2024-09-01', deadline:'2024-09-03' },
+    { id:'C-2406', issue:'Door Lock Repair', location:'Tower A, Apt 400', priority:'Low',    status:'Pending',         provider:'Secure Lock Services', submitted:'2024-09-04', deadline:'2024-09-07' },
+    { id:'C-2406b',issue:'Paint Work',       location:'Tower B, Apt 150', priority:'Low',    status:'InProgress',      provider:'ColorPro Painters',    submitted:'2024-09-11', deadline:'2024-09-17' },
+    { id:'C-2405', issue:'Window Repair',    location:'Tower C, Apt 227', priority:'Medium', status:'Approved',        provider:'GlassFix Solutions',   submitted:'2024-09-24', deadline:'2024-09-25' },
+    { id:'C-2404', issue:'Lift Maintenance', location:'Tower D, Apt 530', priority:'Low',    status:'Rejected',        provider:'-',                    submitted:'2024-10-02', deadline:'2024-10-03' },
+    { id:'C-2423', issue:'Water Leakage',    location:'Tower A, Apt 132', priority:'High',   status:'Pending',         provider:'-',                    submitted:'2024-09-18', deadline:'-' },
+    { id:'C-2415', issue:'AC Not Cooling',   location:'Tower B, Apt 343', priority:'Medium', status:'Pending',         provider:'-',                    submitted:'2024-09-10', deadline:'2024-09-12' },
+    { id:'C-2411', issue:'Electrical Issue', location:'Tower C, Apt 501', priority:'High',   status:'Pending',         provider:'-',                    submitted:'2024-09-26', deadline:'2024-09-27' },
+    { id:'C-2413', issue:'Pipe Leakage',     location:'Tower A, Apt 142', priority:'High',   status:'Approved',        provider:'-',                    submitted:'2024-09-18', deadline:'-' },
+    { id:'C-2420', issue:'Dock Lock Repair', location:'Tower B, Apt 253', priority:'Low',    status:'Approved-Waiting',provider:'-',                    submitted:'2024-09-10', deadline:'2024-09-12' },
+  ];
+
+let serviceProviders = [
+  { name: "ElectroFix Solutions", type: "Electrical", rating: 4.9 },
+  { name: "PowerCare Experts", type: "Electrical", rating: 4.7 },
+
+  { name: "CoolFix Pvt Ltd", type: "AC", rating: 4.8 },
+  { name: "AirFlow Services", type: "AC", rating: 4.6 },
+
+  { name: "QuickFix Plumbing", type: "Plumbing", rating: 4.7 },
+  { name: "HydroCare Plumbing", type: "Plumbing", rating: 4.5 },
+
+  { name: "GlassFix Solutions", type: "Window", rating: 4.5 },
+
+  { name: "Secure Lock Services", type: "Lock", rating: 4.6 },   
+  { name: "ColorPro Painters", type: "Paint", rating: 4.4 }      
+];
+
+let acceptedProvidersMap = {
+  "C-2409": ["CoolFix Pvt Ltd", "AirFlow Services"],   
+  "C-2408": ["ElectroFix Solutions"],                 
+  "C-2410": ["QuickFix Plumbing", "HydroCare Plumbing"], 
+  "C-2406": ["Secure Lock Services"],                  
+  "C-2406b": ["ColorPro Painters"]                     
+};
+
+  let estimates = [
+  {id:'C-2409', issue:'AC Repair', cost:'₹2500', provider:'CoolFix Pvt Ltd'},
+  {id:'C-2405', issue:'Window Repair', cost:'₹1800', provider:'GlassFix Solutions'}
+];
+
+  function priorityBadge(p) {
+    const map = { High:'priority-high', Medium:'priority-medium', Low:'priority-low' };
+    return `<span class="priority ${map[p]||'priority-low'}">${p}</span>`;
+  }
+
+  function statusBadge(s) {
+    const map = {
+      'Pending':'status-pending',
+      'Approved':'status-approved',
+      'Approved-Waiting':'status-approved-waiting',
+      'InProgress':'status-inprogress',
+      'Rejected':'status-rejected',
+      'Completed':'status-completed',
+    };
+    const label = s === 'Approved-Waiting' ? 'Approved-Waiting for Service Providers' : s;
+    return `<span class="status-badge ${map[s]||''}">${label}</span>`;
+  }
+
+function renderAll(data = complaints) {
+  const tbody = document.getElementById('allBody');
+  tbody.innerHTML = '';
+
+  data.forEach(c => {
+    const ds = c.status === 'Approved-Waiting' ? 'Approved' : c.status;
+    tbody.innerHTML += `<tr>
+      <td>${c.id}</td><td>${c.issue}</td><td>${c.location}</td>
+      <td>${priorityBadge(c.priority)}</td><td>${statusBadge(ds)}</td>
+      <td>${c.provider||'-'}</td><td>${c.submitted}</td><td>${c.deadline||'-'}</td>
+    </tr>`;
+  });
+}
+
+ function renderPending(data = complaints) {
+  const tbody = document.getElementById('pendingBody');
+  const list = data.filter(c => c.status === 'Pending');
+  tbody.innerHTML = '';
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No pending complaints!</div></td></tr>`;
+    return;
+  }
+
+  list.forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td>${c.id}</td><td>${c.issue}</td><td>${c.location}</td>
+      <td>${priorityBadge(c.priority)}</td>
+      <td>
+        <button class="btn btn-approve" onclick="approveComplaint('${c.id}')">Approve</button>
+        <button class="btn btn-reject" onclick="rejectComplaint('${c.id}')">Reject</button>
+      </td>
+      <td>${c.submitted}</td><td>${c.deadline||'-'}</td>
+    </tr>`;
+  });
+}
+
+  function renderApproved(data = complaints) {
+  const tbody = document.getElementById('approvedBody');
+  const list = data.filter(c => c.status === 'Approved' || c.status === 'Approved-Waiting');
+  tbody.innerHTML = '';
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No approved complaints.</div></td></tr>`;
+    return;
+  }
+
+  list.forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td>${c.id}</td><td>${c.issue}</td><td>${c.location}</td>
+      <td>${priorityBadge(c.priority)}</td><td>${statusBadge(c.status)}</td>
+      <td>${c.submitted}</td><td>${c.deadline||'-'}</td>
+      <td><button class="btn btn-assign" onclick="assignProvider('${c.id}')">Assign Provider</button></td>
+    </tr>`;
+  });
+}
+
+function renderEstimate(data = estimates) {
+  const tbody = document.getElementById('estimateBody');
+  tbody.innerHTML = '';
+
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">No estimates pending approval.</div></td></tr>`;
+    return;
+  }
+
+  data.forEach(e => {
+    tbody.innerHTML += `<tr>
+      <td>${e.id}</td>
+      <td>${e.issue}</td>
+      <td>${e.cost}</td>
+      <td>${e.provider}</td>
+      <td>
+        <button class="btn btn-approve" onclick="approveEstimate('${e.id}')">Approve</button>
+        <button class="btn btn-reject" onclick="rejectEstimate('${e.id}')">Reject</button>
+      </td>
+    </tr>`;
+  });
+}
+
+function renderInProgress(data = complaints) {
+  const tbody = document.getElementById('inprogressBody');
+  const list = data.filter(c => c.status === 'InProgress');
+  tbody.innerHTML = '';
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state">No in-progress complaints.</div></td></tr>`;
+    return;
+  }
+
+  list.forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td>${c.id}</td><td>${c.issue}</td><td>${c.location}</td>
+      <td>${priorityBadge(c.priority)}</td><td>${statusBadge(c.status)}</td>
+      <td>${c.provider||'-'}</td><td>${c.submitted}</td><td>${c.deadline||'-'}</td>
+    </tr>`;
+  });
+}
+
+function renderCompleted(data = complaints) {
+  const tbody = document.getElementById('completedBody');
+  const list = data.filter(c => c.status === 'Completed');
+  tbody.innerHTML = '';
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No completed complaints.</div></td></tr>`;
+    return;
+  }
+
+  list.forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td>${c.id}</td><td>${c.issue}</td><td>${c.location}</td>
+      <td>${priorityBadge(c.priority)}</td><td>${statusBadge(c.status)}</td>
+      <td>${c.provider||'-'}</td><td>${c.submitted}</td><td>${c.deadline||'-'}</td>
+      <td><button class="btn btn-assign" onclick="viewDetails('${c.id}')">View Details</button></td>
+    </tr>`;
+  });
+}
+
+function renderRejected(data = complaints) {
+  const tbody = document.getElementById('rejectedBody');
+  const list = data.filter(c => c.status === 'Rejected');
+  tbody.innerHTML = '';
+
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state">No rejected complaints.</div></td></tr>`;
+    return;
+  }
+
+  list.forEach(c => {
+    tbody.innerHTML += `<tr>
+      <td>${c.id}</td><td>${c.issue}</td><td>${c.location}</td>
+      <td>${priorityBadge(c.priority)}</td><td>${statusBadge(c.status)}</td>
+      <td>${c.submitted}</td><td>${c.deadline||'-'}</td>
+    </tr>`;
+  });
+}
+
+function renderAllTabs(filteredComplaints, filteredEstimates) {
+
+  const complaintData = filteredComplaints || complaints;
+  const estimateData = filteredEstimates || estimates;
+
+  renderAll(complaintData);
+  renderPending(complaintData);
+  renderApproved(complaintData);
+  renderInProgress(complaintData);
+  renderCompleted(complaintData);
+  renderRejected(complaintData);
+  renderEstimate(estimateData);
+}
+
+  function approveComplaint(id) {
+    const c = complaints.find(x => x.id === id);
+    if (c) { c.status = 'Approved'; renderAllTabs(); }
+  }
+
+  function rejectComplaint(id) {
+    const c = complaints.find(x => x.id === id);
+    if (c) { c.status = 'Rejected'; renderAllTabs(); }
+  }
+
+ let currentComplaintId = null;
+
+function assignProvider(id) {
+  currentComplaintId = id;
+
+  const complaint = complaints.find(c => c.id === id);
+  const type = getTypeFromIssue(complaint.issue);
+  const acceptedNames = acceptedProvidersMap[id] || [];
+  let listData = serviceProviders
+    .filter(p => p.type === type && acceptedNames.includes(p.name))
+    .sort((a, b) => b.rating - a.rating);
+  let html = "";
+  if (listData.length === 0) {
+    listData = serviceProviders
+      .filter(p => p.type === type)
+      .sort((a, b) => b.rating - a.rating);
+
+    html = `<p>No accepted providers. Showing available ${type} providers.</p>`;
+  }
+
+  listData.forEach((p, i) => {
+    html += `
+      <div style="border:1px solid #ddd;padding:12px;margin:10px 0;border-radius:8px;">
+        <b>${i+1}. ${p.name}</b> 
+        <span style="color:green;font-weight:600;">(Accepted)</span><br>
+
+        Type: ${p.type} <br>
+        Rating: ⭐ ${p.rating} <br><br>
+
+        <button class="btn btn-assign" onclick="selectProvider('${p.name}')">
+          Assign
+        </button>
+      </div>
+    `;
+  });
+
+  document.getElementById("providerList").innerHTML = html;
+  document.getElementById("providerModal").style.display = "flex";
+}
+
+function selectProvider(name) {
+  let c = complaints.find(x => x.id === currentComplaintId);
+
+  if (c) {
+    c.provider = name + " (Accepted)";
+    c.status = "InProgress";
+  }
+
+  closeProviderModal();
+  renderAllTabs();
+}
+
+function closeProviderModal() {
+  document.getElementById("providerModal").style.display = "none";
+}
+function getTypeFromIssue(issue) {
+  issue = issue.toLowerCase();
+
+  if (issue.includes("ac")) return "AC";
+  if (issue.includes("electrical")) return "Electrical";
+  if (issue.includes("leak") || issue.includes("pipe")) return "Plumbing";
+  if (issue.includes("window")) return "Window";
+  if (issue.includes("lock") || issue.includes("door")) return "Lock";
+  if (issue.includes("paint")) return "Paint";
+
+  return "General";
+}
+
+function approveEstimate(id){
+  alert("Estimate Approved for " + id);
+  estimates = estimates.filter(e => e.id !== id);
+  renderEstimate();
+}
+
+function rejectEstimate(id){
+  alert("Estimate Rejected for " + id);
+  estimates = estimates.filter(e => e.id !== id);
+  renderEstimate();
+}
+
+function viewDetails(id){
+  const c = complaints.find(x=>x.id===id);
+  document.getElementById('detailsModal').style.display='flex';
+  document.getElementById('detailsContent').innerHTML = `
+    <b>ID:</b> ${c.id}<br>
+    <b>Issue:</b> ${c.issue}<br>
+    <b>Location:</b> ${c.location}<br>
+    <b>Provider:</b> ${c.provider}<br>
+    <b>Status:</b> ${c.status}<br>
+    <b>Submitted:</b> ${c.submitted}<br>
+    <b>Deadline:</b> ${c.deadline}
+  `;
+}
+
+function searchComplaints(value) {
+  value = value.toLowerCase();
+
+  const filteredComplaints = complaints.filter(c =>
+    c.id.toLowerCase().includes(value) ||
+    c.issue.toLowerCase().includes(value) ||
+    c.location.toLowerCase().includes(value)
+  );
+
+  const filteredEstimates = estimates.filter(e =>
+    e.id.toLowerCase().includes(value) ||
+    e.issue.toLowerCase().includes(value) ||
+    e.provider.toLowerCase().includes(value)
+  );
+
+  renderAllTabs(filteredComplaints, filteredEstimates);
+}
+
+function closeModal(){
+  document.getElementById('detailsModal').style.display='none';
+}
+
+  const bannerColors = {
+    all:'banner-blue', pending:'banner-blue', approved:'banner-green',
+    estimate:'banner-blue', inprogress:'banner-blue',
+    completed:'banner-green', rejected:'banner-blue'
+  };
+
+  function switchTab(tab, el) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('mainBanner').className = 'banner ' + (bannerColors[tab] || 'banner-blue');
+  }
+
+  function toggleMenu() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('overlay').classList.toggle('active');
+  }
+
+  renderAllTabs();
+</script>
+</body>
+</html>
