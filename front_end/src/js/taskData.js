@@ -1,7 +1,4 @@
-/**
- * PropSync — Shared State, Data & Utilities
- * Full cross-page state management via localStorage
- */
+
 
 /* ─────────────────────────────────────────────
    STORAGE KEYS
