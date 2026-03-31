@@ -1,0 +1,83 @@
+<!-- pages/participants.html -->
+<div id="page-participants" class="page">
+  <div class="mb-6">
+    <h1 style="font-size:24px;font-weight:700;color:#111827;margin-bottom:4px;">Manage Participants</h1>
+    <p style="font-size:14px;color:#6b7280;">Control panel for managing system users</p>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="card" style="padding:16px;margin-bottom:16px;">
+    <div class="filter-bar">
+      <div class="filter-left">
+        <!-- Search -->
+        <div class="search-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+          </svg>
+          <input type="text" id="p-search" class="search-input" placeholder="Search by name, ID, or email..." />
+        </div>
+
+        <!-- Role Filter -->
+        <div class="relative">
+          <button class="dropdown-btn" id="role-filter-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591L15.25 12.46a2.25 2.25 0 00-.659 1.591v3.055c0 .414-.249.783-.632.918l-4.5 1.64A.75.75 0 018.25 19v-5.95a2.25 2.25 0 00-.659-1.591L3.491 7.41A2.25 2.25 0 012.832 5.82V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/>
+            </svg>
+            <span id="role-filter-label">All Roles</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu" id="role-filter-menu">
+            <button data-role="All Roles">All Roles</button>
+            <button data-role="Property Owner">Property Owner</button>
+            <button data-role="Service Provider">Service Provider</button>
+            <button data-role="Maintenance Manager">Maintenance Manager</button>
+          </div>
+        </div>
+
+        <!-- Sort Dropdown -->
+        <div class="relative">
+          <button class="dropdown-btn" id="sort-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/>
+            </svg>
+            <span id="sort-label">Sort By</span>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/>
+            </svg>
+          </button>
+          <div class="dropdown-menu" id="sort-menu">
+            <button data-sort="name">Name (A-Z)</button>
+            <button data-sort="id">ID (A-Z)</button>
+            <button data-sort="email">Email (A-Z)</button>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-green" id="add-participant-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:16px;height:16px;stroke:#fff;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/>
+        </svg>
+        Add Participant
+      </button>
+    </div>
+  </div>
+
+  <!-- Participants Table -->
+  <div class="card table-wrap">
+    <table id="participants-table">
+      <thead>
+        <tr>
+          <th><button id="sort-id-btn">Participant ID <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg></button></th>
+          <th><button id="sort-name-btn">Name <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg></button></th>
+          <th><button id="sort-email-btn">Email <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg></button></th>
+          <th>Role</th>
+          <th>Access Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="participants-tbody"></tbody>
+    </table>
+  </div>
+</div>
