@@ -23,6 +23,8 @@ const signup_form = document.querySelector("#signup_form");
 const owner_form = document.querySelector("#Owner_form");
 const sp_form = document.querySelector("#SP_form");
 const mma_form = document.querySelector("#MMA_form");
+const signUpBtn = document.querySelector("#signupBtn");
+const signupBack = document.querySelector(".signupBack");
 
 signupRoles.forEach((role) => {
   role.addEventListener("click", () => {
@@ -40,29 +42,45 @@ signupRoles.forEach((role) => {
     ) {
       mma_form.classList.remove("hidden");
     }
-    document.querySelectorAll(".signupBack").forEach((ele) => {
-      ele.addEventListener("click", () => {
-        signup_form.classList.remove("hidden");
-        if (selectedRoleSignUp === "Owner") {
-          owner_form.classList.add("hidden");
-        } else if (selectedRoleSignUp === "Service Provider") {
-          sp_form.classList.add("hidden");
-        } else if (
-          selectedRoleSignUp === "Maintenance Manager" ||
-          selectedRoleSignUp === "Administrator"
-        ) {
-          mma_form.classList.add("hidden");
-        }
-      });
+    signUpBtn.classList.remove("hidden");
+    signupBack.classList.remove("hidden");
+    signupBack.addEventListener("click", () => {
+      signup_form.classList.remove("hidden");
+      if (selectedRoleSignUp === "Owner") {
+        owner_form.classList.add("hidden");
+      } else if (selectedRoleSignUp === "Service Provider") {
+        sp_form.classList.add("hidden");
+      } else if (
+        selectedRoleSignUp === "Maintenance Manager" ||
+        selectedRoleSignUp === "Administrator"
+      ) {
+        mma_form.classList.add("hidden");
+      }
     });
   });
 });
 
 // login form submit
 const login = document.querySelector(".btn");
-login.addEventListener("click", fetchUser);
+login.addEventListener("click", searchUser);
+
+let users = [];
 
 async function fetchUser() {
+  try {
+    const response = await fetch("../data/users.json");
+    const jsonUsers = await response.json();
+    const localUsers = JSON.parse(localStorage.getItem("newUser")) || [];
+    users = [...jsonUsers, localUsers];
+
+    console.log(users);
+  } catch (error) {
+    console.log("Error loading users:", error);
+  }
+}
+fetchUser();
+
+function searchUser() {
   const errorBox = document.getElementById("loginError");
   let email = document.querySelector("#log_email").value.trim();
   let password = document.querySelector("#log_pass").value.trim();
@@ -78,9 +96,6 @@ async function fetchUser() {
   }
 
   try {
-    const response = await fetch(".././data/users.json");
-    const users = await response.json();
-
     const user = users.find(
       (u) =>
         u.email.toLowerCase() === email.toLowerCase() &&
@@ -140,110 +155,54 @@ toggleBtn.forEach((btn) => {
   });
 });
 
-//Signup form validation
-function validateInputs(formData) {
-  let valid = true;
+// SIGNUP WITH LOCAL STORAGE
 
-  if (!formData.email.trim()) {
-    showError(formData.role + "EmailError", "Email is required");
-    valid = false;
-  }
-
-  if (!formData.password.trim()) {
-    showError(formData.role + "PasswordError", "Password is required");
-    valid = false;
-  }
-
-  if (formData.role === "Owner") {
-    if (!formData.propertyUnit.trim()) {
-      showError("propertyUnitError", "Property unit is required");
-      valid = false;
+function handleSignup(form, roleName) {
+  signUpBtn.addEventListener("click", function (e) {
+    const Signup_errorBox = document.querySelector("#signupError");
+    const email = form.querySelectorAll("input")[0].value.trim();
+    const password = form.querySelectorAll("input")[1].value.trim();
+    if (roleName === "Owner") {
+      const propertyUnit = form.querySelectorAll("input")[2].value.trim();
+      const communityName = form.querySelectorAll("input")[3].value.trim();
+    } else if (
+      roleName === "Maintenance Manager" ||
+      roleName === "Administrator"
+    ) {
+      const communityName = form.querySelectorAll("input")[2].value.trim();
     }
 
-    if (!formData.communityName.trim()) {
-      showError("communityNameError", "Community name is required");
-      valid = false;
+    if (!email || !password) {
+      Signup_errorBox.classList.add("show");
+      Signup_errorBox.textContent = "Please enter all details.";
+      return;
     }
-  }
 
-  if (
-    formData.role === "Maintenance Manager" ||
-    formData.role === "Administrator"
-  ) {
-    if (!formData.communityName.trim()) {
-      showError("communityNameError", "Community name is required");
-      valid = false;
+    const exists = users.find(
+      (u) =>
+        u.email.toLowerCase() === email.toLowerCase() &&
+        u.role.toLowerCase() === selectedRoleLogin.toLowerCase(),
+    );
+    if (exists) {
+      Signup_errorBox.classList.add("show");
+      Signup_errorBox.textContent = "User already exists with this email.";
+      return;
     }
-  }
 
-  return valid;
-}
-
-//get form data
-function getFormData(role) {
-  if (role === "Owner") {
-    return {
-      role,
-      email: document.getElementById("#Owner_form input[type='email']").value,
-
-      password: document.getElementById("#Owner_form input[type='password']")
-        .value,
-
-      propertyUnit: document.getElementById("propertyUnit").value,
-
-      communityName: document.getElementById("communityName").value,
+    const newUser = {
+      id: Date.now(),
+      email: email,
+      password: password,
+      role: roleName,
+      propertyUnit: propertyUnit || "",
+      communityName: communityName || "",
     };
-  }
 
-  if (role === "Service Provider") {
-    return {
-      role,
-      email: document.querySelector("#SP_form input[type='email']").value,
-
-      password: document.querySelector("#SP_form input[type='password']").value,
-    };
-  }
-
-  return {
-    role,
-    email: document.querySelector("#MMA_form input[type='email']").value,
-
-    password: document.querySelector("#MMA_form input[type='password']").value,
-
-    communityName: document.querySelector("#MMA_form input[type='text']").value,
-  };
+    localStorage.setItem("newUser", JSON.stringify(newUser));
+    Signup_errorBox.classList.remove("show");
+    alert("Account successfully created!");
+  });
 }
-
-//new user creation
-function createUser(formData) {
-  const newUser = {
-    id: Date.now(),
-    role: formData.role,
-    email: formData.email,
-    password: formData.password,
-    propertyUnit: formData.propertyUnit || "",
-    communityName: formData.communityName || "",
-  };
-
-  users.push(newUser); //storing new user
-
-  return newUser;
-}
-/*
-document.querySelectorAll("#signupBtn").forEach((btn) => {
-  btn.addEventListener("click", handleSignup);
-});
-*/
-
-function handleSignup() {
-  if (!selectedRoleSignUp) {
-    alert("Please select a role");
-    return;
-  }
-
-  const formData = getFormData(selectedRoleSignUp);
-  const isValid = validateInputs(formData);
-  if (!isValid) return;
-  createUser(formData);
-  alert("Signup Successful");
-}
+handleSignup(owner_form, "Owner");
+handleSignup(sp_form, "Service Provider");
+handleSignup(mma_form, "Maintenance Manager");
