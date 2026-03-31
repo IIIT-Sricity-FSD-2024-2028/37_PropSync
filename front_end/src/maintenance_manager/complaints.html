@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PropSync – Complaint Requests</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body class="has-sidebar">
+<div class="sidebar-overlay"></div>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-left">
+      <div class="logo-icon">🏢</div>
+      <div><div class="logo-text">PropSync</div><div class="logo-sub">Maintenance Manager</div></div>
+    </div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> Complaints <span class="nav-badge">7</span></a>
+    <a class="nav-link" href="approved-complaints.html"><span class="nav-icon">✅</span> Approved Complaints</a>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate Approval <span class="nav-badge">2</span></a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Service Bills &amp; Payments</a>
+    <div class="nav-section">Providers</div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">📈</span> Provider Performance</a>
+    <div class="nav-section">Communication</div>
+    <a class="nav-link" href="communication.html"><span class="nav-icon">💬</span> Messages</a>
+    <a class="nav-link" href="notifications.html"><span class="nav-icon">🔔</span> Notifications <span class="nav-badge notif-badge-count">2</span></a>
+    <div class="nav-section">Account</div>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user" onclick="location.href='profile.html'">
+      <div class="u-avatar">MM</div>
+      <div><div class="u-name">Maintenance Manager</div><div class="u-role">Greenwood Heights</div></div>
+    </div>
+    <button class="sidebar-logout" onclick="confirmLogout()"><span style="font-size:16px;">🚪</span> Log Out</button>
+  </div>
+</aside>
+
+<div class="page-wrapper">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
+      <div><div class="topbar-title">Complaint Requests</div><div class="topbar-sub">Home / Complaints</div></div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notifications.html'">🔔<div class="topbar-notif-dot"></div></div>
+      <div class="topbar-icon-btn" onclick="location.href='communication.html'">💬</div>
+      <div class="topbar-avatar" onclick="location.href='profile.html'">MM</div>
+    </div>
+  </div>
+
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+
+  <div class="page-banner">
+    <h1>📋 Complaint Requests</h1>
+    <p>View and manage all maintenance complaint requests</p>
+  </div>
+
+  <div class="filter-card">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Search Complaint ID</label>
+        <input id="searchId" type="text" placeholder="Enter complaint ID..." oninput="renderTable()"/>
+      </div>
+      <div class="filter-group">
+        <label>Issue Filter</label>
+        <select id="issueFilter" onchange="renderTable()">
+          <option value="">All Issues</option>
+          <option>Water Leakage</option><option>AC Not Cooling</option><option>Electrical Issue</option>
+          <option>Plumbing Problem</option><option>Door Lock Repair</option><option>Paint Work</option>
+          <option>Window Repair</option><option>Lift Maintenance</option><option>Sink Blockage</option>
+          <option>Ceiling Fan Not Working</option><option>Boiler Servicing</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Priority</label>
+        <select id="priorityFilter" onchange="renderTable()">
+          <option value="">All Priorities</option>
+          <option>High</option><option>Medium</option><option>Low</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs-container">
+    <div class="tabs">
+      <button class="tab active" onclick="setTab('all',this)">All Complaints</button>
+      <button class="tab" onclick="setTab('pending',this)">Pending</button>
+      <button class="tab" onclick="setTab('approved',this)">Approved</button>
+      <button class="tab" onclick="setTab('inprogress',this)">In Progress</button>
+      <button class="tab" onclick="setTab('completed',this)">Completed</button>
+      <button class="tab" onclick="setTab('payment',this)">Pending Payment</button>
+      <button class="tab" onclick="setTab('rejected',this)">Rejected</button>
+    </div>
+    <div style="padding:16px;overflow-x:auto;">
+      <table class="data-table">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="rejectModal">
+  <div class="modal">
+    <h2 style="margin-bottom:6px;font-size:17px;">Reject Complaint</h2>
+    <p style="font-size:13px;color:#6B7280;margin-bottom:16px;">Please provide a reason for rejecting this complaint.</p>
+    <div class="form-group"><label>Rejection Reason</label><input class="form-control" id="rejectReason" placeholder="Enter rejection reason..."/></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="hideModal('rejectModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="submitReject()">Submit Rejection</button>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="logout-modal">
+    <div class="logout-icon">👋</div>
+    <h3>Log Out?</h3>
+    <p>Are you sure you want to log out of PropSync?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="hideModal('logoutModal')">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="doLogout()">Yes, Log Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+let currentTab = 'all';
+function setTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderTable();
+}
+function renderTable() {
+  const search   = document.getElementById('searchId').value.toLowerCase();
+  const issue    = document.getElementById('issueFilter').value;
+  const priority = document.getElementById('priorityFilter').value;
+  let data = complaints.filter(c => {
+    if (search   && !c.id.toLowerCase().includes(search)) return false;
+    if (issue    && c.issue !== issue) return false;
+    if (priority && c.priority !== priority) return false;
+    const statusMap = {all:'',pending:'Pending',approved:'Approved',inprogress:'In Progress',completed:'Completed',payment:'Payment Pending',rejected:'Rejected'};
+    const want = statusMap[currentTab];
+    return !want || c.status === want;
+  });
+  const heads = {
+    all:       ['Complaint ID','Issue','Location','Priority','Status','Assigned Provider','Submitted','Deadline'],
+    pending:   ['Complaint ID','Issue','Location','Priority','Submitted','Action'],
+    approved:  ['Complaint ID','Issue','Location','Priority','Status','Submitted','Deadline','Action'],
+    inprogress:['Complaint ID','Issue','Location','Priority','Provider','Submitted','Deadline','Action'],
+    completed: ['Complaint ID','Issue','Location','Priority','Provider','Submitted','Deadline','Action'],
+    payment:   ['Complaint ID','Issue','Location','Priority','Provider','Submitted','Deadline','Action'],
+    rejected:  ['Complaint ID','Issue','Location','Priority','Submitted','Rejection Reason'],
+  };
+  document.getElementById('tableHead').innerHTML = '<tr>' + heads[currentTab].map(h=>`<th>${h}</th>`).join('') + '</tr>';
+  const rows = data.map(c => {
+    const link = `<a class="complaint-link" href="complaint-detail.html?id=${c.id}">${c.id}</a>`;
+    const pb   = priorityBadge(c.priority);
+    const sb   = statusBadge(c.status, c.subStatus);
+    const appActs = `<button class="btn btn-success btn-sm" onclick="approveComplaint('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:6px" onclick="openRejectModal('${c.id}')">Reject</button>`;
+    const assignAct = c.subStatus==='Waiting Provider Response'
+      ? `<span class="badge badge-waiting" style="padding:5px 9px;">⏳ Waiting Response</span>`
+      : c.subStatus==='Waiting Cost Approval'
+      ? `<button class="btn btn-warning btn-sm" onclick="location.href='service-estimate.html'">Review Estimate</button>`
+      : `<button class="btn btn-primary btn-sm" onclick="location.href='assign-provider.html?id=${c.id}'">Assign Provider</button>`;
+    if (currentTab==='all') return `<tr><td>${link}</td><td>${c.issue}</td><td>${c.location}</td><td>${pb}</td><td>${sb}</td><td>${c.provider||'<span style="color:#9CA3AF;">—</span>'}</td><td>${c.submitted}</td><td>${c.deadline||'—'}</td></tr>`;
+    if (currentTab==='pending') return `<tr><td>${link}</td><td>${c.issue}</td><td>${c.location}</td><td>${pb}</td><td>${c.submitted}</td><td>${appActs}</td></tr>`;
+    if (currentTab==='approved') return `<tr><td>${link}</td><td>${c.issue}</td><td>${c.location}</td><td>${pb}</td><td>${sb}</td><td>${c.submitted}</td><td>${c.deadline||'—'}</td><td>${assignAct}</td></tr>`;
+    if (currentTab==='inprogress') return `<tr><td>${link}</td><td>${c.issue}</td><td>${c.location}</td><td>${pb}</td><td>${c.provider||'—'}</td><td>${c.submitted}</td><td>${c.deadline||'—'}</td><td><a class="complaint-link" href="complaint-detail.html?id=${c.id}">Monitor</a></td></tr>`;
+    if (currentTab==='completed') return `<tr><td>${link}</td><td>${c.issue}</td><td>${c.location}</td><td>${pb}</td><td>${c.provider||'—'}</td><td>${c.submitted}</td><td>${c.deadline||'—'}</td><td><a class="complaint-link" href="complaint-detail.html?id=${c.id}">Details</a></td></tr>`;
+    if (currentTab==='payment') return `<tr><td>${link}</td><td>${c.issue}</td><td>${c.location}</td><td>${pb}</td><td>${c.provider||'—'}</td><td>${c.submitted}</td><td>${c.deadline||'—'}</td><td><button class="btn btn-success btn-sm" onclick="location.href='service-bills.html'">Pay Bill</button></td></tr>`;
+    if (currentTab==='rejected') return `<tr><td>${link}</td><td>${c.issue}</td><td>${c.location}</td><td>${pb}</td><td>${c.submitted}</td><td style="color:#DC2626;">${c.rejectionReason||'—'}</td></tr>`;
+  });
+  document.getElementById('tableBody').innerHTML = rows.join('') || `<tr><td colspan="8" style="text-align:center;padding:28px;color:#9CA3AF;">No complaints found</td></tr>`;
+}
+function approveComplaint(id, btn) {
+  btn.closest('tr').querySelector('td:last-child').innerHTML = `<span class="badge badge-approved">✅ Approved</span>`;
+  showToast(`✅ Complaint ${id} approved!`);
+}
+document.addEventListener('DOMContentLoaded', renderTable);
+</script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+/* PropSync app.js – unified shared JS */
+
+const complaints = [
+  {id:'C-2410',issue:'Water Leakage',location:'Building A, Apt 102',priority:'High',status:'Pending',subStatus:'',submitted:'2024-03-08',deadline:'2024-03-12',provider:'',rejectionReason:''},
+  {id:'C-2409',issue:'AC Not Cooling',location:'Tower B, Apt 305',priority:'Medium',status:'Pending',subStatus:'',submitted:'2024-03-07',deadline:'2024-03-14',provider:'',rejectionReason:''},
+  {id:'C-2408',issue:'Electrical Issue',location:'Tower B, Apt 304',priority:'High',status:'Approved',subStatus:'Waiting Provider Response',submitted:'2024-03-06',deadline:'2024-03-13',provider:'',rejectionReason:''},
+  {id:'C-2407',issue:'Plumbing Problem',location:'Building C, Apt 201',priority:'Medium',status:'Approved',subStatus:'Waiting Cost Approval',submitted:'2024-03-05',deadline:'2024-03-15',provider:'QuickFix Plumbing',rejectionReason:''},
+  {id:'C-2406',issue:'Door Lock Repair',location:'Building A, Apt 305',priority:'Low',status:'Approved',subStatus:'Provider Assigned',submitted:'2024-03-04',deadline:'2024-03-16',provider:'SecureFix Services',rejectionReason:''},
+  {id:'C-2405',issue:'Paint Work',location:'Tower C, Apt 101',priority:'Low',status:'In Progress',subStatus:'',submitted:'2024-03-03',deadline:'2024-03-17',provider:'ProPaint Co.',rejectionReason:''},
+  {id:'C-2404',issue:'Window Repair',location:'Building B, Apt 409',priority:'Medium',status:'In Progress',subStatus:'',submitted:'2024-03-02',deadline:'2024-03-10',provider:'GlassFix Solutions',rejectionReason:''},
+  {id:'C-2403',issue:'Lift Maintenance',location:'Main Building',priority:'High',status:'Completed',subStatus:'',submitted:'2024-02-25',deadline:'2024-03-05',provider:'Urban Lift Repairs',rejectionReason:''},
+  {id:'C-2402',issue:'Ceiling Fan Not Working',location:'Tower A, Apt 210',priority:'Low',status:'Completed',subStatus:'',submitted:'2024-02-22',deadline:'2024-03-01',provider:'UrbanFix Electrical',rejectionReason:''},
+  {id:'C-2401',issue:'AC Not Cooling',location:'Building D, Apt 102',priority:'Medium',status:'Payment Pending',subStatus:'',submitted:'2024-02-20',deadline:'2024-02-28',provider:'CoolAir Services',rejectionReason:''},
+  {id:'C-2400',issue:'Water Leakage',location:'Tower B, Apt 102',priority:'High',status:'Rejected',subStatus:'',submitted:'2024-02-18',deadline:'',provider:'',rejectionReason:'Duplicate complaint'},
+  {id:'C-2399',issue:'AC Not Cooling',location:'Building A, Apt 410',priority:'Medium',status:'Payment Pending',subStatus:'',submitted:'2024-03-04',deadline:'2024-03-20',provider:'CoolAir Services',rejectionReason:''},
+  {id:'C-2398',issue:'Boiler Servicing',location:'Basement Block B',priority:'High',status:'Payment Pending',subStatus:'',submitted:'2024-03-03',deadline:'2024-03-18',provider:'HeatPro Services',rejectionReason:''},
+  {id:'C-2395',issue:'Sink Blockage',location:'Building C, Apt 303',priority:'Low',status:'Completed',subStatus:'',submitted:'2024-02-26',deadline:'2024-03-01',provider:'QuickFix Plumbing',rejectionReason:''},
+  {id:'C-2390',issue:'AC Repair',location:'Tower A, Apt 101',priority:'Medium',status:'Completed',subStatus:'',submitted:'2024-02-14',deadline:'2024-02-20',provider:'CoolAir Services',rejectionReason:''},
+  {id:'C-2385',issue:'Lift Maintenance',location:'Main Building',priority:'High',status:'Completed',subStatus:'',submitted:'2024-02-10',deadline:'2024-02-15',provider:'Urban Lift Repairs',rejectionReason:''}
+];
+
+const providers = [
+  {name:'CoolAir Services',specialty:'HVAC',rating:4.8,jobs:142,onTime:95,avgCost:2800,trend:'up'},
+  {name:'QuickFix Plumbing',specialty:'Plumbing',rating:4.6,jobs:98,onTime:88,avgCost:1200,trend:'up'},
+  {name:'Urban Lift Repairs',specialty:'Elevator',rating:4.9,jobs:54,onTime:98,avgCost:4200,trend:'up'},
+  {name:'UrbanFix Electrical',specialty:'Electrical',rating:4.5,jobs:112,onTime:82,avgCost:1800,trend:'down'},
+  {name:'HeatPro Services',specialty:'Plumbing',rating:4.3,jobs:76,onTime:79,avgCost:2200,trend:'down'},
+  {name:'GlassFix Solutions',specialty:'General',rating:4.7,jobs:65,onTime:91,avgCost:1600,trend:'up'},
+  {name:'SecureFix Services',specialty:'Security',rating:4.4,jobs:88,onTime:85,avgCost:900,trend:''},
+  {name:'ProPaint Co.',specialty:'Painting',rating:4.2,jobs:43,onTime:80,avgCost:3500,trend:''}
+];
+
+// Shared notification store — persisted in sessionStorage so changes propagate across pages
+function getNotifications() {
+  const stored = sessionStorage.getItem('ps_notifications');
+  if (stored) return JSON.parse(stored);
+  const defaults = [
+    {id:1,icon:'💧',color:'#DCFCE7',title:'New complaint submitted',desc:'Resident from Building A reported water leakage (C-2410)',time:'5 min ago',unread:true},
+    {id:2,icon:'📊',color:'#FEF3C7',title:'Service estimate received',desc:'CoolAir Services submitted estimate for AC repair (C-2403)',time:'30 min ago',unread:true},
+    {id:3,icon:'✅',color:'#DCFCE7',title:'Work completed',desc:'Electrical repair completed in Tower B – Apt 304 (C-2395)',time:'2 hrs ago',unread:false},
+    {id:4,icon:'⚠️',color:'#FEF3C7',title:'Overdue maintenance request',desc:'Complaint C-2404 is overdue by 2 days',time:'3 hrs ago',unread:false},
+    {id:5,icon:'🔧',color:'#F0FDF4',title:'Provider assigned',desc:'QuickFix Plumbing assigned to C-2407',time:'Yesterday',unread:false},
+    {id:6,icon:'❌',color:'#FEE2E2',title:'Provider declined assignment',desc:'HeatPro Services declined assignment for C-2408',time:'Yesterday',unread:false},
+    {id:7,icon:'💰',color:'#F0FDF4',title:'Payment processed',desc:'Payment of ₹4500 processed for C-2385',time:'2 days ago',unread:false},
+    {id:8,icon:'📋',color:'#F0FDF4',title:'Complaint awaiting approval',desc:'Complaint C-2410 needs your review',time:'2 days ago',unread:false}
+  ];
+  sessionStorage.setItem('ps_notifications', JSON.stringify(defaults));
+  return defaults;
+}
+
+function saveNotifications(notifs) {
+  sessionStorage.setItem('ps_notifications', JSON.stringify(notifs));
+}
+
+function addNotification(icon, color, title, desc) {
+  const notifs = getNotifications();
+  notifs.unshift({id: Date.now(), icon, color, title, desc, time: 'Just now', unread: true});
+  saveNotifications(notifs);
+}
+
+function getUnreadCount() {
+  return getNotifications().filter(n => n.unread).length;
+}
+
+/* ── badge helpers ── */
+function priorityBadge(p) {
+  const m = {High:'badge-high', Medium:'badge-medium', Low:'badge-low'};
+  return `<span class="badge ${m[p]||'badge-medium'}">${p}</span>`;
+}
+function statusBadge(status, sub) {
+  const m = {
+    'Pending':'badge-pending','Approved':'badge-approved','In Progress':'badge-inprog',
+    'Completed':'badge-completed','Payment Pending':'badge-payment','Rejected':'badge-rejected'
+  };
+  let label = status;
+  if (status === 'Approved' && sub) {
+    if (sub === 'Waiting Provider Response') label = '⏳ Waiting Response';
+    else if (sub === 'Waiting Cost Approval') label = '📋 Review Estimate';
+    else if (sub === 'Provider Assigned') label = '✅ Provider Assigned';
+  }
+  return `<span class="badge ${m[status]||'badge-pending'}">${label}</span>`;
+}
+
+/* ── modal helpers ── */
+function showModal(id) { const el = document.getElementById(id); if(el){ el.classList.add('open'); el.style.display='flex'; } }
+function hideModal(id) { const el = document.getElementById(id); if(el){ el.classList.remove('open'); el.style.display=''; } }
+document.addEventListener('click', e => {
+  document.querySelectorAll('.modal-overlay').forEach(o => { if(e.target === o) hideModal(o.id); });
+});
+
+/* ── reject modal ── */
+let _rejectTarget = '';
+function openRejectModal(id) {
+  _rejectTarget = id;
+  const inp = document.getElementById('rejectReason');
+  if (inp) inp.value = '';
+  showModal('rejectModal');
+}
+function submitReject() {
+  const r = (document.getElementById('rejectReason')||{}).value || '';
+  if (!r.trim()) { showToast('⚠️ Please enter a rejection reason.'); return; }
+  showToast(`❌ Complaint ${_rejectTarget} rejected.`);
+  hideModal('rejectModal');
+}
+
+/* ── toast ── */
+function showToast(msg, dur=3000) {
+  let t = document.getElementById('_toast');
+  if (!t) { t = document.createElement('div'); t.id='_toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), dur);
+}
+
+/* ── sidebar ── */
+function openSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.querySelector('.sidebar-overlay');
+  if (sb) sb.classList.add('open');
+  if (ov) ov.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  const sb = document.querySelector('.sidebar');
+  const ov = document.querySelector('.sidebar-overlay');
+  if (sb) sb.classList.remove('open');
+  if (ov) ov.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+/* ── alert helpers ── */
+function markAlertRead(btn) {
+  const li = btn.closest('li');
+  if (!li) return;
+  li.style.transition = 'opacity .3s'; li.style.opacity = '0';
+  setTimeout(() => { li.remove(); checkAlertsEmpty(); }, 300);
+}
+function clearAllAlerts() {
+  const ul = document.querySelector('.alert-box ul');
+  if (!ul) return;
+  [...ul.children].forEach(li => { li.style.transition='opacity .3s'; li.style.opacity='0'; });
+  setTimeout(() => { if(ul) ul.innerHTML=''; checkAlertsEmpty(); }, 320);
+}
+function checkAlertsEmpty() {
+  const box = document.querySelector('.alert-box');
+  if (!box) return;
+  const ul = box.querySelector('ul');
+  if (ul && ul.children.length === 0) { box.style.transition='opacity .3s'; box.style.opacity='0'; setTimeout(()=>box.remove(),320); }
+}
+
+/* ── notification helpers ── */
+function markNotifRead(id) {
+  const notifs = getNotifications();
+  const n = notifs.find(x => x.id === id);
+  if (n) { n.unread = false; saveNotifications(notifs); }
+  if (typeof renderNotifs === 'function') renderNotifs();
+}
+function markAllNotifsRead() {
+  const notifs = getNotifications();
+  notifs.forEach(n => n.unread = false);
+  saveNotifications(notifs);
+  if (typeof renderNotifs === 'function') renderNotifs();
+  showToast('✅ All notifications marked as read!');
+}
+
+/* ── logout ── */
+function confirmLogout() { showModal('logoutModal'); }
+function doLogout() { hideModal('logoutModal'); showToast('👋 Logged out successfully!'); setTimeout(() => location.href = 'login.html', 1200); }
+
+/* ── update topbar notif dot ── */
+function updateNotifDot() {
+  const count = getUnreadCount();
+  document.querySelectorAll('.topbar-notif-dot').forEach(dot => {
+    dot.style.display = count > 0 ? 'block' : 'none';
+  });
+  document.querySelectorAll('.notif-badge-count').forEach(el => {
+    el.textContent = count;
+    el.style.display = count > 0 ? 'inline' : 'none';
+  });
+}
+
+/* ── DOMContentLoaded init ── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Hamburger
+  document.querySelectorAll('.hamburger').forEach(btn => btn.addEventListener('click', openSidebar));
+  document.querySelectorAll('.sidebar-close').forEach(btn => btn.addEventListener('click', closeSidebar));
+  const ov = document.querySelector('.sidebar-overlay');
+  if (ov) ov.addEventListener('click', closeSidebar);
+
+  // Active nav link
+  const page = location.pathname.split('/').pop() || 'dashboard.html';
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = (link.getAttribute('href')||'').split('/').pop();
+    if (href === page) link.classList.add('active');
+  });
+
+  // Update notif dot
+  updateNotifDot();
+
+  // Resize handler
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > 900) {
+      const sb = document.querySelector('.sidebar');
+      const ov2 = document.querySelector('.sidebar-overlay');
+      if (sb) sb.classList.remove('open');
+      if (ov2) ov2.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+  });
+});

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PropSync – Approved Complaints</title>
+    <link rel="stylesheet" href="../css/styles.css"/>
+  <style>
+    /* Status pill badges – green rounded as in screenshot */
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 13px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      background: #DCFCE7;
+      color: #15803D;
+    }
+
+    /* Greyed "waiting" action chip */
+    .action-waiting {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #F3F4F6;
+      color: #6B7280;
+      border: 1px solid #E5E7EB;
+      white-space: nowrap;
+    }
+
+    /* Priority rounded badges */
+    .pri-badge {
+      display: inline-block;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .pri-high   { background:#FEE2E2; color:#B91C1C; }
+    .pri-medium { background:#FEF3C7; color:#B45309; }
+    .pri-low    { background:#DCFCE7; color:#15803D; }
+
+    .data-table tbody td  { vertical-align: middle; }
+    .data-table tbody tr:hover { background: #F0FDF4; }
+
+    /* Make warning btn match screenshot orange */
+    .btn-warning { background: #D97706; color:#fff; }
+    .btn-warning:hover { background: #B45309; }
+  </style>
+</head>
+<body class="has-sidebar">
+<div class="sidebar-overlay"></div>
+
+<!-- ══════════ SIDEBAR ══════════ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-left">
+      <div class="logo-icon">🏢</div>
+      <div>
+        <div class="logo-text">PropSync</div>
+        <div class="logo-sub">Maintenance Manager</div>
+      </div>
+    </div>
+    <button class="sidebar-close">✕</button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html">
+      <span class="nav-icon">📋</span> Complaints
+      <span class="nav-badge">7</span>
+    </a>
+    <a class="nav-link active" href="approved-complaints.html">
+      <span class="nav-icon">✅</span> Approved Complaints
+    </a>
+    <a class="nav-link" href="service-estimate.html">
+      <span class="nav-icon">📄</span> Service Estimate Approval
+      <span class="nav-badge">2</span>
+    </a>
+    <a class="nav-link" href="service-bills.html">
+      <span class="nav-icon">💰</span> Service Bills &amp; Payments
+    </a>
+
+    <div class="nav-section">Providers</div>
+    <a class="nav-link" href="provider-performance.html">
+      <span class="nav-icon">📈</span> Provider Performance
+    </a>
+
+    <div class="nav-section">Communication</div>
+    <a class="nav-link" href="communication.html"><span class="nav-icon">💬</span> Messages</a>
+    <a class="nav-link" href="notifications.html">
+      <span class="nav-icon">🔔</span> Notifications
+      <span class="nav-badge notif-badge-count">2</span>
+    </a>
+
+    <div class="nav-section">Account</div>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user" onclick="location.href='profile.html'">
+      <div class="u-avatar">MM</div>
+      <div>
+        <div class="u-name">Maintenance Manager</div>
+        <div class="u-role">Greenwood Heights</div>
+      </div>
+    </div>
+    <button class="sidebar-logout" onclick="confirmLogout()">
+      <span style="font-size:16px;">🚪</span> Log Out
+    </button>
+  </div>
+</aside>
+
+<!-- ══════════ PAGE ══════════ -->
+<div class="page-wrapper">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger"><span></span><span></span><span></span></button>
+      <div>
+        <div class="topbar-title">Approved Complaints</div>
+        <div class="topbar-sub">Home / Approved Complaints</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notifications.html'">
+        🔔<div class="topbar-notif-dot"></div>
+      </div>
+      <div class="topbar-icon-btn" onclick="location.href='communication.html'">💬</div>
+      <div class="topbar-avatar" onclick="location.href='profile.html'">MM</div>
+    </div>
+  </div>
+
+  <!-- BACK -->
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+
+  <!-- GREEN BANNER -->
+  <div class="page-banner">
+    <h1>✅ Approved Complaints</h1>
+    <p>Complaints awaiting service provider assignment</p>
+  </div>
+
+  <!-- TABLE CARD -->
+  <div class="card">
+    <div class="card-title" style="margin-bottom:20px;">
+      Complaints Awaiting Service Provider Assignment
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>COMPLAINT ID</th>
+            <th>ISSUE</th>
+            <th>LOCATION</th>
+            <th>PRIORITY</th>
+            <th>STATUS</th>
+            <th>APPROVED DATE</th>
+            <th>ACTION</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- ── Row 1: C-2408 · Waiting Provider Response ── -->
+          <tr>
+            <td>
+              <a class="complaint-link" href="complaint-detail.html?id=C-2408">C-2408</a>
+            </td>
+            <td>Electrical Issue</td>
+            <td>Tower B, Apt 304</td>
+            <td><span class="pri-badge pri-high">High</span></td>
+            <td><span class="status-pill">⏳ Waiting Response</span></td>
+            <td>2024-03-06</td>
+            <td>
+              <span class="action-waiting">⏳ Waiting for Provider Response</span>
+            </td>
+          </tr>
+
+          <!-- ── Row 2: C-2407 · Waiting Cost Approval → Review Estimate ── -->
+          <tr>
+            <td>
+              <a class="complaint-link" href="complaint-detail.html?id=C-2407">C-2407</a>
+            </td>
+            <td>Plumbing Problem</td>
+            <td>Building C, Apt 201</td>
+            <td><span class="pri-badge pri-medium">Medium</span></td>
+            <td><span class="status-pill">📋 Review Estimate</span></td>
+            <td>2024-03-05</td>
+            <td>
+              <button class="btn btn-warning btn-sm"
+                      onclick="location.href='service-estimate.html'">
+                Review Estimate
+              </button>
+            </td>
+          </tr>
+
+          <!-- ── Row 3: C-2406 · Provider Assigned → Assign Service Provider ── -->
+          <tr>
+            <td>
+              <a class="complaint-link" href="complaint-detail.html?id=C-2406">C-2406</a>
+            </td>
+            <td>Door Lock Repair</td>
+            <td>Building A, Apt 305</td>
+            <td><span class="pri-badge pri-low">Low</span></td>
+            <td><span class="status-pill">✅ Provider Assigned</span></td>
+            <td>2024-03-04</td>
+            <td>
+    <a href="http://127.0.0.1:5500/assign-provider.html?id=C-2406" 
+   class="btn btn-primary btn-sm">
+  Assign Service Provider
+</a>
+            </td>
+          </tr>
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /page-wrapper -->
+
+<!-- LOGOUT MODAL -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="logout-modal">
+    <div class="logout-icon">👋</div>
+    <h3>Log Out?</h3>
+    <p>Are you sure you want to log out of PropSync?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="hideModal('logoutModal')">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="doLogout()">Yes, Log Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

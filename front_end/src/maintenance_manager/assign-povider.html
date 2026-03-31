@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Assign Service Provider – PropSync</title>
+   <link rel="stylesheet" href="../css/styles.css"/>
+  <style>
+    /* ── Page-specific additions – nothing from style.css is removed ── */
+
+    .complaint-detail-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 26px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .cd-section-label {
+      font-size: 11.5px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 16px;
+    }
+    .complaint-detail-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+    .cd-field-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .cd-field-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Due date */
+    .due-date-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .due-date-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+    .date-input-wrap {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+    }
+    .date-input-wrap .cal-icon {
+      position: absolute;
+      left: 12px;
+      font-size: 15px;
+      pointer-events: none;
+    }
+    .date-input-wrap input[type="date"] {
+      padding: 9px 14px 9px 38px;
+      border: 1.5px solid var(--border);
+      border-radius: 9px;
+      font-size: 13px;
+      font-family: var(--font);
+      background: #FAFAFA;
+      min-width: 220px;
+      color: var(--text);
+      transition: border-color .15s;
+    }
+    .date-input-wrap input[type="date"]:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+    }
+
+    /* Providers section */
+    .providers-section-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .providers-section-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .section-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+    }
+
+    /* Individual provider row card */
+    .rec-provider-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 2px solid var(--border);
+      cursor: pointer;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    .rec-provider-card:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: 0 2px 10px rgba(22,163,74,.10);
+    }
+    .rec-provider-card.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: 0 2px 14px rgba(22,163,74,.15);
+    }
+
+    .rec-rank-badge {
+      font-size: 13px;
+      font-weight: 800;
+      min-width: 30px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .rec-rank-badge.rank-1 { color: #D97706; }
+    .rec-rank-badge.rank-2 { color: #6B7280; }
+    .rec-rank-badge.rank-3 { color: #B45309; }
+
+    .rec-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .rec-info { flex: 1; }
+    .rec-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+    .rec-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .rec-rating {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .rec-rating .star { color: #FBBF24; font-size: 13px; }
+    .rec-jobs { font-size: 12px; color: var(--text-muted); }
+    .rec-on-time { font-size: 12px; font-weight: 600; color: var(--primary); }
+
+    .rec-cost {
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text);
+      text-align: right;
+      min-width: 80px;
+    }
+    .rec-cost small {
+      display: block;
+      font-size: 10.5px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+
+    .rec-select-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color .2s, background .2s;
+    }
+    .rec-provider-card.selected .rec-select-circle {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+    .rec-provider-card.selected .rec-select-circle::after {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: #fff;
+      border-radius: 50%;
+    }
+
+    /* AI badge */
+    .ai-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(135deg, #ECFDF5, #D1FAE5);
+      border: 1px solid #6EE7B7;
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 10.5px;
+      font-weight: 700;
+      color: #065F46;
+    }
+
+    /* Notes */
+    .notes-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 26px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .notes-card h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 14px;
+    }
+
+    /* Action bar */
+    .action-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow);
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .action-bar-btns { display: flex; gap: 10px; }
+
+    /* Selected pill */
+    .selected-pill {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-light);
+      border: 1px solid var(--primary-mid);
+      border-radius: 20px;
+      padding: 5px 14px 5px 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--primary);
+    }
+    .selected-pill.visible { display: inline-flex; }
+    .selected-pill-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--primary);
+    }
+
+    /* Confirm modal */
+    .assign-confirm-modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px;
+      width: 460px;
+      max-width: 94vw;
+      box-shadow: 0 20px 60px rgba(0,0,0,.15);
+      animation: fadeUp .2s ease;
+    }
+    .assign-confirm-modal .modal-icon-wrap {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px;
+      margin: 0 auto 16px;
+    }
+    .assign-confirm-modal h3 {
+      font-size: 18px; font-weight: 800;
+      text-align: center; margin-bottom: 6px;
+    }
+    .assign-confirm-modal p {
+      font-size: 13px; color: var(--text-muted);
+      text-align: center; margin-bottom: 20px;
+    }
+    .assign-summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 9px 0;
+      border-bottom: 1px solid #F3F4F6;
+      font-size: 13px;
+    }
+    .assign-summary-row .asr-label { color: var(--text-muted); }
+    .assign-summary-row .asr-value { font-weight: 700; }
+
+    @media (max-width: 768px) {
+      .complaint-detail-grid { grid-template-columns: 1fr 1fr; }
+      .rec-cost { display: none; }
+    }
+    @media (max-width: 480px) {
+      .complaint-detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body class="has-sidebar">
+
+<div class="sidebar-overlay"></div>
+
+<!-- ══ SIDEBAR ══ -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-left">
+      <div class="logo-icon">🏢</div>
+      <div><div class="logo-text">PropSync</div><div class="logo-sub">Maintenance Manager</div></div>
+    </div>
+    <button class="sidebar-close">✕</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> Complaints <span class="nav-badge">7</span></a>
+    <a class="nav-link active" href="approved-complaints.html"><span class="nav-icon">✅</span> Approved Complaints</a>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate Approval <span class="nav-badge">2</span></a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Service Bills &amp; Payments</a>
+    <div class="nav-section">Providers</div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">📈</span> Provider Performance</a>
+    <div class="nav-section">Communication</div>
+    <a class="nav-link" href="communication.html"><span class="nav-icon">💬</span> Messages</a>
+    <a class="nav-link" href="notifications.html"><span class="nav-icon">🔔</span> Notifications <span class="nav-badge notif-badge-count">2</span></a>
+    <div class="nav-section">Account</div>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user" onclick="location.href='profile.html'">
+      <div class="u-avatar">MM</div>
+      <div><div class="u-name">Maintenance Manager</div><div class="u-role">Greenwood Heights</div></div>
+    </div>
+    <button class="sidebar-logout" onclick="confirmLogout()"><span style="font-size:16px;">🚪</span> Log Out</button>
+  </div>
+</aside>
+
+<!-- ══ MAIN ══ -->
+<div class="page-wrapper">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger"><span></span><span></span><span></span></button>
+      <div>
+        <div class="topbar-title">Assign Service Provider</div>
+        <div class="topbar-sub">Home / Approved Complaints / Assign Provider</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notifications.html'">
+        🔔<div class="topbar-notif-dot"></div>
+      </div>
+      <div class="topbar-icon-btn" onclick="location.href='communication.html'">💬</div>
+      <div class="topbar-avatar" onclick="location.href='profile.html'">MM</div>
+    </div>
+  </div>
+
+  <a class="back-link" href="approved-complaints.html">← Back to Approved Complaints</a>
+
+  <!-- COMPLAINT DETAILS (populated by JS) -->
+  <div class="complaint-detail-card">
+    <div class="cd-section-label">Complaint Details</div>
+    <div class="complaint-detail-grid">
+      <div>
+        <div class="cd-field-label">Complaint ID</div>
+        <div class="cd-field-value" id="detailId" style="font-family:'DM Mono',monospace;color:var(--primary)">—</div>
+      </div>
+      <div>
+        <div class="cd-field-label">Issue</div>
+        <div class="cd-field-value" id="detailIssue">—</div>
+      </div>
+      <div>
+        <div class="cd-field-label">Location</div>
+        <div class="cd-field-value" id="detailLocation">—</div>
+      </div>
+      <div>
+        <div class="cd-field-label">Priority</div>
+        <div class="cd-field-value" id="detailPriority">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SET DUE DATE -->
+  <div class="due-date-card">
+    <h3>📅 Set Due Date</h3>
+    <div class="date-input-wrap">
+      <span class="cal-icon">📆</span>
+      <input type="date" id="dueDate" />
+    </div>
+    <div style="margin-top:8px;font-size:11.5px;color:var(--text-muted);">
+      Select the deadline by which this issue should be resolved.
+    </div>
+  </div>
+
+  <!-- RECOMMENDED PROVIDERS -->
+  <div class="providers-section-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:4px;">
+      <h3>Recommended Service Providers</h3>
+      <span class="ai-tag">✨ AI Ranked</span>
+    </div>
+    <div class="section-sub">Select a provider to assign this complaint. Ranked by specialty match, rating &amp; on-time rate.</div>
+    <div id="providerList"></div>
+  </div>
+
+  <!-- NOTES -->
+  <div class="notes-card">
+    <h3>📝 Notes for Provider <span style="font-size:11.5px;font-weight:400;color:var(--text-muted);">(Optional)</span></h3>
+    <textarea class="form-control" id="providerNotes" rows="3" placeholder="Add any special instructions or details for the service provider…"></textarea>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <div style="font-size:13px;color:var(--text-muted);">
+      Selected:&nbsp;
+      <span class="selected-pill" id="selectedPill">
+        <span class="selected-pill-dot"></span>
+        <span id="selectedPillText">None</span>
+      </span>
+    </div>
+    <div class="action-bar-btns">
+      <button class="btn btn-outline" onclick="location.href='approved-complaints.html'">Cancel</button>
+      <button class="btn btn-primary" onclick="openAssignConfirm()">🔧 Assign Service Provider</button>
+    </div>
+  </div>
+
+</div><!-- /page-wrapper -->
+
+<!-- ══ ASSIGN CONFIRM MODAL ══ -->
+<div class="modal-overlay" id="assignConfirmModal">
+  <div class="assign-confirm-modal">
+    <div class="modal-icon-wrap">🔧</div>
+    <h3>Confirm Assignment</h3>
+    <p>You are about to assign a service provider to this complaint. The provider will be notified immediately.</p>
+    <div class="assign-summary-row">
+      <span class="asr-label">Complaint ID</span>
+      <span class="asr-value" id="confirmId" style="font-family:'DM Mono',monospace;color:var(--primary);">—</span>
+    </div>
+    <div class="assign-summary-row">
+      <span class="asr-label">Issue</span>
+      <span class="asr-value" id="confirmIssue">—</span>
+    </div>
+    <div class="assign-summary-row">
+      <span class="asr-label">Provider</span>
+      <span class="asr-value" id="confirmProvider">—</span>
+    </div>
+    <div class="assign-summary-row">
+      <span class="asr-label">Due Date</span>
+      <span class="asr-value" id="confirmDue">—</span>
+    </div>
+    <div class="assign-summary-row" style="border-bottom:none;">
+      <span class="asr-label">Est. Cost</span>
+      <span class="asr-value" id="confirmCost" style="color:var(--primary);">—</span>
+    </div>
+    <div class="modal-note" style="margin-top:16px;">
+      ⚠️ The provider will receive a notification and must accept or decline the assignment within 24 hours.
+    </div>
+    <div class="modal-actions" style="margin-top:20px;">
+      <button class="btn btn-outline" onclick="hideModal('assignConfirmModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="doAssign()">✅ Confirm Assignment</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LOGOUT MODAL ══ -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="logout-modal">
+    <div class="logout-icon">👋</div>
+    <h3>Log Out?</h3>
+    <p>Are you sure you want to log out of PropSync?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="hideModal('logoutModal')">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="doLogout()">Yes, Log Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+/* ─── Provider data for recommendation (sorted by rating desc) ─── */
+const providerPool = [
+  { name:'UrbanFix Electrical', specialty:'Electrical', initials:'UE', color:'#0891B2', rating:4.5, jobs:112, onTime:82, avgCost:1800 },
+  { name:'CoolAir Services',    specialty:'HVAC',       initials:'CA', color:'#16A34A', rating:4.8, jobs:142, onTime:95, avgCost:2800 },
+  { name:'QuickFix Plumbing',   specialty:'Plumbing',   initials:'QF', color:'#16A34A', rating:4.6, jobs:98,  onTime:88, avgCost:1200 },
+  { name:'Urban Lift Repairs',  specialty:'Elevator',   initials:'UL', color:'#7C3AED', rating:4.9, jobs:54,  onTime:98, avgCost:4200 },
+  { name:'GlassFix Solutions',  specialty:'General',    initials:'GF', color:'#D97706', rating:4.7, jobs:65,  onTime:91, avgCost:1600 },
+  { name:'SecureFix Services',  specialty:'Security',   initials:'SF', color:'#6D28D9', rating:4.4, jobs:88,  onTime:85, avgCost:900  },
+  { name:'HeatPro Services',    specialty:'Plumbing',   initials:'HP', color:'#DC2626', rating:4.3, jobs:76,  onTime:79, avgCost:2200 },
+  { name:'ProPaint Co.',        specialty:'Painting',   initials:'PP', color:'#0284C7', rating:4.2, jobs:43,  onTime:80, avgCost:3500 },
+];
+
+/* ─── State ─── */
+let _complaint   = null;
+let _selectedProv = null;
+
+/* ─── Init ─── */
+document.addEventListener('DOMContentLoaded', () => {
+  // Read complaint ID from URL
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+
+  _complaint = (id && complaints.find(c => c.id === id)) || complaints.find(c => c.status === 'Approved') || null;
+
+  if (_complaint) {
+    document.getElementById('detailId').textContent       = _complaint.id;
+    document.getElementById('detailIssue').textContent    = _complaint.issue;
+    document.getElementById('detailLocation').textContent = _complaint.location;
+    document.getElementById('detailPriority').innerHTML   = priorityBadge(_complaint.priority);
+  }
+
+  // Set min date to today
+  const today = new Date().toISOString().split('T')[0];
+  const dueDateEl = document.getElementById('dueDate');
+  dueDateEl.min = today;
+  // Pre-fill existing deadline if present
+  if (_complaint && _complaint.deadline) {
+    dueDateEl.value = _complaint.deadline;
+  }
+
+  // Render provider list (top 4 sorted by rating)
+  const top4 = [...providerPool].sort((a, b) => b.rating - a.rating).slice(0, 4);
+  const rankClass = ['rank-1', 'rank-2', 'rank-3', ''];
+  document.getElementById('providerList').innerHTML = top4.map((p, i) => `
+    <div class="rec-provider-card${i === 0 ? ' selected' : ''}"
+         onclick="selectProvider(this, ${JSON.stringify(p).split('"').join('&quot;')})">
+      <div class="rec-rank-badge ${rankClass[i]}">#${i+1}</div>
+      <div class="rec-avatar" style="background:${p.color}">${p.initials}</div>
+      <div class="rec-info">
+        <div class="rec-name">${p.name}</div>
+        <div class="rec-meta">
+          <div class="rec-rating"><span class="star">★</span> ${p.rating}</div>
+          <div class="rec-jobs">${p.jobs} Completed Jobs</div>
+          <span class="specialty-tag">${p.specialty}</span>
+          <div class="rec-on-time">${p.onTime}% On-Time</div>
+        </div>
+      </div>
+      <div class="rec-cost">₹${p.avgCost.toLocaleString('en-IN')} <small>avg cost</small></div>
+      <div class="rec-select-circle"></div>
+    </div>
+  `).join('');
+
+  // Default-select first provider
+  _selectedProv = top4[0];
+  updatePill();
+});
+
+/* ─── Select provider ─── */
+function selectProvider(card, provObj) {
+  // provObj may arrive as plain object or from HTML attribute (already parsed by onclick JSON)
+  _selectedProv = (typeof provObj === 'string') ? JSON.parse(provObj) : provObj;
+  document.querySelectorAll('.rec-provider-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  updatePill();
+}
+
+function updatePill() {
+  const pill = document.getElementById('selectedPill');
+  const txt  = document.getElementById('selectedPillText');
+  if (_selectedProv) {
+    txt.textContent = _selectedProv.name;
+    pill.classList.add('visible');
+  } else {
+    pill.classList.remove('visible');
+  }
+}
+
+/* ─── Open confirm modal ─── */
+function openAssignConfirm() {
+  if (!_selectedProv) { showToast('⚠️ Please select a service provider.'); return; }
+  const dueVal = document.getElementById('dueDate').value;
+  if (!dueVal) { showToast('⚠️ Please set a due date before assigning.'); return; }
+
+  document.getElementById('confirmId').textContent       = _complaint ? _complaint.id : '—';
+  document.getElementById('confirmIssue').textContent    = _complaint ? _complaint.issue : '—';
+  document.getElementById('confirmProvider').textContent = _selectedProv.name;
+  document.getElementById('confirmDue').textContent      = dueVal;
+  document.getElementById('confirmCost').textContent     = '₹' + _selectedProv.avgCost.toLocaleString('en-IN');
+
+  showModal('assignConfirmModal');
+}
+
+/* ─── Confirm assignment ─── */
+function doAssign() {
+  hideModal('assignConfirmModal');
+  addNotification(
+    '🔧', '#DCFCE7',
+    'Provider Assigned',
+    `${_selectedProv.name} assigned to ${_complaint ? _complaint.id : 'complaint'} (${_complaint ? _complaint.issue : ''})`
+  );
+  showToast(`✅ ${_selectedProv.name} successfully assigned!`);
+  setTimeout(() => { location.href = 'approved-complaints.html'; }, 1400);
+}
+</script>
+</body>
+</html>

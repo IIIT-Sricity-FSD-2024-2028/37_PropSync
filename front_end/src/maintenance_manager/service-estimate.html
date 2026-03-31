@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PropSync – Service Estimate Approval</title>
+  <link rel="stylesheet" href="../css/styles.css"/>
+</head>
+<body class="has-sidebar">
+<div class="sidebar-overlay"></div>
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-left">
+      <div class="logo-icon">🏢</div>
+      <div><div class="logo-text">PropSync</div><div class="logo-sub">Maintenance Manager</div></div>
+    </div>
+    <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Main</div>
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> Complaints <span class="nav-badge">7</span></a>
+    <a class="nav-link" href="approved-complaints.html"><span class="nav-icon">✅</span> Approved Complaints</a>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate Approval <span class="nav-badge">2</span></a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Service Bills &amp; Payments</a>
+    <div class="nav-section">Providers</div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">📈</span> Provider Performance</a>
+    <div class="nav-section">Communication</div>
+    <a class="nav-link" href="communication.html"><span class="nav-icon">💬</span> Messages</a>
+    <a class="nav-link" href="notifications.html"><span class="nav-icon">🔔</span> Notifications <span class="nav-badge notif-badge-count">2</span></a>
+    <div class="nav-section">Account</div>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-user" onclick="location.href='profile.html'">
+      <div class="u-avatar">MM</div>
+      <div><div class="u-name">Maintenance Manager</div><div class="u-role">Greenwood Heights</div></div>
+    </div>
+    <button class="sidebar-logout" onclick="confirmLogout()"><span style="font-size:16px;">🚪</span> Log Out</button>
+  </div>
+</aside>
+
+<div class="page-wrapper">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="openSidebar()"><span></span><span></span><span></span></button>
+      <div><div class="topbar-title">Service Estimate Approval</div><div class="topbar-sub">Home / Service Estimate Approval</div></div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notifications.html'">🔔<div class="topbar-notif-dot"></div></div>
+      <div class="topbar-avatar" onclick="location.href='profile.html'">MM</div>
+    </div>
+  </div>
+
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:4px;">📄 Service Estimate Approval</h2>
+  <p style="color:#6B7280;font-size:13px;margin-bottom:20px;">Review and approve or reject service estimates from providers</p>
+
+  <!-- Pending Estimates -->
+  <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
+    <span style="font-size:14px;font-weight:700;">⏳ Pending Estimates</span>
+    <span style="background:#FEF3C7;color:#B45309;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;" id="pendingCount">3</span>
+  </div>
+
+  <div id="pendingEstimates">
+    <div class="estimate-card" id="est-C-2401">
+      <div class="estimate-header">
+        <div>
+          <span class="estimate-issue">AC Not Cooling</span>
+          <a class="estimate-id" href="complaint-detail.html?id=C-2401">C-2401</a>
+          <div class="estimate-provider">Submitted on 2024-02-21 &nbsp;|&nbsp; Provider: <span>CoolAir Services</span></div>
+        </div>
+        <div style="text-align:right;"><div class="estimate-cost">₹120<small>Estimated cost</small></div></div>
+      </div>
+      <div class="estimate-desc">Work Description: Replace cooling coil and check water pressure. Estimated 2–3 hours of work required.</div>
+      <div class="estimate-actions">
+        <button class="btn btn-success" onclick="approveEst('C-2401')">✅ Approve Estimate</button>
+        <button class="btn btn-danger"  onclick="rejectEst('C-2401')">❌ Reject Estimate</button>
+      </div>
+    </div>
+
+    <div class="estimate-card" id="est-C-2402">
+      <div class="estimate-header">
+        <div>
+          <span class="estimate-issue">Ceiling Fan Not Working</span>
+          <a class="estimate-id" href="complaint-detail.html?id=C-2402">C-2402</a>
+          <div class="estimate-provider">Submitted on 2024-02-23 &nbsp;|&nbsp; Provider: <span>UrbanFix Electrical</span></div>
+        </div>
+        <div style="text-align:right;"><div class="estimate-cost">₹85<small>Estimated cost</small></div></div>
+      </div>
+      <div class="estimate-desc">Work Description: Replace faulty capacitor and test motor. Parts included in estimate.</div>
+      <div class="estimate-actions">
+        <button class="btn btn-success" onclick="approveEst('C-2402')">✅ Approve Estimate</button>
+        <button class="btn btn-danger"  onclick="rejectEst('C-2402')">❌ Reject Estimate</button>
+      </div>
+    </div>
+
+    <div class="estimate-card" id="est-C-2403">
+      <div class="estimate-header">
+        <div>
+          <span class="estimate-issue">Lift Maintenance</span>
+          <a class="estimate-id" href="complaint-detail.html?id=C-2403">C-2403</a>
+          <div class="estimate-provider">Submitted on 2024-02-26 &nbsp;|&nbsp; Provider: <span>Urban Lift Repairs</span></div>
+        </div>
+        <div style="text-align:right;"><div class="estimate-cost">₹450<small>Estimated cost</small></div></div>
+      </div>
+      <div class="estimate-desc">Work Description: Annual maintenance service and safety inspection. Includes lubrication, cable check, and safety testing.</div>
+      <div class="estimate-actions">
+        <button class="btn btn-success" onclick="approveEst('C-2403')">✅ Approve Estimate</button>
+        <button class="btn btn-danger"  onclick="rejectEst('C-2403')">❌ Reject Estimate</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estimate History -->
+  <div style="margin-top:28px;">
+    <div style="font-size:14px;font-weight:700;margin-bottom:14px;">📜 Estimate History</div>
+
+    <!-- Tabs for history -->
+    <div class="tabs-container">
+      <div class="tabs">
+        <button class="tab active" onclick="setHistTab('all',this)">All History</button>
+        <button class="tab" onclick="setHistTab('approved',this)">✅ Approved</button>
+        <button class="tab" onclick="setHistTab('rejected',this)">❌ Rejected</button>
+      </div>
+      <div style="padding:16px;overflow-x:auto;">
+        <table class="data-table" id="historyTable">
+          <thead>
+            <tr>
+              <th>Complaint ID</th><th>Issue</th><th>Provider</th>
+              <th>Estimated Cost</th><th>Submitted On</th><th>Decision</th><th>Date</th><th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="logout-modal">
+    <div class="logout-icon">👋</div><h3>Log Out?</h3>
+    <p>Are you sure you want to log out of PropSync?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="hideModal('logoutModal')">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="doLogout()">Yes, Log Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/app.js"></script>
+<script>
+const estimateHistory = [
+  {id:'C-2395',issue:'Sink Blockage',provider:'QuickFix Plumbing',cost:'₹800',submitted:'2024-02-27',decision:'approved',decisionDate:'2024-02-27'},
+  {id:'C-2390',issue:'AC Repair',provider:'CoolAir Services',cost:'₹2,200',submitted:'2024-02-15',decision:'approved',decisionDate:'2024-02-16'},
+  {id:'C-2385',issue:'Lift Maintenance',provider:'Urban Lift Repairs',cost:'₹4,500',submitted:'2024-02-11',decision:'approved',decisionDate:'2024-02-12'},
+  {id:'C-2380',issue:'Paint Work',provider:'ProPaint Co.',cost:'₹6,000',submitted:'2024-02-05',decision:'rejected',decisionDate:'2024-02-06'},
+  {id:'C-2375',issue:'Electrical Issue',provider:'UrbanFix Electrical',cost:'₹3,200',submitted:'2024-01-28',decision:'rejected',decisionDate:'2024-01-29'},
+];
+
+let currentHistTab = 'all';
+const actionablePending = {'C-2401':true,'C-2402':true,'C-2403':true};
+let pendingCount = 3;
+
+function setHistTab(tab, el) {
+  currentHistTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory();
+}
+
+function renderHistory() {
+  const data = estimateHistory.filter(e => currentHistTab === 'all' || e.decision === currentHistTab);
+  document.getElementById('historyBody').innerHTML = data.map(e => `
+    <tr>
+      <td><a class="complaint-link" href="complaint-detail.html?id=${e.id}">${e.id}</a></td>
+      <td>${e.issue}</td>
+      <td>${e.provider}</td>
+      <td style="font-weight:700;color:#16A34A;">${e.cost}</td>
+      <td>${e.submitted}</td>
+      <td>${e.decision==='approved'
+        ? '<span class="badge badge-approved">✅ Approved</span>'
+        : '<span class="badge badge-rejected">❌ Rejected</span>'}</td>
+      <td>${e.decisionDate}</td>
+      <td><a class="complaint-link" href="complaint-detail.html?id=${e.id}">View Details</a></td>
+    </tr>`).join('') || `<tr><td colspan="8" style="text-align:center;padding:24px;color:#9CA3AF;">No history found</td></tr>`;
+}
+
+function approveEst(id) {
+  const card = document.getElementById('est-'+id);
+  if (!card) return;
+  card.style.transition = 'opacity .3s';
+  card.style.opacity = '0';
+  setTimeout(() => {
+    card.remove();
+    pendingCount--;
+    document.getElementById('pendingCount').textContent = pendingCount;
+    // Add to history
+    estimateHistory.unshift({id, issue:'Work Item', provider:'Provider', cost:'—', submitted: new Date().toISOString().split('T')[0], decision:'approved', decisionDate: new Date().toISOString().split('T')[0]});
+    renderHistory();
+    addNotification('✅','#DCFCE7','Estimate Approved',`Estimate for ${id} has been approved`);
+  }, 300);
+  showToast(`✅ Estimate for ${id} approved!`);
+}
+function rejectEst(id) {
+  const card = document.getElementById('est-'+id);
+  if (!card) return;
+  card.style.transition = 'opacity .3s';
+  card.style.opacity = '0';
+  setTimeout(() => {
+    card.remove();
+    pendingCount--;
+    document.getElementById('pendingCount').textContent = pendingCount;
+    estimateHistory.unshift({id, issue:'Work Item', provider:'Provider', cost:'—', submitted: new Date().toISOString().split('T')[0], decision:'rejected', decisionDate: new Date().toISOString().split('T')[0]});
+    renderHistory();
+    addNotification('❌','#FEE2E2','Estimate Rejected',`Estimate for ${id} has been rejected`);
+  }, 300);
+  showToast(`Estimate for ${id} rejected.`);
+}
+
+document.addEventListener('DOMContentLoaded', renderHistory);
+</script>
+</body>
+</html>
