@@ -306,12 +306,12 @@ function initShell(activePage) {
   const unread  = getUnreadCount();
 
   const pages = {
-    dashboard:     { label:'Dashboard',            href:'index.html' },
-    complaints:    { label:'Available Complaints', href:'available-complaints.html' },
-    tasks:         { label:'Assigned Tasks',        href:'assigned-tasks.html' },
-    ratings:       { label:'Ratings & Feedback',   href:'ratings-feedback.html' },
-    notifications: { label:'Notifications',         href:'notifications.html' },
-    profile:       { label:'Profile',               href:'profile.html' },
+    dashboard:     { label:'Dashboard',            href:'service_provider/index.html' },
+    complaints:    { label:'Available Complaints', href:'service_provider/available-complaints.html' },
+    tasks:         { label:'Assigned Tasks',        href:'service_provider/assigned-tasks.html' },
+    ratings:       { label:'Ratings & Feedback',   href:'service_provider/ratings-feedback.html' },
+    notifications: { label:'Notifications',         href:'service_provider/notifications.html' },
+    profile:       { label:'Profile',               href:'service_provider/profile.html' },
   };
 
   const navIcons = {
@@ -365,12 +365,12 @@ function initShell(activePage) {
             <span style="display:none;font-size:1.1rem;font-weight:800;color:#293543;">PropSync</span>
           </div>
           <div class="header-right">
-            <button class="notif-btn" onclick="location.href='notifications.html'" title="Notifications" style="position:relative;">
+            <button class="notif-btn" onclick="location.href='service_provider/notifications.html'" title="Notifications" style="position:relative;">
               <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               ${unread > 0 ? `<span class="notif-dot"></span>` : ''}
             </button>
-            <button class="profile-btn" onclick="location.href='profile.html'" title="Profile">
-              <span class="profile-btn-name">${initials}</span>
+            <button class="profile-btn" onclick="location.href='service_provider/profile.html'" title="Profile">
+              <span class="profile-btn-name">SAI</span>
               <span class="profile-avatar">
                 <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </span>
