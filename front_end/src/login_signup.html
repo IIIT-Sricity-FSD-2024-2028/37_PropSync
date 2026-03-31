@@ -5,8 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PropSync</title>
     <link rel="icon" type="image/png" href="./public/favicon.png" />
+    <link rel="stylesheet" href="./css/login_signup.css" />
   </head>
   <body>
-    <!--Login page and Signup Page code here-->
+    <div id="home_icon">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+      >
+        <path
+          d="M15 36.6666V20H25V36.6666M5 15L20 3.33331L35 15V33.3333C35 34.2174 34.6488 35.0652 34.0237 35.6903C33.3986 36.3155 32.5507 36.6666 31.6667 36.6666H8.33333C7.44928 36.6666 6.60143 36.3155 5.97631 35.6903C5.35119 35.0652 5 34.2174 5 33.3333V15Z"
+          stroke="#F3F3F3"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+
+    <div class="center_box">
+      <div class="content">
+        <h1 class="heading1">PROPSYNC</h1>
+        <h2 class="heading2">Log In</h2>
+        <div id="login_form">
+          <div id="loginError" class="error-message"></div>
+          <p>Select Your Role:</p>
+
+          <div class="roles">
+            <div class="role">
+              <p>Owner</p>
+            </div>
+            <div class="role">
+              <p>Service Provider</p>
+            </div>
+            <div class="role">
+              <p>Maintenance Manager</p>
+            </div>
+            <div class="role">
+              <p>Administrator</p>
+            </div>
+          </div>
+          <form>
+            <input type="email" id="log_email" placeholder="Email address" />
+            <input type="password" id="log_pass" placeholder="Password" />
+            <button class="btn" type="button">Log In</button>
+          </form>
+        </div>
+      </div>
+      <div class="content hidden">
+        <h1 class="heading1">PROPSYNC</h1>
+        <h2 class="heading2">Sign Up</h2>
+        <div id="signup_form">
+          <p>Select Your Role:</p>
+
+          <div class="s_roles">
+            <div class="s_role">
+              <p>Owner</p>
+            </div>
+            <div class="s_role">
+              <p>Service Provider</p>
+            </div>
+            <div class="s_role">
+              <p>Maintenance Manager</p>
+            </div>
+            <div class="s_role">
+              <p>Administrator</p>
+            </div>
+          </div>
+        </div>
+        <div id="Owner_form" class="hidden">
+          <input type="email" placeholder="Email Address" />
+          <input type="password" placeholder="Password" />
+          <input type="text" id="propertyUnit" placeholder="Property unit" />
+          <input type="text" id="communityName" placeholder="Community name" />
+          <button class="btn" id="signupBtn">Sign Up</button>
+          <a class="signupBack">← Back</a>
+        </div>
+        <div id="SP_form" class="hidden">
+          <input type="email" placeholder="Email Address" />
+          <input type="password" placeholder="Password" />
+          <button class="btn" id="signupBtn">Sign Up</button>
+          <a class="signupBack">← Back</a>
+        </div>
+        <div id="MMA_form" class="hidden">
+          <input type="email" placeholder="Email Address" />
+          <input type="password" placeholder="Password" />
+          <input type="text" placeholder="Community name" />
+          <button class="btn" id="signupBtn">Sign Up</button>
+          <a class="signupBack">← Back</a>
+        </div>
+      </div>
+      <div>
+        <div class="box">
+          <h2 class="boxTitle">New to PropSync?</h2>
+          <p class="boxText">
+            Create an account today and start your journey with PropSync now!
+          </p>
+          <button class="toggleBtn">Sign Up</button>
+        </div>
+        <div class="box hidden">
+          <h2 class="boxTitle">Already have account?</h2>
+          <p class="boxText">
+            To keep connected with your service requests and property, please
+            login with your personal info.
+          </p>
+          <button class="toggleBtn">Log In</button>
+        </div>
+      </div>
+    </div>
+    <script src="./js/login_signup.js"></script>
   </body>
 </html>

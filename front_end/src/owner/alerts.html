@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PropSync</title>
+    <title>PropSync - Alerts</title>
     <link rel="icon" type="image/png" href="../../public/favicon.png" />
     <link rel="stylesheet" href="../css/owner.css" />
   </head>
@@ -17,7 +17,7 @@
       </div>
 
       <ul>
-        <a class="nav-item active" href="#">
+        <a class="nav-item" href="./dashboard.html">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -78,7 +78,7 @@
             /></svg
           >Payment History
         </a>
-        <a class="nav-item" href="./alerts.html">
+        <a class="nav-item active" href="./alerts.html">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="24"
@@ -184,283 +184,127 @@
       </div>
     </header>
 
-    <!-- ===== MAIN ===== -->
-    <div class="container">
-      <h1>Welcome Back, John Doe!</h1>
-      <p class="sub">Unit A-304 | CreekSide Community</p>
-
-      <!-- ===== STATS ===== -->
-      <div class="cards-container">
-        <div class="cards">
-          <div class="card-text">
-            <p>Your Complaints</p>
-            <h2>24</h2>
-          </div>
-
-          <div class="card-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="lucide lucide-clipboard-list w-6 h-6"
-            >
-              <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
-              <path
-                d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
-              ></path>
-              <path d="M12 11h4"></path>
-              <path d="M12 16h4"></path>
-              <path d="M8 11h.01"></path>
-              <path d="M8 16h.01"></path>
-            </svg>
-          </div>
+    <!--Alerts and Notifications-->
+    <div class="alerts_main">
+      <!-- Header -->
+      <div class="alerts_header">
+        <div>
+          <h1>Notifications</h1>
+          <p>
+            View alerts and updates related to complaints and task deadlines.
+          </p>
         </div>
-        <div class="cards">
-          <div class="card-text">
-            <p>Complaints Approved</p>
-            <h2>8</h2>
-          </div>
 
-          <div class="card-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="lucide lucide-file-text w-6 h-6"
-            >
-              <path
-                d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
-              ></path>
-              <path d="M14 2v4a2 2 0 0 0 2 2h4"></path>
-              <path d="M10 9H8"></path>
-              <path d="M16 13H8"></path>
-              <path d="M16 17H8"></path>
-            </svg>
-          </div>
+        <div class="unread-badge">3 Unread</div>
+      </div>
+
+      <!-- Filters -->
+      <div class="filters">
+        <div class="filter-box">
+          <span>All Types</span>
         </div>
-        <div class="cards">
-          <div class="card-text">
-            <p>In Progress</p>
-            <h2>8</h2>
-          </div>
 
-          <div class="card-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="lucide lucide-trending-up w-6 h-6"
-            >
-              <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline>
-              <polyline points="16 7 22 7 22 13"></polyline>
-            </svg>
-          </div>
+        <div class="filter-box">
+          <span>All Notifications</span>
         </div>
-        <div class="cards">
-          <div class="card-text">
-            <p>Resolved</p>
-            <h2>8</h2>
-          </div>
 
-          <div class="card-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="lucide lucide-circle-check-big w-6 h-6"
-            >
-              <path d="M21.801 10A10 10 0 1 1 17 3.335"></path>
-              <path d="m9 11 3 3L22 4"></path>
-            </svg>
-          </div>
+        <div class="filter-actions">
+          <button class="btn green">✓ Mark All Read</button>
+
+          <button class="btn outline">🗑 Clear All</button>
         </div>
       </div>
 
-      <!-- ===== MID SECTION ===== -->
-      <div class="mid">
-        <!-- Notifications : 3/4 width -->
-        <div class="box box-large">
-          <div class="box-header">
-            <h3>
-              Notifications
-              <span class="badge">3</span>
-            </h3>
-            <a href="./alerts.html" class="view-all">View All →</a>
+      <!-- Notifications List -->
+      <div class="notifications">
+        <!-- Notification 1 -->
+        <div class="notification_card">
+          <div class="icon green">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-bell w-5 h-5 text-[#42a443]"
+            >
+              <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
+              <path
+                d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+              ></path>
+            </svg>
           </div>
 
-          <div class="item">
-            <div class="icon yellow">!</div>
-            <div>
-              <p class="title">New Complaint Assigned</p>
-              <p class="desc">Complaint C-2401 has been assigned to you</p>
-              <span class="time">5 minutes ago</span>
-            </div>
-          </div>
+          <div class="notifi_content">
+            <div class="notifi_item">
+              <h3>
+                New Complaint Available
+                <span class="tag new">New</span>
+              </h3>
 
-          <div class="item">
-            <div class="icon green">✓</div>
-            <div>
-              <p class="title">Estimate Approved</p>
-              <p class="desc">Your estimate for C-2395 has been approved</p>
-              <span class="time">1 day ago</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Payment History : 1/4 width -->
-        <div class="box box-small">
-          <div class="box-header">
-            <h3>Payment History</h3>
-            <a href="./payment-history.html" class="view-all">View All →</a>
-          </div>
-
-          <div class="item">
-            <div class="icon yellow">!</div>
-            <div>
-              <p class="title">March 30th</p>
-              <p class="desc">Monthly Maintenance cost pending!!</p>
-            </div>
-          </div>
-
-          <div class="item">
-            <div class="icon green">✓</div>
-            <div>
-              <p class="title">February 28th</p>
-              <p class="desc">Successfully paid monthly maintenance cost.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ===== COMPLAINTS ===== -->
-      <div class="complaints-container">
-        <!-- Header -->
-        <div class="complaints-header">
-          <h2>Community Complaints</h2>
-
-          <button
-            class="new-complaint-btn"
-            onclick="window.location.href = './new-complaint.html'"
-          >
-            + New Complaint
-          </button>
-        </div>
-
-        <!-- Search + Filter -->
-        <div class="complaints-controls">
-          <input
-            type="text"
-            placeholder="Search complaints..."
-            class="search-box"
-          />
-
-          <select class="status-filter">
-            <option>All Status</option>
-            <option>In Progress</option>
-            <option>Approved</option>
-            <option>Resolved</option>
-            <option>Waiting</option>
-          </select>
-        </div>
-
-        <!-- Complaint Card 1 -->
-        <div class="complaint-card">
-          <div class="card-left">
-            <div class="card-title-row">
-              <h3>Leaking Faucet in Play area</h3>
+              <span class="time"> 2 hours ago </span>
             </div>
 
-            <p class="description">
-              The Faucet in play area has been leaking for the past two days.
-              Water drips constantly even when fully closed.
+            <span class="badge"> New Complaint </span>
+
+            <p>
+              A new plumbing complaint has been posted in your category.
+              Complaint C-2405: Burst Pipe in Basement.
             </p>
 
-            <div class="tag-row">
-              <span class="tag green"> Unit: A-304 </span>
-              <span class="tag blue"> Category: Plumbing </span>
+            <div class="actions">
+              <span class="mark">✓ Mark as Read</span>
+              <span class="delete">🗑 Delete</span>
             </div>
           </div>
-          <div class="status in-progress">In Progress</div>
         </div>
 
-        <!-- Complaint Card 2 -->
-        <div class="complaint-card">
-          <div class="card-left">
-            <h3>Broken Elevator</h3>
+        <!-- Notification 2 -->
+        <div class="notification_card">
+          <div class="icon red">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="lucide lucide-clock w-5 h-5 text-[#DC2626]"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
 
-            <p class="description">
-              Elevator in Building B is not working. Stuck on the 5th floor.
+          <div class="notifi_content">
+            <div class="notifi_item">
+              <h3>
+                Deadline Approaching
+                <span class="tag new">New</span>
+              </h3>
+
+              <span class="time"> 4 hours ago </span>
+            </div>
+
+            <span class="badge"> Deadline </span>
+
+            <p>
+              The deadline for complaint C-2402 is approaching. Due date: Mar 9,
+              2026.
             </p>
 
-            <div class="tag-row">
-              <span class="tag green"> Unit: B-201 </span>
-              <span class="tag blue"> Category: Elevator </span>
+            <div class="actions">
+              <span class="mark">✓ Mark as Read</span>
+              <span class="delete">🗑 Delete</span>
             </div>
           </div>
-          <div class="status approved">Approved</div>
-        </div>
-
-        <!-- Complaint Card 3 -->
-        <div class="complaint-card">
-          <div class="card-left">
-            <div class="card-title-row">
-              <h3>Garbage Overflow</h3>
-            </div>
-
-            <p class="description">
-              Severe garbage flow near the common area leading to bad smell and
-              mosquitoes everywhere. Collect it and clean it as soon as
-              possible.
-            </p>
-
-            <div class="tag-row">
-              <span class="tag green"> Unit: A-304 </span>
-              <span class="tag blue"> Category: Clean </span>
-            </div>
-          </div>
-          <div class="status resolved">Resolved</div>
-        </div>
-
-        <!-- Complaint Card 4 -->
-        <div class="complaint-card">
-          <div class="card-left">
-            <h3>Parking Lot Light Not Working</h3>
-
-            <p class="description">
-              The light near parking spot C-25 has been out for a week. Safety
-              concern at night.
-            </p>
-
-            <div class="tag-row">
-              <span class="tag green"> Unit: C-105 </span>
-              <span class="tag blue"> Category: Electrical </span>
-            </div>
-          </div>
-          <div class="status waiting">Waiting</div>
         </div>
       </div>
     </div>
