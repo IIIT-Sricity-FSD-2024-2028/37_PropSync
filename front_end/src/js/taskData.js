@@ -221,7 +221,7 @@ function getProfile() {
   return JSON.parse(localStorage.getItem(PROFILE_KEY));
 }
 function saveProfile(data) {
-  const parts = (data.name || '').trim().split(/\sai+/);
+  const parts = (data.name || '').trim().split(/\s+/);
   data.initials = parts.map(p => p[0]).join('').toUpperCase().slice(0,2) || 'U';
   localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
 }
@@ -306,12 +306,12 @@ function initShell(activePage) {
   const unread  = getUnreadCount();
 
   const pages = {
-    dashboard:     { label:'Dashboard',            href:'service_provider/index.html' },
-    complaints:    { label:'Available Complaints', href:'service_provider/available-complaints.html' },
-    tasks:         { label:'Assigned Tasks',        href:'service_provider/assigned-tasks.html' },
-    ratings:       { label:'Ratings & Feedback',   href:'service_provider/ratings-feedback.html' },
-    notifications: { label:'Notifications',         href:'service_provider/notifications.html' },
-    profile:       { label:'Profile',               href:'service_provider/profile.html' },
+    dashboard:     { label:'Dashboard',            href:'../service_provider/index.html' },
+    complaints:    { label:'Available Complaints', href:'../service_provider/available-complaints.html' },
+    tasks:         { label:'Assigned Tasks',        href:'../service_provider/assigned-tasks.html' },
+    ratings:       { label:'Ratings & Feedback',   href:'../service_provider/ratings-feedback.html' },
+    notifications: { label:'Notifications',         href:'../service_provider/notifications.html' },
+    profile:       { label:'Profile',               href:'../service_provider/profile.html' },
   };
 
   const navIcons = {
@@ -338,7 +338,7 @@ function initShell(activePage) {
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-inner">
           <div class="sidebar-header">
-            <img src="assets/logo.png" alt="PropSync" class="sidebar-logo"
+            <img src="../../public/image.png" alt="PropSync" class="sidebar-logo"
               onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
             <span style="display:none;color:#fff;font-size:1.2rem;font-weight:800;letter-spacing:-0.5px;">PropSync</span>
             <button class="sidebar-close-btn" id="sidebar-close">
@@ -360,16 +360,16 @@ function initShell(activePage) {
             <button class="menu-btn" id="menu-btn">
               <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18" stroke-linecap="round"/></svg>
             </button>
-            <img src="assets/logo.png" alt="PropSync" class="header-logo"
+            <img src="../../public/image.png" alt="PropSync" class="header-logo"
               onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
             <span style="display:none;font-size:1.1rem;font-weight:800;color:#293543;">PropSync</span>
           </div>
           <div class="header-right">
-            <button class="notif-btn" onclick="location.href='service_provider/notifications.html'" title="Notifications" style="position:relative;">
+            <button class="notif-btn" onclick="location.href='../service_provider/notifications.html'" title="Notifications" style="position:relative;">
               <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
               ${unread > 0 ? `<span class="notif-dot"></span>` : ''}
             </button>
-            <button class="profile-btn" onclick="location.href='service_provider/profile.html'" title="Profile">
+            <button class="profile-btn" onclick="location.href='../service_provider/profile.html'" title="Profile">
               <span class="profile-btn-name">SAI</span>
               <span class="profile-avatar">
                 <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -397,7 +397,7 @@ function initShell(activePage) {
   // Logout
   document.getElementById('logout-btn').addEventListener('click', () => {
     if (confirm('Are you sure you want to log out?')) {
-      location.href = 'index.html';
+      location.href = '../index.html';
     }
   });
 }
