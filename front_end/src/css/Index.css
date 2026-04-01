@@ -105,91 +105,40 @@ a.btn.active,
     .features {flex-direction: column;gap: 10px;}
 }
 
-.intro{display:flex;align-items:center;gap:60px}
-.intro-text{width:50%;padding-left:60px}
-.intro-text h2{font-size:32px;color:#1c2947;line-height:1.4;margin-bottom:15px;margin-top: 20px;}
-.intro-text p{font-size:19px;line-height:1.6;color:#555;margin-bottom:23px;}
-.btn {
+.intro {
+  display: flex;
+  justify-content: center; /* center horizontally */
+  align-items: center;     /* center vertically if needed */
+  flex-direction: column;  /* stack heading, text, and button vertically */
+  gap: 20px;               /* spacing between elements */
+  padding: 60px 20px;      /* spacing from top/bottom */
+  text-align: center;      /* center text inside */
+}
+
+.intro-text h2 {
+  font-size: 32px;
+  color: #1c2947;
+  line-height: 1.4;
+  margin: 0;
+  margin-bottom: 30px;  /* remove old margins */
+}
+
+.intro-text p {
+  font-size: 19px;
+  line-height: 1.6;
+  color: #555;
+  margin-bottom: 30px;
+}
+
+.intro-text .btn {
   background: #34A853;
   color: #fff;
   border-radius: 25px;
-  padding: 12px 28px;
+  padding: 12px 36px;
   border: 1px solid #34A853;
   font-weight: bold;
   text-decoration: none;
-  margin-left: 100px;
-}
-
-.intro-image-container {
-  flex: 1.2; /* Slightly wider than text for visual balance */
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* The "Laptop Screen" Frame */
-.dashboard-window {
-  width: 100%;
-  aspect-ratio: 16 / 10; /* Perfect dashboard ratio */
-  max-width: 600px;
-  overflow: hidden;
-  border-radius: 12px;
-  background: #f8f9fa;
-  box-shadow: 0 30px 60px rgba(0,0,0,0.12);
-  border: 1px solid #e0e0e0;
-  position: relative;
-}
-
-/* Decorative Browser Dots (Red, Yellow, Green) */
-.browser-dot-bar {
-  height: 25px;
-  background: #f1f1f1;
-  display: flex;
-  align-items: center;
-  padding-left: 12px;
-  gap: 6px;
-  border-bottom: 1px solid #e0e0e0;
-  z-index: 2;
-  position: relative;
-}
-
-.browser-dot-bar span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #ddd;
-}
-
-/* The Scrolling Track */
-.dashboard-track {
-  display: flex;
-  flex-direction: column;
-  /* Adjust "10s" to make it faster or slower */
-  animation: verticalScroll 10s cubic-bezier(0.645, 0.045, 0.355, 1) infinite;
-}
-
-.dashboard-track img {
-  width: 100%;
-  aspect-ratio: 16 / 10; 
-  object-fit: cover;
-}
-
-/* Animation Logic: 3 Images + 1 Loop Anchor */
-@keyframes verticalScroll {
-  0%, 25% { transform: translateY(0); }             /* Show Image 1 */
-  33%, 58% { transform: translateY(-100%); }        /* Show Image 2 */
-  66%, 91% { transform: translateY(-200%); }        /* Show Image 3 */
-  100% { transform: translateY(-300%); }            /* Reset to Top */
-}
-
-/* Responsive adjustment */
-@media (max-width: 968px) {
-  .intro {
-    flex-direction: column;
-    text-align: center;
-    padding: 40px 5%;
-  }
-  .intro-text { max-width: 100%; }
-  .intro-image-container { justify-content: center; width: 100%; }
+  margin: 0 auto; /* center button */
 }
 
 
@@ -221,7 +170,6 @@ a.btn.active,
         height: 300px;
     }
 }
-
 .section{margin-top:-40px;text-align:center;margin-bottom:15px}
 .section h2{font-size:32px;color:#1c2947;margin-bottom :50px;line-height:1.4;margin-top:80px;}
 .section p{font-size:19px;margin-top:-30px;color: #555;}

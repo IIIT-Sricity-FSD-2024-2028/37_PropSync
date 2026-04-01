@@ -9,15 +9,10 @@
     border-bottom: 2px solid #e6f4ea;
   }
   .header-left { display: flex; align-items: center; gap: 20px; }
-
   :root { --primary-green: #28a745; --notif-red: #ff4d4d; }
-
   .menu-trigger { font-size: 22px; color: var(--primary-green); cursor: pointer; }
-
   .logo-img { height: 100px; width: auto; object-fit: contain; }
-
   .header-right { display: flex; align-items: center; gap: 25px; }
-
 .badge {
   display: none !important;
 }
