@@ -66,6 +66,12 @@ function loadComplaints(data) {
     const div = document.createElement("div");
     div.className = "complaint-card";
 
+    // Make card clickable — navigate to detail page with complaint id
+    div.style.cursor = "pointer";
+    div.addEventListener("click", () => {
+      window.location.href = `./complaint_details.html?id=${c.id}`;
+    });
+
     let statusClass = "pending";
 
     switch ((c.status || "").toLowerCase()) {
@@ -289,9 +295,6 @@ function loadPayments(data) {
               </defs></svg
             >
           Payment confirmation uploaded
-          <a href="${p.receipt}" target="_blank">
-            View
-          </a>
         </p>
       `
       }
@@ -506,17 +509,189 @@ function saveNotifications() {
   localStorage.setItem("notifications", JSON.stringify(notifications));
 }
 
-//Complaint details Page
-const complaintCards = comp_container.querySelectorAll(".complaint-card");
-console.log(complaintCards);
-complaintCards.forEach((complaint) => {
-  complaint.addEventListener("click", () => {
-    window.location.href = "../owner/complaint_details.html";
-    const values = document.querySelectorAll("info-val");
-    values[0] = complaint.title;
-    values[1] = complaint.category;
-    values[2] = complaint.id;
-    values[3] = complaint.issuedBy;
-    values[4] = complaint.status;
+// ─────────────────────────────────────────────
+// Complaint Details Page — reads ?id= from URL
+// ─────────────────────────────────────────────
+async function loadComplaintDetails() {
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+
+  if (!id) return;
+
+  // Load all complaints (JSON + localStorage)
+  let allComplaints = [];
+  try {
+    const response = await fetch("../../data/complaints.json");
+    const jsonComplaints = await response.json();
+    const localComplaints =
+      JSON.parse(localStorage.getItem("newComplaint")) || [];
+    allComplaints = [...jsonComplaints, ...localComplaints];
+  } catch {
+    allComplaints = JSON.parse(localStorage.getItem("newComplaint")) || [];
+  }
+
+  // Match by id (loose comparison handles both string and number ids)
+  const c = allComplaints.find((x) => String(x.id) === String(id));
+
+  if (!c) {
+    document.querySelector(".main").innerHTML =
+      `<p style="padding:2rem;color:red;">Complaint not found.</p>`;
+    return;
+  }
+
+  // ── Helper: map status → stepper step index (1-based) ──
+  const statusStepMap = {
+    pending: 1,
+    approved: 2,
+    assigned: 3,
+    "estimating cost": 4,
+    "in progress": 5,
+    resolved: 6,
+  };
+  const currentStep = statusStepMap[(c.status || "").toLowerCase()] || 1;
+
+  // ── Stepper ──
+  const stepCircles = document.querySelectorAll(".step-circle");
+  const stepConnectors = document.querySelectorAll(".step-connector");
+  const stepLabels = document.querySelectorAll(".step-label");
+
+  stepCircles.forEach((el, i) => {
+    el.classList.remove("done", "current");
+    stepLabels[i]?.classList.remove("active");
+    if (i + 1 < currentStep) {
+      el.classList.add("done");
+      el.textContent = "✓";
+      stepLabels[i]?.classList.add("active");
+      if (stepConnectors[i]) stepConnectors[i].classList.add("done");
+    } else if (i + 1 === currentStep) {
+      el.classList.add("current");
+      el.textContent = i + 1;
+      stepLabels[i]?.classList.add("active");
+    } else {
+      el.textContent = i + 1;
+    }
   });
-});
+
+  // ── Complaint Information card ──
+  const set = (id, val) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  set("detail-title", c.title || "—");
+  set("detail-category", c.category || "—");
+  set("detail-id", `C-${c.id}`);
+  set("detail-issuedby", c.issuedBy || "—");
+
+  const workStatusMap = {
+    pending: "Waiting for Maintenance Manager to approve…",
+    approved: "Complaint approved. Waiting for provider assignment.",
+    assigned: `Assigned to: ${c.assignedTo || "a service provider"}`,
+    "estimating cost": "Service provider is submitting cost estimate.",
+    "in progress": "Work is currently in progress.",
+    resolved: "Work has been completed and resolved.",
+  };
+  set(
+    "detail-workstatus",
+    workStatusMap[(c.status || "").toLowerCase()] || c.status || "—",
+  );
+
+  // Status badge
+  set("detail-status-text", c.status || "pending");
+  const badge = document.getElementById("detail-status-badge");
+  if (badge) {
+    const statusColorMap = {
+      pending:
+        "background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,.25)",
+      approved:
+        "background:var(--green-lt);color:var(--green);border-color:rgba(22,163,74,.25)",
+      assigned:
+        "background:var(--blue-lt);color:var(--blue);border-color:rgba(29,78,216,.25)",
+      "estimating cost":
+        "background:#f5f3ff;color:#7c3aed;border-color:rgba(124,58,237,.25)",
+      "in progress":
+        "background:var(--teal-lt);color:var(--teal);border-color:rgba(13,148,136,.25)",
+      resolved:
+        "background:#f3f4f6;color:#374151;border-color:rgba(55,65,81,.25)",
+    };
+    badge.style.cssText = statusColorMap[(c.status || "").toLowerCase()] || "";
+  }
+
+  // ── Lifecycle list ──
+  const lcItems = document.querySelectorAll(".lc-item");
+  const lifecycleStages = [
+    { name: "Complaint Submitted", date: c.submittedOn || null },
+    { name: "Complaint Approved", date: null },
+    { name: "Service Provider Assigned", date: null },
+    { name: "Estimate Submitted", date: null },
+    { name: "Estimate Approved", date: null },
+    { name: "Work In Progress", date: null },
+    { name: "Work Completed", date: null },
+    { name: "Payment Processed", date: null },
+  ];
+
+  lcItems.forEach((item, i) => {
+    const dot = item.querySelector(".lc-dot");
+    const nameEl = item.querySelector(".lc-name");
+    const dateEl = item.querySelector(".lc-date");
+    const existingPill = nameEl?.querySelector(".cur-pill");
+    if (existingPill) existingPill.remove();
+
+    dot?.classList.remove("done", "cur");
+    nameEl?.classList.remove("dim");
+
+    const stageStep = i + 1;
+    if (stageStep < currentStep) {
+      dot?.classList.add("done");
+      if (nameEl)
+        nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
+    } else if (stageStep === currentStep) {
+      dot?.classList.add("cur");
+      if (nameEl) {
+        nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
+        const pill = document.createElement("span");
+        pill.className = "cur-pill";
+        pill.textContent = "Current";
+        nameEl.appendChild(pill);
+      }
+      if (dateEl && lifecycleStages[i]?.date)
+        dateEl.textContent = lifecycleStages[i].date;
+    } else {
+      if (nameEl) {
+        nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
+        nameEl.classList.add("dim");
+      }
+      if (dateEl) dateEl.textContent = "";
+    }
+  });
+
+  // ── Description ──
+  const descEl = document.querySelector(".desc-text");
+  if (descEl) descEl.textContent = c.caption || "No description provided.";
+
+  // ── Photo ──
+  const photoWrap = document.querySelector(".photo-wrap");
+  if (photoWrap) {
+    if (c.image) {
+      const img = photoWrap.querySelector("img");
+      if (img) img.src = c.image;
+      const cap = photoWrap.querySelector(".photo-caption strong");
+      const capSmall = photoWrap.querySelector(".photo-caption small");
+      if (cap) cap.textContent = c.title;
+      if (capSmall)
+        capSmall.textContent = `Submitted by ${c.issuedBy || "resident"}`;
+    } else {
+      photoWrap.innerHTML = `<p style="padding:2rem;text-align:center;color:var(--muted);">No photo attached to this complaint.</p>`;
+    }
+  }
+
+  // ── Page title ──
+  document.title = `PropSync – ${c.title}`;
+  const hdrTitle = document.querySelector(".hdr-title");
+  if (hdrTitle) hdrTitle.textContent = c.title;
+}
+
+// Run on detail page (only if the stepper element exists)
+if (document.querySelector(".stepper")) {
+  loadComplaintDetails();
+}
