@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>PropSync – Assign Service Provider</title>
+    <link rel="stylesheet" href="../css/maintenance_manager.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+
+  <body class="has-sidebar">
+    <div class="sidebar-overlay"></div>
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-left">
+          <img
+            src="../../public/image.png"
+            alt="Logo"
+            class="sidebar-logo-img"
+          />
+        </div>
+        <button class="sidebar-close" title="Close menu">✕</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-link" href="dashboard.html"
+          ><span class="nav-icon">🏠</span> Dashboard</a
+        >
+        <a class="nav-link" href="complaints.html"
+          ><span class="nav-icon">📋</span> New Complaint
+          <span
+            class="nav-badge notif-complaints-count"
+            style="display: none"
+          ></span
+        ></a>
+        <a class="nav-link" href="approved-complaints.html"
+          ><span class="nav-icon">✅</span> Approved Complaints</a
+        >
+        <div class="nav-divider"></div>
+        <a class="nav-link" href="service-estimate.html"
+          ><span class="nav-icon">📄</span> Service Estimate</a
+        >
+        <a class="nav-link" href="service-bills.html"
+          ><span class="nav-icon">💰</span> Payment History</a
+        >
+        <div class="nav-divider"></div>
+        <a class="nav-link" href="provider-performance.html"
+          ><span class="nav-icon">🏆</span> Provider Performance</a
+        >
+        <div class="nav-divider"></div>
+        <a class="nav-link" href="notification.html"
+          ><span class="nav-icon">🔔</span> Alerts &amp; Notifications
+          <span class="nav-badge notif-badge-count" style="display: none"></span
+        ></a>
+        <a class="nav-link" href="profile.html"
+          ><span class="nav-icon">👤</span> Profile</a
+        >
+      </nav>
+      <div class="sidebar-footer">
+        <button class="sidebar-logout" onclick="confirmLogout()">
+          → &nbsp;Logout
+        </button>
+      </div>
+    </aside>
+
+    <div class="page-wrapper">
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="hamburger" title="Open menu">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="topbar-logo">
+            <span class="topbar-logo-text">PropSync</span>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div
+            class="topbar-icon-btn"
+            onclick="location.href = 'notification.html'"
+            title="Notifications"
+            style="
+              position: relative;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              width: 40px;
+              height: 40px;
+              border-radius: 50%;
+              background: transparent;
+              cursor: pointer;
+            "
+          >
+            <i
+              class="fa-regular fa-bell"
+              style="font-size: 22px; color: #1a0dab"
+            ></i>
+            <div
+              class="topbar-notif-dot"
+              style="
+                position: absolute;
+                top: 6px;
+                right: 6px;
+                width: 8px;
+                height: 8px;
+                background: #dc2626;
+                border-radius: 50%;
+                border: 2px solid #fff;
+                display: none;
+              "
+            ></div>
+          </div>
+          <div
+            onclick="location.href = 'profile.html'"
+            title="Profile"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              cursor: pointer;
+            "
+          >
+            <div
+              style="
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                border: 2px solid #1a0dab;
+                background: transparent;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #1a0dab;
+                font-size: 18px;
+                flex-shrink: 0;
+              "
+            >
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <span style="font-weight: 500; font-size: 15px; color: #1a0dab"
+              >Maintenance Manager</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <a class="back-link" href="approved-complaints.html"
+        >← Back to Approved Complaints</a
+      >
+      <h2 style="font-size: 20px; font-weight: 700; margin-bottom: 20px">
+        🔧 Assign Service Provider
+      </h2>
+
+      <div class="card" style="margin-bottom: 20px">
+        <div
+          style="
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-bottom: 12px;
+          "
+        >
+          Complaint Details
+        </div>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+          "
+        >
+          <div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 3px">
+              Complaint ID
+            </div>
+            <div
+              style="
+                font-weight: 700;
+                font-family: &quot;DM Mono&quot;, monospace;
+              "
+              id="assignId"
+            >
+              —
+            </div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 3px">
+              Issue
+            </div>
+            <div style="font-weight: 600" id="assignIssue">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 3px">
+              Location
+            </div>
+            <div style="font-weight: 600" id="assignLocation">—</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #9ca3af; margin-bottom: 3px">
+              Priority
+            </div>
+            <div id="assignPriority">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px">
+          📅 Set Due Date
+        </div>
+        <input
+          type="date"
+          class="form-control"
+          style="max-width: 240px"
+          id="dueDate"
+        />
+      </div>
+
+      <div class="card" style="margin-bottom: 20px">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 10px">
+          📝 Notes for Provider (Optional)
+        </div>
+        <textarea
+          class="form-control"
+          id="providerNotes"
+          placeholder="Special instructions or notes for the assigned provider..."
+        ></textarea>
+      </div>
+
+      <div class="card" style="margin-bottom: 20px">
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+          "
+        >
+          <div style="font-size: 13px; font-weight: 700">
+            🏆 Recommended Service Providers
+          </div>
+          <div style="font-size: 12px; color: #6b7280">
+            Ranked by rating &amp; performance
+          </div>
+        </div>
+        <div id="providerList"></div>
+      </div>
+
+      <div style="display: flex; gap: 12px">
+        <button
+          class="btn btn-ghost"
+          onclick="location.href = 'approved-complaints.html'"
+        >
+          Cancel
+        </button>
+        <button
+          class="btn btn-primary"
+          style="flex: 1"
+          onclick="assignProvider()"
+        >
+          ✅ Confirm Assignment
+        </button>
+      </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal-overlay" id="successModal">
+      <div class="modal" style="text-align: center">
+        <div style="font-size: 52px; margin-bottom: 14px">✅</div>
+        <h3 style="font-size: 18px; font-weight: 700; margin-bottom: 8px">
+          Provider Assigned!
+        </h3>
+        <p
+          style="font-size: 13px; color: #6b7280; margin-bottom: 6px"
+          id="successMsg"
+        >
+          Provider assigned successfully.
+        </p>
+        <p style="font-size: 12px; color: #16a34a; font-weight: 600">
+          Notification sent to provider and resident.
+        </p>
+        <div style="margin-top: 20px; display: flex; gap: 10px">
+          <button
+            class="btn btn-outline"
+            style="flex: 1"
+            onclick="location.href = 'approved-complaints.html'"
+          >
+            Approved List
+          </button>
+          <button
+            class="btn btn-primary"
+            style="flex: 1"
+            onclick="location.href = 'complaints.html'"
+          >
+            All Complaints
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div class="modal-overlay" id="logoutModal">
+      <div class="logout-modal">
+        <div class="logout-icon">👋</div>
+        <h3>Log Out?</h3>
+        <p>Are you sure?</p>
+        <div style="display: flex; gap: 10px; justify-content: center">
+          <button
+            class="btn btn-ghost"
+            style="flex: 1"
+            onclick="hideModal('logoutModal')"
+          >
+            Cancel
+          </button>
+          <button class="btn btn-danger" style="flex: 1" onclick="doLogout()">
+            Yes, Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/maintenance_manager.js"></script>
+    <script>
+      let selectedProvider = null;
+
+      document.addEventListener("DOMContentLoaded", () => {
+        complaints = getComplaints();
+        const params = new URLSearchParams(location.search);
+        const id = params.get("id") || "C-2406";
+        const c =
+          complaints.find((x) => x.id === id) ||
+          complaints.find((x) => x.status === "Approved") ||
+          complaints[0];
+
+        document.getElementById("assignId").textContent = c.id;
+        document.getElementById("assignIssue").textContent = c.issue;
+        document.getElementById("assignLocation").textContent = c.location;
+        document.getElementById("assignPriority").innerHTML = priorityBadge(
+          c.priority,
+        );
+        document.getElementById("dueDate").min = new Date()
+          .toISOString()
+          .split("T")[0];
+
+        const medals = ["🥇", "🥈", "🥉", "#4", "#5", "#6", "#7", "#8"];
+        const medalBg = [
+          "#FEF3C7",
+          "#F3F4F6",
+          "#FEF3C7",
+          "#F0FDF4",
+          "#F0FDF4",
+          "#F0FDF4",
+          "#F0FDF4",
+          "#F0FDF4",
+        ];
+        const medalColor = [
+          "#D97706",
+          "#6B7280",
+          "#B45309",
+          "#16A34A",
+          "#16A34A",
+          "#16A34A",
+          "#16A34A",
+          "#16A34A",
+        ];
+
+        document.getElementById("providerList").innerHTML = providers
+          .map((p, i) => {
+            const barC =
+              p.onTime >= 90
+                ? "#16A34A"
+                : p.onTime >= 80
+                  ? "#D97706"
+                  : "#DC2626";
+            return `
+    <div class="provider-rec-card" id="pcard-${i}" onclick="selectProvider(${i})">
+      <div style="width:36px;height:36px;border-radius:10px;background:${medalBg[i]};color:${medalColor[i]};display:flex;align-items:center;justify-content:center;font-size:${i < 3 ? "18" : "13"}px;font-weight:800;flex-shrink:0;">${medals[i]}</div>
+      <div style="flex:1;">
+        <div class="provider-rec-name">${p.name} <span class="specialty-tag">${p.specialty}</span>${p.trend === "up" ? '<span style="font-size:10px;color:#16A34A;margin-left:5px;">↗ Trending</span>' : ""}</div>
+        <div class="provider-rec-meta">⭐ ${p.rating} &nbsp;•&nbsp; ${p.jobs} jobs &nbsp;•&nbsp; ${p.onTime}% on-time &nbsp;•&nbsp; Avg: ₹${p.avgCost.toLocaleString()}</div>
+        <div style="margin-top:5px;height:4px;background:#E5E7EB;border-radius:2px;overflow:hidden;">
+          <div style="width:${p.onTime}%;height:100%;background:${barC};border-radius:2px;"></div>
+        </div>
+      </div>
+      <div id="check-${i}" style="font-size:20px;opacity:0;transition:opacity .2s;">✅</div>
+    </div>`;
+          })
+          .join("");
+      });
+
+      function selectProvider(i) {
+        selectedProvider = i;
+        document.querySelectorAll(".provider-rec-card").forEach((el, j) => {
+          el.classList.toggle("selected", j === i);
+          document.getElementById("check-" + j).style.opacity =
+            j === i ? "1" : "0";
+        });
+      }
+
+      function assignProvider() {
+        if (selectedProvider === null) {
+          showToast("⚠️ Please select a provider.");
+          return;
+        }
+        const due = document.getElementById("dueDate").value;
+        if (!due) {
+          showToast("⚠️ Please set a due date.");
+          return;
+        }
+        const p = providers[selectedProvider];
+        addNotification(
+          "wrench",
+          "#DCFCE7",
+          "Provider Assigned",
+          `${p.name} assigned to ${document.getElementById("assignId").textContent}. Due: ${due}`,
+          "provider",
+        );
+        document.getElementById("successMsg").textContent =
+          `${p.name} has been assigned. Due: ${due}`;
+        showModal("successModal");
+      }
+    </script>
+  </body>
+</html>

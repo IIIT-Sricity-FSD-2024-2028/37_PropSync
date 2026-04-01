@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "title": "New Complaint Available",
+    "message": "A new plumbing complaint has been posted in your category. Complaint C-2405: Burst Pipe in Basement.",
+    "type": "New Complaint",
+    "time": "2 hours ago",
+    "status": "unread"
+  },
+  {
+    "id": 2,
+    "title": "Deadline Approaching",
+    "message": "The deadline for complaint C-2402 is approaching. Due date: Mar 9, 2026.",
+    "type": "Deadline",
+    "time": "4 hours ago",
+    "status": "unread"
+  }
+]

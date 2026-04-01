@@ -2,12 +2,438 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PropSync</title>
-    <link rel="icon" type="image/png" href="../../public/favicon.png" />
-    <link rel="stylesheet" href="" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>PropSync – Dashboard</title>
+    <link rel="stylesheet" href="../css/maintenance_manager.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
   </head>
-  <body>
-    <!--Maintenance Manager Dashboard code here-->
+  <body class="has-sidebar">
+    <div class="sidebar-overlay"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-left">
+          <img
+            src="../../public/image.png"
+            alt="Logo"
+            class="sidebar-logo-img"
+          />
+        </div>
+        <button class="sidebar-close" title="Close menu">✕</button>
+      </div>
+      <nav class="sidebar-nav">
+        <a class="nav-link" href="dashboard.html"
+          ><span class="nav-icon">🏠</span> Dashboard</a
+        >
+        <a class="nav-link" href="complaints.html"
+          ><span class="nav-icon">📋</span> New Complaint
+          <span
+            class="nav-badge notif-complaints-count"
+            style="display: none"
+          ></span
+        ></a>
+        <a class="nav-link" href="approved-complaints.html"
+          ><span class="nav-icon">✅</span> Approved Complaints</a
+        >
+        <div class="nav-divider"></div>
+        <a class="nav-link" href="service-estimate.html"
+          ><span class="nav-icon">📄</span> Service Estimate</a
+        >
+        <a class="nav-link" href="service-bills.html"
+          ><span class="nav-icon">💰</span> Payment History</a
+        >
+        <div class="nav-divider"></div>
+        <a class="nav-link" href="provider-performance.html"
+          ><span class="nav-icon">🏆</span> Provider Performance</a
+        >
+        <div class="nav-divider"></div>
+        <a class="nav-link" href="notification.html"
+          ><span class="nav-icon">🔔</span> Alerts &amp; Notifications
+          <span class="nav-badge notif-badge-count" style="display: none"></span
+        ></a>
+        <a class="nav-link" href="profile.html"
+          ><span class="nav-icon">👤</span> Profile</a
+        >
+      </nav>
+      <div class="sidebar-footer">
+        <button class="sidebar-logout" onclick="confirmLogout()">
+          → &nbsp;Logout
+        </button>
+      </div>
+    </aside>
+
+    <div class="page-wrapper">
+      <!-- TOPBAR -->
+      <div class="topbar">
+        <div class="topbar-left">
+          <button class="hamburger" title="Open menu">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="topbar-logo">
+            <img
+              src="../../public/image.png"
+              alt="PropSync"
+              style="height: 34px; width: auto; object-fit: contain"
+            />
+          </div>
+        </div>
+        <div class="topbar-right">
+          <div
+            class="topbar-icon-btn"
+            onclick="location.href = 'notification.html'"
+            title="Notifications"
+          >
+            <i
+              class="fa-regular fa-bell"
+              style="font-size: 20px; color: #1a0dab"
+            ></i>
+            <div class="topbar-notif-dot"></div>
+          </div>
+          <div
+            onclick="location.href = 'profile.html'"
+            title="Profile"
+            style="
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              cursor: pointer;
+            "
+          >
+            <div
+              style="
+                width: 38px;
+                height: 38px;
+                border-radius: 50%;
+                border: 2px solid #1a0dab;
+                background: transparent;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #1a0dab;
+                font-size: 17px;
+                flex-shrink: 0;
+              "
+            >
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <span style="font-weight: 600; font-size: 14px; color: #1a0dab"
+              >Maintenance Manager</span
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="welcome-banner">
+        <h1>Welcome Back, Maintenance Manager 👋</h1>
+        <p>
+          Manage your property maintenance and service coordination efficiently
+        </p>
+      </div>
+
+      <div class="kpi-grid" id="kpiGrid"></div>
+
+      <div class="alert-box" id="alertBox">
+        <div class="alert-icon">⚠️</div>
+        <div style="flex: 1">
+          <h3>System Alerts</h3>
+          <ul id="alertList">
+            <li>
+              Service estimates awaiting approval –
+              <a
+                href="service-estimate.html"
+                style="color: #d97706; font-weight: 600"
+                >Review Now</a
+              ><button class="alert-read-btn" onclick="markAlertRead(this)">
+                Dismiss
+              </button>
+            </li>
+            <li>
+              1 maintenance request overdue<button
+                class="alert-read-btn"
+                onclick="markAlertRead(this)"
+              >
+                Dismiss
+              </button>
+            </li>
+            <li>
+              1 service provider declined assignment<button
+                class="alert-read-btn"
+                onclick="markAlertRead(this)"
+              >
+                Dismiss
+              </button>
+            </li>
+          </ul>
+        </div>
+        <button class="alert-clear-all" onclick="clearAllAlerts()">
+          Clear all
+        </button>
+      </div>
+
+      <div class="dash-grid">
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 16px">
+            New Complaints Needing Approval
+          </div>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Issue</th>
+                <th>Location</th>
+                <th>Priority</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="dashComplaintsBody"></tbody>
+          </table>
+          <a
+            href="complaints.html"
+            class="btn btn-outline btn-sm"
+            style="margin-top: 12px"
+            >View All Complaints</a
+          >
+        </div>
+
+        <div class="card">
+          <div class="card-title" style="margin-bottom: 16px">
+            Recent Notifications
+          </div>
+          <div
+            id="dashNotifs"
+            style="display: flex; flex-direction: column; gap: 8px"
+          ></div>
+          <a
+            href="notification.html"
+            class="btn btn-outline btn-sm"
+            style="margin-top: 14px"
+            >View All Notifications</a
+          >
+        </div>
+      </div>
+
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+          margin-top: 4px;
+        "
+      >
+        <div class="card" style="margin-bottom: 0">
+          <div class="card-title" style="margin-bottom: 12px">
+            Complaint Status Overview
+          </div>
+          <div
+            id="statusBars"
+            style="display: flex; flex-direction: column; gap: 10px"
+          ></div>
+        </div>
+        <div class="card" style="margin-bottom: 0">
+          <div class="card-title" style="margin-bottom: 12px">
+            Pending Payments
+          </div>
+          <div style="font-size: 28px; font-weight: 800; color: #16a34a">
+            ₹8,000
+          </div>
+          <div style="font-size: 12px; color: #6b7280; margin-top: 4px">
+            2 bills awaiting payment
+          </div>
+          <a
+            href="service-bills.html"
+            class="btn btn-success btn-sm"
+            style="margin-top: 12px"
+            >Process Payments</a
+          >
+        </div>
+        <div class="card" style="margin-bottom: 0">
+          <div class="card-title" style="margin-bottom: 12px">Top Provider</div>
+          <div style="font-size: 14px; font-weight: 700">
+            Urban Lift Repairs
+          </div>
+          <div style="font-size: 12px; color: #6b7280; margin-top: 3px">
+            4.9 ⭐ · 98% on-time · 54 jobs
+          </div>
+          <a
+            href="provider-performance.html"
+            class="btn btn-outline btn-sm"
+            style="margin-top: 12px"
+            >View All Providers</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal-overlay" id="rejectModal">
+      <div class="modal">
+        <h2 style="margin-bottom: 6px; font-size: 17px">
+          Reject Complaint <span id="rejectModalComplaintId"></span>
+        </h2>
+        <p style="font-size: 13px; color: #6b7280; margin-bottom: 16px">
+          This reason will be sent to the resident who raised the complaint.
+        </p>
+        <div class="form-group">
+          <label>Rejection Reason</label>
+          <textarea
+            class="form-control"
+            id="rejectReason"
+            placeholder="Enter reason for rejection..."
+            rows="3"
+          ></textarea>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" onclick="hideModal('rejectModal')">
+            Cancel
+          </button>
+          <button class="btn btn-danger" onclick="submitReject()">
+            Submit Rejection
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Logout Modal -->
+    <div class="modal-overlay" id="logoutModal">
+      <div class="logout-modal">
+        <div class="logout-icon">👋</div>
+        <h3>Log Out?</h3>
+        <p>Are you sure you want to log out of PropSync?</p>
+        <div style="display: flex; gap: 10px; justify-content: center">
+          <button
+            class="btn btn-ghost"
+            style="flex: 1"
+            onclick="hideModal('logoutModal')"
+          >
+            Cancel
+          </button>
+          <button class="btn btn-danger" style="flex: 1" onclick="doLogout()">
+            Yes, Log Out
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script src="../js/maintenance_manager.js"></script>
+    <script>
+      function renderDashboardComplaints() {
+        complaints = getComplaints();
+        const pending = complaints.filter((c) => c.status === "Pending");
+        const tbody = document.getElementById("dashComplaintsBody");
+        if (!pending.length) {
+          tbody.innerHTML =
+            '<tr><td colspan="5" style="text-align:center;padding:20px;color:#9CA3AF;">No pending complaints</td></tr>';
+          return;
+        }
+        tbody.innerHTML = pending
+          .map(
+            (c) => `
+    <tr>
+      <td><a class="complaint-link" href="complaint-details.html?id=${c.id}">${c.id}</a></td>
+      <td>${c.issue}</td>
+      <td style="font-size:12px;color:#6B7280;">${c.location}</td>
+      <td>${priorityBadge(c.priority)}</td>
+      <td>
+        <button class="btn btn-success btn-sm" onclick="dashApprove('${c.id}',this)">Approve</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openRejectModal('${c.id}', function(){ renderDashboardComplaints(); renderKPIs(); })">Reject</button>
+      </td>
+    </tr>`,
+          )
+          .join("");
+      }
+
+      function dashApprove(id, btn) {
+        approveComplaintById(id);
+        complaints = getComplaints();
+        renderDashboardComplaints();
+        renderKPIs();
+        showToast(`Complaint ${id} approved and moved to Approved Complaints.`);
+      }
+
+      function renderKPIs() {
+        complaints = getComplaints();
+        const total = complaints.length;
+        const pending = complaints.filter((c) => c.status === "Pending").length;
+        const inProgress = complaints.filter(
+          (c) => c.status === "In Progress",
+        ).length;
+        const completed = complaints.filter(
+          (c) => c.status === "Completed",
+        ).length;
+
+        document.getElementById("kpiGrid").innerHTML = `
+    <div class="kpi-card">
+      <div><div class="kpi-label">Total Complaints</div><div class="kpi-value">${total}</div></div>
+      <div class="kpi-icon" style="background:#F0FDF4;color:#16A34A;">📋</div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Pending Approvals</div><div class="kpi-value">${pending}</div></div>
+      <div class="kpi-icon" style="background:#FEF3C7;color:#D97706;">⏳</div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">In Progress</div><div class="kpi-value">${inProgress}</div></div>
+      <div class="kpi-icon" style="background:#FEE2E2;color:#DC2626;">⚡</div>
+    </div>
+    <div class="kpi-card">
+      <div><div class="kpi-label">Completed</div><div class="kpi-value">${completed}</div></div>
+      <div class="kpi-icon" style="background:#F0FDF4;color:#16A34A;">✅</div>
+    </div>`;
+
+        document.getElementById("statusBars").innerHTML = [
+          { label: "Pending", val: pending, total, color: "#D97706" },
+          { label: "In Progress", val: inProgress, total, color: "#DC2626" },
+          { label: "Completed", val: completed, total, color: "#16A34A" },
+        ]
+          .map(
+            (s) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12.5px;">${s.label}</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:80px;height:7px;background:#E5E7EB;border-radius:4px;overflow:hidden;">
+          <div style="width:${s.total ? Math.round((s.val / s.total) * 100) : 0}%;height:100%;background:${s.color};border-radius:4px;"></div>
+        </div>
+        <span style="font-size:12px;font-weight:700;">${s.val}</span>
+      </div>
+    </div>`,
+          )
+          .join("");
+      }
+
+      function renderDashNotifs() {
+        const notifs = getNotifications().slice(0, 5);
+        const container = document.getElementById("dashNotifs");
+        if (!notifs.length) {
+          container.innerHTML =
+            '<div style="font-size:13px;color:#9CA3AF;padding:12px 0;">No notifications</div>';
+          return;
+        }
+        container.innerHTML = notifs
+          .map(
+            (n) => `
+    <div style="font-size:13px;cursor:pointer;padding:10px 12px;border-radius:8px;
+      background:${n.unread ? "#F0FDF4" : "#F9FAFB"};
+      border-left:3px solid ${n.unread ? "#16A34A" : "transparent"};"
+      onclick="location.href='notification.html'">
+      <div style="font-weight:${n.unread ? "600" : "500"};color:${n.unread ? "#111827" : "#4B5563"};">
+        ${notifIcon(n.icon)} ${n.title}
+        ${n.unread ? '<span style="font-size:10px;background:#16A34A;color:#fff;padding:1px 6px;border-radius:10px;margin-left:6px;">New</span>' : ""}
+      </div>
+      <div style="font-size:11px;color:#6B7280;margin-top:2px;">${n.desc}</div>
+      <div style="font-size:11px;color:#9CA3AF;margin-top:2px;">${n.time}</div>
+    </div>`,
+          )
+          .join("");
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        renderKPIs();
+        renderDashboardComplaints();
+        renderDashNotifs();
+      });
+    </script>
   </body>
 </html>
