@@ -519,6 +519,10 @@ body {
 }
 
 /*Alerts and notifications*/
+.read {
+  border: none;
+  border: 2px solid #22c55e;
+}
 .alerts_main {
   padding: 24px;
   background: #f2f2f4;
@@ -610,7 +614,7 @@ body {
   background: #ffffff;
   padding: 20px;
   border-radius: 14px;
-  border: 2px solid #22c55e;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.26);
   align-items: flex-start;
   transition: 0.2s;
 }

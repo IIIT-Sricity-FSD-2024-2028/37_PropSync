@@ -385,7 +385,7 @@ function loadNotifications(data) {
     const div = document.createElement("div");
 
     div.className =
-      n.status === "read" ? "notification_card read" : "notification_card";
+      n.status === "read" ? "notification_card" : "notification_card read";
 
     const iconColor = n.type === "Deadline" ? "red" : "green";
 
@@ -442,6 +442,7 @@ function loadNotifications(data) {
 
     markBtn.addEventListener("click", () => {
       markAsRead(n.id);
+      n.classList.remove("read");
     });
 
     deleteBtn.addEventListener("click", () => {

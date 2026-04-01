@@ -14,5 +14,29 @@
     "type": "Deadline",
     "time": "4 hours ago",
     "status": "unread"
+  },
+  {
+    "id": 3,
+    "title": "Your Complaint Approved",
+    "message": "The recent complaint that you have registered is approved by maintennace manager",
+    "type": "Complaint Approved",
+    "time": "4 hours ago",
+    "status": "unread"
+  },
+  {
+    "id": 4,
+    "title": "Monthly Electrical check",
+    "message": "On Mar 9, 2026, monthly electrical check is going on.",
+    "type": "Routine Check",
+    "time": "4 hours ago",
+    "status": "unread"
+  },
+  {
+    "id": 5,
+    "title": "Power Shutdown",
+    "message": "Due to breakdown and repair, power will shutdon for 5hours today.",
+    "type": "Alert",
+    "time": "1 hours ago",
+    "status": "read"
   }
 ]
