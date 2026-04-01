@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Details — PropSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<script src="../js/taskData.js"></script>
+<script>
+/* =========================================================
+   Task Details Page
+   ========================================================= */
+
+function progressStep(done, label, sub) {
+  return `
+    <div class="progress-step">
+      <div class="progress-step-icon ${done ? 'done' : 'pending'}">
+        ${done
+          ? `<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+          : `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`}
+      </div>
+      <div class="progress-step-info">
+        <p class="progress-step-title ${done ? 'done' : 'pending'}">${label}</p>
+        <p class="progress-step-sub">${sub}</p>
+      </div>
+    </div>`;
+}
+
+function progressConnector(done) {
+  return `<div class="progress-connector ${done ? 'done' : 'pending'}"></div>`;
+}
+
+function buildPage() {
+  initShell('tasks');
+  const taskId = getParam('task');
+  const content = document.getElementById('page-content');
+
+  const task = taskId ? getTask(taskId) : null;
+
+  if (!task) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Task Not Found</h3>
+        <p>The task you're looking for doesn't exist.</p>
+        <div style="margin-top:20px;"><button class="btn btn-dark" onclick="location.href='assigned-tasks.html'">Back to Assigned Tasks</button></div>
+      </div>`;
+    return;
+  }
+
+  const p = task.progress;
+  const isApproved = p.approved;
+
+  content.innerHTML = `
+    <button class="back-btn" onclick="location.href='assigned-tasks.html'">
+      <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      Back to Assigned Tasks
+    </button>
+    <h1 style="margin-bottom:32px;">Task Details</h1>
+
+    <div class="task-details-grid">
+      <!-- Left Column -->
+      <div>
+        <!-- Complaint Info Card -->
+        <div class="card mb-6">
+          <div class="colored-card-header dark">
+            <h2>Complaint Information</h2>
+          </div>
+          <div class="card-body">
+            <div class="info-grid-2">
+              <div class="info-field">
+                <label>Complaint ID</label>
+                <p style="font-size:1.1rem;font-weight:600;color:var(--foreground);">${task.id}</p>
+              </div>
+              <div class="info-field">
+                <label>Issue Type</label>
+                <span class="badge badge-yellow">${task.issueType}</span>
+              </div>
+              <div class="info-field">
+                <label>Property Location</label>
+                <div class="meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>${task.location}</span></div>
+              </div>
+              <div class="info-field">
+                <label>Deadline</label>
+                <div class="meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>${task.deadline}</span></div>
+              </div>
+              <div class="info-field">
+                <label>Priority</label>
+                <span class="badge ${priorityClass(task.priority)}">${task.priority}</span>
+              </div>
+              <div class="info-field">
+                <label>Assigned Date</label>
+                <div class="meta-row"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span>${task.assignedDate}</span></div>
+              </div>
+            </div>
+            <div style="margin-bottom:24px;">
+              <label style="display:block;font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:8px;">Complaint Description</label>
+              <p style="font-size:0.95rem;color:var(--muted-foreground);line-height:1.6;">${task.description}</p>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:10px;">Uploaded Image</label>
+              <img src="${task.image}" alt="${task.title}" style="width:100%;height:260px;object-fit:cover;border-radius:10px;border:1px solid var(--border);" onerror="this.src='https://placehold.co/600x260/e5e7eb/6b7280?text=Image'">
+            </div>
+          </div>
+        </div>
+
+        <!-- Estimate Section -->
+        ${task.estimateSubmitted && task.estimate ? `
+        <div class="card">
+          <div class="colored-card-header green"><h2>Service Estimate</h2></div>
+          <div class="card-body">
+            <div class="alert-box ${isApproved ? 'green' : 'green'}">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <p style="font-size:0.88rem;font-weight:600;color:var(--foreground);">
+                ${isApproved ? 'Estimate Approved – You can now begin work on this task' : 'Estimate Submitted – Awaiting Maintenance Manager Approval'}
+              </p>
+            </div>
+            <div class="info-grid-2" style="margin-bottom:20px;">
+              <div>
+                <label style="display:block;font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:6px;">Estimated Cost</label>
+                <p style="font-size:1.6rem;font-weight:700;color:#16A34A;">${task.estimate.cost}</p>
+              </div>
+              <div>
+                <label style="display:block;font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:6px;">Estimated Completion Time</label>
+                <p style="font-size:1.2rem;font-weight:600;color:#374151;">${task.estimate.completionTime}</p>
+              </div>
+            </div>
+            <div style="margin-bottom:20px;">
+              <label style="display:block;font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:6px;">Description of Work</label>
+              <p style="font-size:0.9rem;color:var(--muted-foreground);line-height:1.6;">${task.estimate.workDescription}</p>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.82rem;font-weight:700;color:#374151;margin-bottom:8px;">Uploaded File</label>
+              <div class="file-row">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                <span>${task.estimate.uploadedFile}</span>
+                <button title="Download">
+                  <svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        ` : !task.estimateSubmitted ? `
+        <div class="card">
+          <div class="colored-card-header green"><h2>Service Estimate</h2></div>
+          <div class="card-body">
+            <div class="alert-box yellow">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <p style="font-size:0.85rem;font-weight:600;color:#92400E;">You need to submit a service estimate before work can begin on this task.</p>
+            </div>
+            <button class="btn btn-accent btn-full" onclick="location.href='submit-estimate.html?task=${task.id}'">
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              Submit Service Estimate
+            </button>
+          </div>
+        </div>
+        ` : ''}
+      </div>
+
+      <!-- Right Column: Action Buttons + Progress Tracker -->
+      <div>
+        <!-- Quick Actions -->
+        <div class="card mb-6">
+          <div class="card-body">
+            <h2 style="font-size:1.05rem;margin-bottom:16px;">Quick Actions</h2>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              ${!task.estimateSubmitted ? `<button class="btn btn-accent btn-full" onclick="location.href='submit-estimate.html?task=${task.id}'"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>Submit Estimate</button>` : ''}
+              ${task.status !== 'Completed' ? `<button class="btn btn-dark btn-full" onclick="location.href='update-status.html?task=${task.id}'"><svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>Update Status</button>` : ''}
+              <button class="btn btn-ghost btn-full" onclick="location.href='assigned-tasks.html'"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>Back to Tasks</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Tracker -->
+        <div class="card">
+          <div class="card-body">
+            <h2 style="font-size:1.05rem;margin-bottom:20px;">Task Progress</h2>
+            <div class="progress-tracker">
+              ${progressStep(p.assigned,     'Assigned',           'Task assigned to you')}
+              ${progressConnector(p.estimateSent)}
+              ${progressStep(p.estimateSent, 'Estimate Submitted', 'Service estimate sent')}
+              ${progressConnector(p.approved)}
+              ${progressStep(p.approved,     'Approved',           'Manager approved estimate')}
+              ${progressConnector(p.inProgress)}
+              ${progressStep(p.inProgress,   'In Progress',        'Work in progress')}
+              ${progressConnector(p.completed)}
+              ${progressStep(p.completed,    'Completed',          'Task completed')}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+document.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
+</html>

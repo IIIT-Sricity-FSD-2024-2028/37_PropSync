@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — PropSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<script src="../js/taskData.js"></script>
+<script>
+const svgIcons = {
+  'alert-circle': `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  'clock':        `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+  'check-circle': `<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+};
+
+function statusBadge(status) {
+  return `<span class="badge ${statusClass(status)}">${status}</span>`;
+}
+
+function buildPage() {
+  initShell('dashboard');
+  const content = document.getElementById('page-content');
+
+  // Live data from localStorage
+  const tasks      = getTasksArray();
+  const complaints = getAllComplaints();
+  const profile    = getProfile();
+  const notifs     = getNotifications().slice(0, 3);
+
+  const totalAssigned  = tasks.length;
+  const inProgress     = tasks.filter(t => t.status === 'In Progress').length;
+  const completed      = tasks.filter(t => t.status === 'Completed').length;
+  const pendingEst     = tasks.filter(t => !t.estimateSubmitted).length;
+
+  // Recent complaints — use available complaints list, show first 3
+  const recentComplaints = complaints.slice(0, 3);
+
+  // Tasks table — show latest 4 assigned tasks
+  const tableTasks = tasks.slice(0, 4);
+
+  const notifIconMap = {
+    new_complaint: { cls:'notif-icon-green',  icon:'alert-circle' },
+    assignment:    { cls:'notif-icon-green',  icon:'check-circle' },
+    deadline:      { cls:'notif-icon-yellow', icon:'clock' },
+    approval:      { cls:'notif-icon-teal',   icon:'check-circle' },
+    completion:    { cls:'notif-icon-teal',   icon:'check-circle' },
+  };
+
+  const feedbacks = [
+    { name:'Sarah Johnson', rating:5, comment:'Excellent work! Very professional and quick service.',   date:'Mar 4, 2026' },
+    { name:'Michael Chen',  rating:4, comment:'Good service, minor delay but quality work.',             date:'Mar 2, 2026' },
+    { name:'Emily Davis',   rating:5, comment:'Outstanding service! Highly recommended.',               date:'Feb 28, 2026' },
+  ];
+
+  content.innerHTML = `
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Welcome back, ${profile.name}! Here's your overview.</p>
+    </div>
+
+    <!-- Stat Cards (live) -->
+    <div class="stat-cards-grid">
+      <div class="stat-card">
+        <div class="stat-card-info"><p class="label">Total Complaints Assigned</p><p class="value">${totalAssigned}</p></div>
+        <div class="stat-icon blue"><svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-info"><p class="label">Complaints In Progress</p><p class="value">${inProgress}</p></div>
+        <div class="stat-icon yellow"><svg viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-info"><p class="label">Completed Complaints</p><p class="value">${completed}</p></div>
+        <div class="stat-icon green"><svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-info"><p class="label">Pending Estimates</p><p class="value">${pendingEst}</p></div>
+        <div class="stat-icon black"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+      </div>
+    </div>
+
+    <!-- Two col -->
+    <div class="two-col-grid mb-8">
+      <!-- Recent Complaints -->
+      <div class="card">
+        <div class="card-body">
+          <h2 style="margin-bottom:20px;">Recent Complaints</h2>
+          ${recentComplaints.length === 0 ? `<p style="color:var(--muted-foreground);">No available complaints.</p>` :
+            recentComplaints.map(c => `
+              <div class="complaint-card">
+                <img src="${c.imageUrl}" alt="${c.title}" class="complaint-img"
+                  onerror="this.src='https://placehold.co/128x128/e5e7eb/6b7280?text=Image'">
+                <div class="complaint-content">
+                  <div class="complaint-badges">
+                    <span class="badge badge-green">${c.id}</span>
+                    <span class="badge badge-dark">${c.issueType}</span>
+                    ${c.accepted ? '<span class="badge" style="background:#16A34A;color:#fff;border-radius:999px;">✓ Accepted</span>' : ''}
+                  </div>
+                  <p class="complaint-title">${c.title}</p>
+                  <p class="complaint-desc">${c.description}</p>
+                  <div class="complaint-meta">
+                    <div class="complaint-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>${c.location}</span></div>
+                    <div class="complaint-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Deadline: ${c.deadline}</span></div>
+                  </div>
+                  ${!c.accepted ? `
+                  <div class="complaint-actions">
+                    <button class="btn btn-green btn-sm" onclick="dashAccept('${c.id}')">
+                      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Accept
+                    </button>
+                    <button class="btn btn-red btn-sm" onclick="dashReject('${c.id}')">
+                      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject
+                    </button>
+                  </div>` : `
+                  <div style="margin-top:8px;">
+                    <a href="assigned-tasks.html" class="btn-link" style="font-size:0.82rem;">View in Assigned Tasks →</a>
+                  </div>`}
+                </div>
+              </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Notifications Panel (live) -->
+      <div class="card">
+        <div class="card-body">
+          <div class="notif-panel-header">
+            <div class="notif-panel-title">
+              <h2 style="font-size:1.05rem;font-weight:700;">Notifications</h2>
+              <span class="notif-count-badge">${getUnreadCount()}</span>
+            </div>
+            <button class="btn-link" onclick="location.href='notifications.html'">View All <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+          </div>
+          ${notifs.length === 0 ? `<p style="color:var(--muted-foreground);font-size:0.9rem;">No notifications.</p>` :
+            notifs.map(n => {
+              const cfg = notifIconMap[n.type] || notifIconMap.assignment;
+              return `
+              <div class="notif-item" onclick="location.href='notifications.html'" style="${!n.read?'background:rgba(66,164,67,0.04);border-left:3px solid #42a443;border-radius:8px;':''}">
+                <div class="notif-icon-wrap ${cfg.cls}">${svgIcons[cfg.icon]}</div>
+                <div class="notif-info">
+                  <p class="notif-title">${n.title}${!n.read?'<span style="background:#42a443;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:999px;margin-left:6px;font-weight:700;">New</span>':''}</p>
+                  <p class="notif-msg">${n.message}</p>
+                  <p class="notif-time">${n.timestamp}</p>
+                </div>
+              </div>`;
+            }).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- Tasks Table (live) -->
+    <div class="mb-8">
+      <h2 style="margin-bottom:16px;">Assigned Tasks</h2>
+      <div class="card">
+        <div class="card-header-bar"><h2>Recent Tasks</h2></div>
+        <div class="table-wrap">
+          ${tableTasks.length === 0 ? `<p style="padding:24px;color:var(--muted-foreground);">No assigned tasks yet.</p>` : `
+          <table>
+            <thead><tr>
+              <th>Complaint ID</th><th>Issue Type</th><th>Status</th><th>Deadline</th><th>Action</th>
+            </tr></thead>
+            <tbody>
+              ${tableTasks.map(t => `
+                <tr class="clickable" onclick="location.href='task-details.html?task=${t.id}'">
+                  <td style="font-weight:600;">${t.id}</td>
+                  <td>${t.issueType}</td>
+                  <td>${statusBadge(t.status)}</td>
+                  <td style="color:var(--muted-foreground);font-size:0.88rem;">${t.deadline}</td>
+                  <td>
+                    <button class="btn-link" onclick="event.stopPropagation();location.href='update-status.html?task=${t.id}'">
+                      <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                      Update Status
+                    </button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>`}
+        </div>
+      </div>
+    </div>
+
+    <!-- Ratings Overview -->
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;">
+          <h2 style="font-size:1.05rem;font-weight:700;">Recent Feedback</h2>
+          <button class="btn-link" onclick="location.href='ratings-feedback.html'">View All <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+        </div>
+        <div class="ratings-summary">
+          <div class="ratings-avg">
+            <div class="ratings-avg-num">4.8</div>
+            <div class="stars-row">${renderStars(5)}</div>
+            <p style="font-size:0.75rem;color:var(--muted-foreground)">Average Rating</p>
+          </div>
+          <div class="ratings-total">
+            <div class="ratings-total-num">127</div>
+            <p class="ratings-total-label">Total Reviews</p>
+          </div>
+        </div>
+        ${feedbacks.map(f => `
+          <div class="feedback-item">
+            <div class="feedback-header">
+              <div class="feedback-user">
+                <div class="feedback-avatar">${f.name[0]}</div>
+                <div><div class="feedback-name">${f.name}</div><div class="feedback-date">${f.date}</div></div>
+              </div>
+              ${renderStars(f.rating, 12)}
+            </div>
+            <p class="feedback-comment">${f.comment}</p>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// Dashboard inline accept/reject — persists to localStorage
+function dashAccept(id) {
+  acceptComplaint(id);
+  buildPage(); // re-render with updated state
+}
+function dashReject(id) {
+  rejectComplaint(id);
+  buildPage();
+}
+
+document.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
+</html>

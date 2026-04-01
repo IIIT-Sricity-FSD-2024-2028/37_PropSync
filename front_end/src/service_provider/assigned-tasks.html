@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assigned Tasks — PropSync</title>
+  
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<script src="../js/taskData.js"></script>
+<script>
+/* =========================================================
+   Assigned Tasks Page
+   ========================================================= */
+
+function isOverdue(deadline) {
+  const today = new Date('2026-03-06');
+  const d = new Date(deadline);
+  return d < today;
+}
+
+function getFilteredTasks() {
+  const tasks = getTasksArray();
+  const search = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const statusF = document.getElementById('status-filter')?.value || 'All';
+  const priorityF = document.getElementById('priority-filter')?.value || 'All';
+  return tasks.filter(t => {
+    const matchSearch = t.id.toLowerCase().includes(search);
+    const matchStatus = statusF === 'All' || t.status === statusF;
+    const matchPriority = priorityF === 'All' || t.priority === priorityF;
+    return matchSearch && matchStatus && matchPriority;
+  });
+}
+
+function renderTable() {
+  const filtered = getFilteredTasks();
+  const tbody = document.getElementById('tasks-tbody');
+  const emptyState = document.getElementById('empty-state');
+  const tableCard = document.getElementById('table-card');
+  if (!tbody) return;
+
+  if (filtered.length === 0) {
+    emptyState.style.display = 'block';
+    tableCard.style.display = 'none';
+    return;
+  }
+  emptyState.style.display = 'none';
+  tableCard.style.display = 'block';
+
+  tbody.innerHTML = filtered.map(t => {
+    const overdueFlag = isOverdue(t.deadline) && t.status !== 'Completed';
+    const deadlineHTML = `
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--muted-foreground);stroke-width:2;fill:none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="${overdueFlag ? 'overdue-text' : ''}" style="font-size:0.88rem;">${t.deadline}</span>
+        ${overdueFlag ? '<span class="overdue-badge">Overdue</span>' : ''}
+      </div>`;
+    const actionsHTML = `
+      <div style="display:flex;align-items:center;gap:4px;" onclick="event.stopPropagation()">
+        ${!t.estimateSubmitted ? `<button onclick="location.href='submit-estimate.html?task=${t.id}'" title="Submit Estimate" style="padding:7px;background:none;border:none;cursor:pointer;color:#16A34A;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='rgba(22,163,74,0.1)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>` : ''}
+        ${t.status !== 'Completed' ? `<button onclick="location.href='update-status.html?task=${t.id}'" title="Update Status" style="padding:7px;background:none;border:none;cursor:pointer;color:#F59E0B;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>` : ''}
+      </div>`;
+    return `
+      <tr class="clickable" onclick="location.href='task-details.html?task=${t.id}'">
+        <td><span style="font-weight:600;color:var(--foreground);">${t.id}</span></td>
+        <td><span class="badge badge-green" style="border-radius:999px;">${t.issueType}</span></td>
+        <td style="font-size:0.88rem;color:var(--muted-foreground);">${t.location}</td>
+        <td><span class="badge ${priorityClass(t.priority)}">${t.priority}</span></td>
+        <td>${deadlineHTML}</td>
+        <td><span class="badge ${statusClass(t.status)}">${t.status}</span></td>
+        <td>${actionsHTML}</td>
+      </tr>`;
+  }).join('');
+}
+
+function buildPage() {
+  initShell('tasks');
+  const content = document.getElementById('page-content');
+  content.innerHTML = `
+    <div class="page-header">
+      <h1>Assigned Tasks</h1>
+      <p>View complaints that have been officially assigned to you by the maintenance manager.</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-bar">
+      <div class="filters-grid">
+        <div class="filter-field">
+          <svg class="filter-field-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" id="search-input" class="filter-input" placeholder="Search by Complaint ID">
+        </div>
+        <div class="filter-field">
+          <svg class="filter-field-icon" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+          <select class="filter-select" id="status-filter">
+            <option value="All">All Status</option>
+            <option value="Assigned">Assigned</option>
+            <option value="In Progress">In Progress</option>
+            <option value="Waiting for Materials">Waiting for Materials</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <svg class="filter-field-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <select class="filter-select" id="priority-filter">
+            <option value="All">All Priority</option>
+            <option value="High">High Priority</option>
+            <option value="Medium">Medium Priority</option>
+            <option value="Low">Low Priority</option>
+          </select>
+        </div>
+        <div class="filter-field">
+          <svg class="filter-field-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <select class="filter-select" id="deadline-filter">
+            <option value="All">All Deadlines</option>
+            <option value="Today">Due Today</option>
+            <option value="This Week">This Week</option>
+            <option value="This Month">This Month</option>
+            <option value="Overdue">Overdue</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <h3>No Assigned Tasks Found</h3>
+      <p>You currently have no assigned maintenance tasks matching your filters.</p>
+    </div>
+
+    <!-- Table -->
+    <div class="card" id="table-card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>Complaint ID</th>
+            <th>Issue Type</th>
+            <th>Location</th>
+            <th>Priority</th>
+            <th>Deadline</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="tasks-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('search-input').addEventListener('input', renderTable);
+  document.getElementById('status-filter').addEventListener('change', renderTable);
+  document.getElementById('priority-filter').addEventListener('change', renderTable);
+  renderTable();
+}
+
+document.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+#page-dashboard { padding: 24px; }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card { border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+
+.stat-icon-area {
+  position: relative;
+  padding: 16px;
+  display: flex; align-items: center; justify-content: center;
+}
+.stat-icon-area svg { width: 48px; height: 48px; }
+
+.stat-trend {
+  position: absolute; top: 8px; right: 8px;
+  display: flex; align-items: center; gap: 2px;
+  font-size: 12px;
+}
+.stat-trend.up   { color: #16a34a; }
+.stat-trend.down { color: #dc2626; }
+.stat-trend svg  { width: 12px; height: 12px; stroke: currentColor; }
+
+.stat-body  { background: #fff; padding: 16px; }
+.stat-value { font-size: 24px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+.stat-label { font-size: 12px; color: #6b7280; }
+
+.dashboard-bottom { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+.registration-item {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.registration-item:last-child { margin-bottom: 0; }
+
+.reg-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.reg-icon svg { width: 16px; height: 16px; stroke: currentColor; }
+
+.reg-name { font-size: 14px; font-weight: 500; color: #111827; }
+.reg-role { font-size: 12px; color: #6b7280; }
+.reg-time { font-size: 12px; color: #9ca3af; }
+
+.health-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.health-item:last-child { border-bottom: none; }
+.health-label       { font-size: 14px; color: #374151; }
+.health-val-success { font-size: 14px; font-weight: 500; color: #0d9488; }
+.health-val-info    { font-size: 14px; font-weight: 500; color: #2563eb; }

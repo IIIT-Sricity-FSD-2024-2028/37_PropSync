@@ -1,0 +1,22 @@
+[
+  {
+    "email": "johndoe@gmail.com",
+    "password": "1234",
+    "role": "Owner"
+  },
+  {
+    "email": "johndoe@gmail.com",
+    "password": "1234",
+    "role": "Service Provider"
+  },
+  {
+    "email": "johndoe@gmail.com",
+    "password": "1234",
+    "role": "Maintenance Manager"
+  },
+  {
+    "email": "johndoe@gmail.com",
+    "password": "1234",
+    "role": "Administrator"
+  }
+]

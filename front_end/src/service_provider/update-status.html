@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Status — PropSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<script src="../js/taskData.js"></script>
+<script>
+function buildPage() {
+  initShell('tasks');
+  const taskId = getParam('task');
+  const content = document.getElementById('page-content');
+  const task = taskId ? getTask(taskId) : null;
+
+  if (!task) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <h3>Task Not Found</h3><p>The task you're looking for doesn't exist.</p>
+        <div style="margin-top:20px;"><button class="btn btn-dark" onclick="location.href='assigned-tasks.html'">Back to Assigned Tasks</button></div>
+      </div>`;
+    return;
+  }
+
+  content.innerHTML = `
+    <div style="max-width:800px;margin-inline:auto;">
+      <button class="back-btn" onclick="location.href='task-details.html?task=${task.id}'">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        Back to Task Details
+      </button>
+
+      <div class="page-header">
+        <h1>Update Task Status</h1>
+        <p>Update the progress and status of your assigned maintenance task.</p>
+      </div>
+
+      <!-- Task Info (real data) -->
+      <div class="card mb-6">
+        <div class="card-body">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <h2 style="font-size:1.1rem;">Task Information</h2>
+            <span class="badge badge-yellow">${task.id}</span>
+          </div>
+          <div class="info-grid-2" style="margin-bottom:0;">
+            <div><span style="font-size:0.85rem;color:var(--muted-foreground);">Issue Type:</span> <span style="font-weight:600;margin-left:6px;">${task.issueType}</span></div>
+            <div>
+              <span style="font-size:0.85rem;color:var(--muted-foreground);">Current Status:</span>
+              <span class="badge ${statusClass(task.status)}" style="margin-left:6px;">${task.status}</span>
+            </div>
+            <div><span style="font-size:0.85rem;color:var(--muted-foreground);">Location:</span> <span style="font-weight:600;margin-left:6px;">${task.location}</span></div>
+            <div><span style="font-size:0.85rem;color:var(--muted-foreground);">Deadline:</span> <span style="font-weight:600;margin-left:6px;">${task.deadline}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="card">
+        <div class="colored-card-header dark"><h2>Status Update</h2></div>
+        <div class="card-body">
+
+          <div class="form-field">
+            <label class="form-label">
+              <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Update Status *
+            </label>
+            <select id="status-select" class="form-select">
+              <option value="In Progress"        ${task.status==='In Progress'?'selected':''}>In Progress</option>
+              <option value="Waiting for Materials" ${task.status==='Waiting for Materials'?'selected':''}>Waiting for Materials</option>
+              <option value="Completed"          ${task.status==='Completed'?'selected':''}>Completed</option>
+              <option value="On Hold">On Hold</option>
+            </select>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">Progress Notes *</label>
+            <textarea id="notes-input" class="form-textarea" rows="6"
+              placeholder="Describe the work completed, any issues encountered, or next steps..."></textarea>
+            <p id="notes-err" style="color:#DC2626;font-size:0.8rem;margin-top:4px;display:none;">Please provide progress notes.</p>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label">
+              <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+              Upload Progress Photos (Optional)
+            </label>
+            <div class="upload-zone" id="photo-zone" onclick="document.getElementById('photo-upload').click()">
+              <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+              <input type="file" id="photo-upload" style="display:none;" accept="image/*" multiple>
+              <div class="upload-zone-label">Click to upload photos</div>
+              <p class="upload-zone-sub">JPG, PNG or HEIC (max 5MB each)</p>
+              <div id="photo-list" class="upload-file-list" style="display:none;"></div>
+            </div>
+          </div>
+
+          <div class="alert-box green" style="margin-bottom:24px;">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            <div>
+              <p class="alert-title">Status Update Guidelines</p>
+              <p class="alert-text">Please provide detailed notes about your progress. If marking as completed, ensure all work has been thoroughly tested. Photos help document the work performed.</p>
+            </div>
+          </div>
+
+          <div class="form-btn-row">
+            <button class="btn btn-accent" id="submit-btn">
+              <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+              Update Status
+            </button>
+            <button class="btn btn-gray" onclick="location.href='task-details.html?task=${task.id}'">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Photo upload
+  document.getElementById('photo-upload').addEventListener('change', function() {
+    const list  = document.getElementById('photo-list');
+    const files = Array.from(this.files);
+    if (!files.length) { list.style.display = 'none'; return; }
+    list.style.display = 'block';
+    list.innerHTML = '<p>Uploaded files:</p>' + files.map(f =>
+      `<div class="upload-file-item"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>${f.name}</div>`
+    ).join('');
+  });
+
+  const zone = document.getElementById('photo-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor='#42a443'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor=''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.style.borderColor='';
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    document.getElementById('photo-upload').files = dt.files;
+    document.getElementById('photo-upload').dispatchEvent(new Event('change'));
+  });
+
+  // Submit — persist to localStorage
+  document.getElementById('submit-btn').addEventListener('click', () => {
+    const notes  = document.getElementById('notes-input').value.trim();
+    const status = document.getElementById('status-select').value;
+    document.getElementById('notes-err').style.display = notes ? 'none' : 'block';
+    if (!notes) return;
+
+    const progressUpdate = { ...task.progress };
+    if (status === 'In Progress')           { progressUpdate.inProgress = true; }
+    if (status === 'Waiting for Materials') { progressUpdate.inProgress = true; }
+    if (status === 'Completed')             { progressUpdate.inProgress = true; progressUpdate.completed = true; }
+
+    updateTask(taskId, { status, progress: progressUpdate });
+
+    // Add notification
+    addNotification({
+      type: status === 'Completed' ? 'completion' : 'assignment',
+      title: status === 'Completed' ? 'Task Completed' : 'Status Updated',
+      message: `Complaint ${taskId} status updated to "${status}".`,
+      complaintId: taskId
+    });
+
+    // Show success toast then navigate
+    showToast('Status updated successfully!');
+    setTimeout(() => location.href = 'task-details.html?task=' + taskId, 1200);
+  });
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#42a443;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.2);z-index:9999;animation:fadeIn 0.3s ease;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1500);
+}
+
+document.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
+</html>

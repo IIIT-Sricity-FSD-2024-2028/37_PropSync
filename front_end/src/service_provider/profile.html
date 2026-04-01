@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — PropSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<script src="../js/taskData.js"></script>
+<script>
+let isEditing = false;
+let editData  = {};
+
+const statIcons = {
+  star:  `<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:#F59E0B;stroke:#F59E0B;stroke-width:1;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+  check: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+  clip:  `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>`,
+  trend: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+};
+const statBg = { yellow:'rgba(245,158,11,0.1)', green2:'rgba(66,164,67,0.2)', teal:'rgba(104,213,176,0.3)' };
+
+function fieldRow(label, key, type, placeholder, iconSvg) {
+  const profile = getProfile();
+  const val = isEditing ? (editData[key] ?? profile[key]) : profile[key];
+  return `
+    <div class="profile-field">
+      <div class="profile-field-label">${iconSvg} ${label}</div>
+      ${isEditing
+        ? `<input type="${type}" id="field-${key}" class="form-input" value="${val}" placeholder="${placeholder}">`
+        : `<p class="profile-field-value">${val || '—'}</p>`}
+    </div>`;
+}
+
+function renderProfileCard() {
+  const profile = getProfile();
+  const card = document.getElementById('profile-card');
+  if (!card) return;
+
+  card.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+      <h2>Profile Information</h2>
+      ${!isEditing ? `
+        <button class="btn btn-accent btn-sm" id="edit-btn">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit Profile
+        </button>` : `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-accent btn-sm" id="save-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Changes
+          </button>
+          <button class="btn btn-ghost btn-sm" id="cancel-btn">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Cancel
+          </button>
+        </div>`}
+    </div>
+
+    <div class="profile-details-grid">
+      <div class="profile-photo-area">
+        <div class="profile-photo-wrap">
+          <div class="profile-avatar-large">${profile.initials || profile.name[0].toUpperCase()}</div>
+          ${isEditing ? `<button class="profile-camera-btn" title="Change photo">
+            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>` : ''}
+        </div>
+        <p class="profile-sp-id">Service Provider ID: ${profile.spId}</p>
+      </div>
+      <div>
+        ${fieldRow('Full Name','name','text','Full Name', `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`)}
+        ${fieldRow('Email Address','email','email','Email', `<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`)}
+        ${fieldRow('Phone Number','phone','tel','Phone', `<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.37 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l1.27-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`)}
+        ${fieldRow('Service Category','category','text','Category', `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`)}
+        ${fieldRow('Years of Experience','experience','text','Years', `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`)}
+        ${fieldRow('Service Locations','locations','text','Locations (comma separated)', `<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`)}
+      </div>
+    </div>
+  `;
+
+  if (!isEditing) {
+    document.getElementById('edit-btn').addEventListener('click', () => {
+      editData = { ...getProfile() };
+      isEditing = true;
+      renderProfileCard();
+    });
+  } else {
+    document.getElementById('save-btn').addEventListener('click', () => {
+      const current = getProfile();
+      ['name','email','phone','category','experience','locations'].forEach(k => {
+        const el = document.getElementById(`field-${k}`);
+        if (el) editData[k] = el.value.trim();
+      });
+      saveProfile({ ...current, ...editData });
+      isEditing = false;
+      // Update the header initials live
+      const hdr = document.querySelector('.profile-btn-name');
+      if (hdr) hdr.textContent = getProfile().initials;
+      renderProfileCard();
+    });
+    document.getElementById('cancel-btn').addEventListener('click', () => {
+      editData = {};
+      isEditing = false;
+      renderProfileCard();
+    });
+  }
+}
+
+function buildPage() {
+  initShell('profile');
+  const profile = getProfile();
+  const tasks = getTasksArray();
+  const completed = tasks.filter(t => t.status === 'Completed').length;
+  const active    = tasks.filter(t => t.status !== 'Completed').length;
+
+  const performanceStats = [
+    { icon:'star',  label:'Average Rating',  value:'4.8', subtext:'out of 5.0',        colorCls:'yellow' },
+    { icon:'check', label:'Completed Tasks', value: completed.toString(), subtext:'total completions', colorCls:'green2' },
+    { icon:'clip',  label:'Active Tasks',    value: active.toString(),    subtext:'in progress',       colorCls:'teal' },
+    { icon:'trend', label:'Success Rate',    value:'98%', subtext:'completion rate',    colorCls:'green2' },
+  ];
+
+  const content = document.getElementById('page-content');
+  content.innerHTML = `
+    <div class="page-header">
+      <h1>My Profile</h1>
+      <p>Manage your account information and service details.</p>
+    </div>
+
+    <div class="card mb-6" style="padding:32px;" id="profile-card"></div>
+
+    <div class="mb-6">
+      <h2 style="margin-bottom:16px;">Performance Summary</h2>
+      <div class="stat-cards-grid">
+        ${performanceStats.map(s => `
+          <div class="card">
+            <div class="card-body">
+              <div style="padding:10px;border-radius:8px;background:${statBg[s.colorCls]};display:inline-flex;margin-bottom:14px;">${statIcons[s.icon]}</div>
+              <div style="font-size:2rem;font-weight:700;margin-bottom:4px;">${s.value}</div>
+              <div style="font-size:0.9rem;font-weight:600;margin-bottom:2px;">${s.label}</div>
+              <div style="font-size:0.78rem;color:var(--muted-foreground);">${s.subtext}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="card" style="padding:32px;">
+      <h2 style="margin-bottom:24px;">Account Settings</h2>
+      <button class="settings-btn">
+        <div class="settings-btn-left">
+          <div class="settings-btn-icon"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#42a443;stroke-width:2;fill:none;display:block;"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="settings-btn-text"><p>Change Password</p><span>Update your password to keep your account secure</span></div>
+        </div>
+        <div class="settings-btn-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </button>
+      <button class="settings-btn">
+        <div class="settings-btn-left">
+          <div class="settings-btn-icon"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#42a443;stroke-width:2;fill:none;display:block;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.37 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l1.27-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg></div>
+          <div class="settings-btn-text"><p>Update Contact Information</p><span>Manage your contact details and emergency contacts</span></div>
+        </div>
+        <div class="settings-btn-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </button>
+      <button class="settings-btn" onclick="location.href='notifications.html'">
+        <div class="settings-btn-left">
+          <div class="settings-btn-icon teal"><svg viewBox="0 0 24 24" style="width:18px;height:18px;stroke:#42a443;stroke-width:2;fill:none;display:block;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
+          <div class="settings-btn-text"><p>Notification Preferences</p><span>Choose how you want to receive notifications</span></div>
+        </div>
+        <div class="settings-btn-arrow"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></div>
+      </button>
+    </div>
+  `;
+
+  renderProfileCard();
+}
+
+document.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
+</html>

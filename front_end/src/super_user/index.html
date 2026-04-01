@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PropSync — Super User</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+ <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_base.css" />
+<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_layout.css" />
+<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_components.css" />
+<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_dashboard.css" />
+<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_participants.css" />
+<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_roles.css" />
+<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_complaints.css" />
+<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_config.css" />
+</head>
+<body>
+
+<div id="app"></div>
+
+<!-- SIDEBAR -->
+<template id="tpl-sidebar">
+  <div id="sidebar-overlay"></div>
+  <aside id="sidebar">
+    <nav class="sidebar-nav" id="sidebar-nav"></nav>
+    <div class="sidebar-footer">
+      <button class="nav-link" id="logout-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-9A2.25 2.25 0 002.25 5.25v13.5A2.25 2.25 0 004.5 21h9a2.25 2.25 0 002.25-2.25V15M18 15l3-3m0 0l-3-3m3 3H9"/></svg>
+        <span>Logout</span>
+      </button>
+    </div>
+  </aside>
+</template>
+
+<!-- HEADER -->
+<template id="tpl-header">
+  <header id="header">
+    <div class="header-left">
+      <button class="menu-toggle" id="menu-toggle" aria-label="Toggle sidebar">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5"/></svg>
+      </button>
+      <img src="../../public/image.png" alt="PropSync Logo" id="logo" />
+    </div>
+    <div class="header-right">
+      <button class="notif-btn" id="notif-bell-btn" aria-label="Notifications">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+        <span class="notif-badge hidden" id="notif-badge">0</span>
+      </button>
+      <div class="user-menu-wrapper">
+        <button class="user-btn" id="user-btn">
+          <div class="user-avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+          </div>
+          <div class="user-info">
+            <p class="user-name" id="header-username">Sarah Mitchell</p>
+            <svg class="chevron-icon" id="user-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+          </div>
+        </button>
+        <div class="user-dropdown" id="user-dropdown">
+          <button class="dropdown-item" id="profile-dropdown-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="icon-green"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
+            Profile
+          </button>
+          <button class="dropdown-item" id="logout-dropdown-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-9A2.25 2.25 0 002.25 5.25v13.5A2.25 2.25 0 004.5 21h9a2.25 2.25 0 002.25-2.25V15M18 15l3-3m0 0l-3-3m3 3H9"/></svg>
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+</template>
+
+<!-- PAGE: DASHBOARD -->
+<template id="tpl-page-dashboard">
+  <div id="page-dashboard" class="page active"></div>
+</template>
+
+<!-- PAGE: PARTICIPANTS -->
+<template id="tpl-page-participants">
+  <div id="page-participants" class="page">
+    <div class="mb-6">
+      <h1 style="font-size:24px;font-weight:700;color:#111827;margin-bottom:4px;">Manage Participants</h1>
+      <p style="font-size:14px;color:#6b7280;">Control panel for managing system users</p>
+    </div>
+    <div class="card" style="padding:16px;margin-bottom:16px;">
+      <div class="filter-bar">
+        <div class="filter-left">
+          <div class="search-wrap">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            <input type="text" id="p-search" class="search-input" placeholder="Search by name, ID, or email..." />
+          </div>
+          <div class="relative">
+            <button class="dropdown-btn" id="role-filter-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591L15.25 12.46a2.25 2.25 0 00-.659 1.591v3.055c0 .414-.249.783-.632.918l-4.5 1.64A.75.75 0 018.25 19v-5.95a2.25 2.25 0 00-.659-1.591L3.491 7.41A2.25 2.25 0 012.832 5.82V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
+              <span id="role-filter-label">All Roles</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+            </button>
+            <div class="dropdown-menu" id="role-filter-menu">
+              <button data-role="All Roles">All Roles</button>
+              <button data-role="Property Owner">Property Owner</button>
+              <button data-role="Service Provider">Service Provider</button>
+              <button data-role="Maintenance Manager">Maintenance Manager</button>
+            </div>
+          </div>
+          <div class="relative">
+            <button class="dropdown-btn" id="sort-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg>
+              <span id="sort-label">Sort By</span>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+            </button>
+            <div class="dropdown-menu" id="sort-menu">
+              <button data-sort="name">Name (A-Z)</button>
+              <button data-sort="id">ID (A-Z)</button>
+              <button data-sort="email">Email (A-Z)</button>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-green" id="add-participant-btn">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:16px;height:16px;stroke:#fff;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          Add Participant
+        </button>
+      </div>
+    </div>
+    <div class="card table-wrap">
+      <table id="participants-table">
+        <thead>
+          <tr>
+            <th><button id="sort-id-btn">Participant ID <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg></button></th>
+            <th><button id="sort-name-btn">Name <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg></button></th>
+            <th><button id="sort-email-btn">Email <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 7.5L7.5 3m0 0L12 7.5M7.5 3v13.5m13.5 0L16.5 21m0 0L12 16.5m4.5 4.5V7.5"/></svg></button></th>
+            <th>Role</th><th>Access Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="participants-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+<!-- PAGE: ROLES -->
+<template id="tpl-page-roles">
+  <div id="page-roles" class="page">
+    <div style="margin-bottom:16px;">
+      <h1 style="font-size:24px;font-weight:700;color:#111827;margin-bottom:4px;">Role Management</h1>
+      <p style="font-size:14px;color:#6b7280;">Define and manage system roles and their permissions</p>
+    </div>
+    <div class="roles-grid" id="roles-grid"></div>
+  </div>
+</template>
+
+<!-- PAGE: CONFIGURATION -->
+<template id="tpl-page-configuration">
+  <div id="page-configuration" class="page">
+    <div style="margin-bottom:12px;">
+      <h1 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:2px;">System Configuration</h1>
+      <p style="font-size:12px;color:#6b7280;">Manage system-wide settings and preferences</p>
+    </div>
+    <div id="config-content"></div>
+  </div>
+</template>
+
+<!-- PAGE: COMPLAINTS -->
+<template id="tpl-page-complaints">
+  <div id="page-complaints" class="page">
+    <div style="margin-bottom:20px;">
+      <h1 style="font-size:24px;font-weight:700;color:#111827;margin-bottom:4px;">Complaints</h1>
+      <p style="font-size:14px;color:#6b7280;">Manage maintenance complaints and service requests</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
+      <div class="relative">
+        <button class="btn btn-outline" id="complaints-filter-btn" style="border:1px solid #e5e7eb;gap:8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:18px;height:18px;stroke:#16a34a;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591L15.25 12.46a2.25 2.25 0 00-.659 1.591v3.055c0 .414-.249.783-.632.918l-4.5 1.64A.75.75 0 018.25 19v-5.95a2.25 2.25 0 00-.659-1.591L3.491 7.41A2.25 2.25 0 012.832 5.82V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z"/></svg>
+          <span id="complaints-filter-label">All Complaints</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:16px;height:16px;stroke:#374151;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+        </button>
+        <div class="complaints-filter-dropdown" id="complaints-filter-menu"></div>
+      </div>
+      <div class="search-wrap" style="flex:1;max-width:500px;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+        <input type="text" id="complaints-search" class="search-input" placeholder="Search by title, service provider, type, or property..." />
+      </div>
+      <div class="results-count" id="complaints-count">0 Complaints</div>
+      <button class="btn btn-green" id="add-complaint-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:16px;height:16px;stroke:#fff;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+        Add Complaint
+      </button>
+    </div>
+    <div id="complaints-list"></div>
+  </div>
+</template>
+
+<!-- PAGE: NOTIFICATIONS -->
+<template id="tpl-page-notifications">
+  <div id="page-notifications" class="page">
+    <div style="max-width:1024px;margin:0 auto;">
+      <div class="notif-page-header">
+        <div class="notif-page-header-top">
+          <div>
+            <h1>Notifications</h1>
+            <p>View alerts and updates related to system activities and user management.</p>
+          </div>
+          <span class="unread-pill hidden" id="notif-unread-pill">0 Unread</span>
+        </div>
+        <div class="notif-filter-row">
+          <div class="relative">
+            <button class="notif-filter-btn" id="notif-filter-btn">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"/></svg>
+                <span id="notif-filter-label">All Notifications</span>
+              </div>
+              <svg class="chevron-icon" id="notif-filter-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
+            </button>
+            <div class="notif-filter-dropdown" id="notif-filter-menu">
+              <button data-filter="all" class="active">All Notifications</button>
+              <button data-filter="unread">Unread Only</button>
+              <button data-filter="read">Read Only</button>
+            </div>
+          </div>
+          <div class="notif-actions">
+            <button class="btn btn-green" id="mark-all-read-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:16px;height:16px;stroke:#fff;"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5"/></svg>
+              Mark All Read
+            </button>
+            <button class="btn btn-outline" id="clear-all-notif-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:16px;height:16px;stroke:#374151;"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+              Clear All
+            </button>
+          </div>
+        </div>
+      </div>
+      <div id="notifications-list"></div>
+    </div>
+  </div>
+</template>
+
+<!-- PAGE: PROFILE -->
+<template id="tpl-page-profile">
+  <div id="page-profile" class="page">
+    <div class="profile-inner">
+      <div style="margin-bottom:32px;">
+        <h1 style="font-size:30px;font-weight:700;color:#111827;">My Profile</h1>
+        <p style="color:#6b7280;margin-top:8px;">Manage your account information and super user details.</p>
+      </div>
+      <div id="profile-content"></div>
+    </div>
+  </div>
+</template>
+
+<!-- ALL MODALS -->
+<template id="tpl-modals">
+  <!-- ADD PARTICIPANT -->
+  <div class="modal-overlay hidden" id="add-participant-modal">
+    <div class="modal modal-md">
+      <div class="modal-header"><div><h2>Add New Participant</h2><p class="modal-subtitle">Fill in the details to create a new participant account</p></div><button class="modal-close" data-close="add-participant-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ap-name" class="form-control" placeholder="John Doe" /><p class="form-error" id="ap-name-error"></p></div>
+        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ap-email" class="form-control" placeholder="email@example.com" /></div>
+        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ap-contact" class="form-control" placeholder="+91 9734298517" /><p class="form-error" id="ap-contact-error"></p></div>
+        <div class="form-group"><label>Password <span class="req">*</span></label><div class="pass-wrap"><input type="password" id="ap-password" class="form-control" placeholder="••••••••" /><button type="button" class="pass-toggle" data-target="ap-password"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button></div><p class="form-error" id="ap-password-error"></p></div>
+        <div class="form-group"><label>Role Selection <span class="req">*</span></label><select id="ap-role" class="form-control"><option>Property Owner</option><option>Service Provider</option><option>Maintenance Manager</option><option>Administrator</option></select></div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="add-participant-modal">Cancel</button><button class="btn btn-green" id="ap-save-btn">Save</button></div>
+    </div>
+  </div>
+
+  <!-- EDIT PARTICIPANT -->
+  <div class="modal-overlay hidden" id="edit-participant-modal">
+    <div class="modal modal-md">
+      <div class="modal-header"><div><h2>Edit Participant</h2><p class="modal-subtitle">Update participant details</p></div><button class="modal-close" data-close="edit-participant-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ep-id" />
+        <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ep-name" class="form-control" /><p class="form-error" id="ep-name-error"></p></div>
+        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ep-email" class="form-control" /></div>
+        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ep-contact" class="form-control" /><p class="form-error" id="ep-contact-error"></p></div>
+        <div class="form-group"><label>Role Selection <span class="req">*</span></label><select id="ep-role" class="form-control"><option>Property Owner</option><option>Service Provider</option><option>Maintenance Manager</option><option>Administrator</option></select></div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="edit-participant-modal">Cancel</button><button class="btn btn-green" id="ep-save-btn">Save Changes</button></div>
+    </div>
+  </div>
+
+  <!-- VIEW PARTICIPANT -->
+  <div class="modal-overlay hidden" id="view-participant-modal">
+    <div class="modal modal-md">
+      <div class="modal-header"><h2>Participant Details</h2><button class="modal-close" data-close="view-participant-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body" id="view-participant-body"></div>
+      <div class="modal-footer"><button class="btn btn-blue" data-close="view-participant-modal">Close</button></div>
+    </div>
+  </div>
+
+  <!-- EDIT ROLE PERMISSIONS -->
+  <div class="modal-overlay hidden" id="edit-role-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header"><div><h2>Edit Role Permissions</h2><p class="modal-subtitle" id="edit-role-name"></p></div><button class="modal-close" data-close="edit-role-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body" id="edit-role-body"></div>
+      <div class="modal-footer"><button class="btn btn-outline" data-close="edit-role-modal">Cancel</button><button class="btn btn-blue" id="save-role-perms-btn">Save Changes</button></div>
+    </div>
+  </div>
+
+  <!-- ADD COMPLAINT -->
+  <div class="modal-overlay hidden" id="add-complaint-modal">
+    <div class="modal modal-lg" style="max-height:90vh;">
+      <div class="modal-header"><h2>Add New Complaint</h2><button class="modal-close" data-close="add-complaint-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Complaint Title <span class="req">*</span></label><input type="text" id="ac-title" class="form-control" placeholder="Enter complaint title" /></div>
+        <div class="form-group"><label>Description <span class="req">*</span></label><textarea id="ac-desc" class="form-control" rows="3" placeholder="Describe the issue..."></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label>Service Provider <span class="req">*</span></label><input type="text" id="ac-provider" class="form-control" placeholder="Provider name" /></div>
+          <div class="form-group"><label>Provider Type</label><select id="ac-provider-type" class="form-control"><option>Plumber</option><option>Electrician</option><option>HVAC Technician</option><option>Locksmith</option><option>Carpenter</option><option>Painter</option><option>Other</option></select></div>
+        </div>
+        <div class="form-group"><label>Property <span class="req">*</span></label><input type="text" id="ac-property" class="form-control" placeholder="Building - Unit" /></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label>Reported By <span class="req">*</span></label><input type="text" id="ac-reported-by" class="form-control" placeholder="Reporter name" /></div>
+          <div class="form-group"><label>Reported Date</label><input type="date" id="ac-date" class="form-control" /></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label>Status</label><select id="ac-status" class="form-control"><option value="to-be-resolved">To Be Resolved</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="estimate-approval">Estimate Approval</option></select></div>
+          <div class="form-group"><label>Priority</label><select id="ac-priority" class="form-control"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
+        </div>
+        <div class="form-group"><label>Estimated Cost (optional)</label><input type="text" id="ac-cost" class="form-control" placeholder="e.g. $450" /></div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="add-complaint-modal">Cancel</button><button class="btn btn-green" id="ac-save-btn">Save Complaint</button></div>
+    </div>
+  </div>
+
+  <!-- EDIT COMPLAINT -->
+  <div class="modal-overlay hidden" id="edit-complaint-modal">
+    <div class="modal modal-lg" style="max-height:90vh;">
+      <div class="modal-header"><h2>Edit Complaint</h2><button class="modal-close" data-close="edit-complaint-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <input type="hidden" id="ec-id" />
+        <div class="form-group"><label>Complaint Title</label><input type="text" id="ec-title" class="form-control" /></div>
+        <div class="form-group"><label>Description</label><textarea id="ec-desc" class="form-control" rows="3"></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label>Service Provider</label><input type="text" id="ec-provider" class="form-control" /></div>
+          <div class="form-group"><label>Provider Type</label><select id="ec-provider-type" class="form-control"><option>Plumber</option><option>Electrician</option><option>HVAC Technician</option><option>Locksmith</option><option>Carpenter</option><option>Painter</option><option>Other</option></select></div>
+        </div>
+        <div class="form-group"><label>Property</label><input type="text" id="ec-property" class="form-control" /></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label>Reported By</label><input type="text" id="ec-reported-by" class="form-control" /></div>
+          <div class="form-group"><label>Reported Date</label><input type="date" id="ec-date" class="form-control" /></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group"><label>Status</label><select id="ec-status" class="form-control"><option value="to-be-resolved">To Be Resolved</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="estimate-approval">Estimate Approval</option></select></div>
+          <div class="form-group"><label>Priority</label><select id="ec-priority" class="form-control"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
+        </div>
+        <div class="form-group"><label>Estimated Cost</label><input type="text" id="ec-cost" class="form-control" placeholder="e.g. $450" /></div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="edit-complaint-modal">Cancel</button><button class="btn btn-green" id="ec-save-btn">Save Changes</button></div>
+    </div>
+  </div>
+
+  <!-- VIEW COMPLAINT -->
+  <div class="modal-overlay hidden" id="view-complaint-modal">
+    <div class="modal modal-lg" style="max-height:90vh;">
+      <div class="modal-header"><h2>View Complaint Details</h2><button class="modal-close" data-close="view-complaint-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body" id="view-complaint-body"></div>
+    </div>
+  </div>
+
+  <!-- REVIEW ESTIMATE -->
+  <div class="modal-overlay hidden" id="review-estimate-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header"><h2>Review Maintenance Estimate</h2><button class="modal-close" data-close="review-estimate-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body" id="review-estimate-body"></div>
+    </div>
+  </div>
+
+  <!-- CHANGE PASSWORD -->
+  <div class="modal-overlay hidden" id="change-password-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header"><h2>Change Password</h2><button class="modal-close" data-close="change-password-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Current Password</label><div class="pass-wrap"><input type="password" id="cp-current" class="form-control" placeholder="Enter current password" /><button type="button" class="pass-toggle" data-target="cp-current"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button></div></div>
+        <div class="form-group"><label>New Password</label><div class="pass-wrap"><input type="password" id="cp-new" class="form-control" placeholder="Enter new password" /><button type="button" class="pass-toggle" data-target="cp-new"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button></div></div>
+        <div class="form-group"><label>Confirm New Password</label><div class="pass-wrap"><input type="password" id="cp-confirm" class="form-control" placeholder="Confirm new password" /><button type="button" class="pass-toggle" data-target="cp-confirm"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button></div></div>
+        <p class="form-error" id="cp-error"></p>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" data-close="change-password-modal">Cancel</button><button class="btn btn-blue" id="cp-save-btn">Change Password</button></div>
+    </div>
+  </div>
+
+  <!-- UPDATE CONTACT -->
+  <div class="modal-overlay hidden" id="contact-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header"><h2>Update Contact Information</h2><button class="modal-close" data-close="contact-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>Phone Number</label><input type="tel" id="ct-phone" class="form-control" /></div>
+        <div class="form-group"><label>Email Address</label><input type="email" id="ct-email" class="form-control" /></div>
+        <div class="form-group"><label>Emergency Contact Name</label><input type="text" id="ct-ename" class="form-control" placeholder="John Doe" /></div>
+        <div class="form-group"><label>Emergency Contact Number</label><input type="tel" id="ct-ephone" class="form-control" placeholder="+1 9876543210" /></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" data-close="contact-modal">Cancel</button><button class="btn btn-green" id="ct-save-btn">Update</button></div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATION PREFERENCES -->
+  <div class="modal-overlay hidden" id="notif-pref-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header"><h2>Notification Preferences</h2><button class="modal-close" data-close="notif-pref-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
+      <div class="modal-body">
+        <div class="notif-pref-row"><div><h3>Email Notifications</h3><p>Receive updates via email</p></div><input type="checkbox" id="np-email" checked /></div>
+        <div class="notif-pref-row"><div><h3>SMS Notifications</h3><p>Receive alerts via SMS</p></div><input type="checkbox" id="np-sms" /></div>
+        <div class="notif-pref-row"><div><h3>Push Notifications</h3><p>Browser push notifications</p></div><input type="checkbox" id="np-push" checked /></div>
+        <div class="notif-pref-row"><div><h3>Weekly Reports</h3><p>Receive weekly summary reports</p></div><input type="checkbox" id="np-weekly" checked /></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-outline" data-close="notif-pref-modal">Cancel</button><button class="btn" style="background:#ca8a04;color:#fff;" id="np-save-btn">Save Preferences</button></div>
+    </div>
+  </div>
+</template>
+
+<!-- JS Modules -->
+<script src="../js/SuperUser_JS/superuser_state.js"></script>
+<script src="../js/SuperUser_JS/superuser_data.js"></script>
+<script src="../js/SuperUser_JS/superuser_icons.js"></script>
+<script src="../js/SuperUser_JS/superuser_utils.js"></script>
+<script src="../js/SuperUser_JS/superuser_ui.js"></script>
+<script src="../js/SuperUser_JS/superuser_loader.js"></script>
+<script src="../js/SuperUser_JS/superuser_router.js"></script>
+<script src="../js/SuperUser_JS/superuser_dashboard.js"></script>
+<script src="../js/SuperUser_JS/superuser_participants.js"></script>
+<script src="../js/SuperUser_JS/superuser_roles.js"></script>
+<script src="../js/SuperUser_JS/superuser_config.js"></script>
+<script src="../js/SuperUser_JS/superuser_complaints.js"></script>
+<script src="../js/SuperUser_JS/superuser_notifications.js"></script>
+<script src="../js/SuperUser_JS/superuser_profile.js"></script>
+<script src="../js/SuperUser_JS/superuser_main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ratings & Feedback — PropSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+<script src="../js/taskData.js"></script>
+<script>
+/* =========================================================
+   Ratings & Feedback Page
+   ========================================================= */
+
+const overviewStats = { averageRating: 4.6, totalReviews: 47, completedComplaints: 52, satisfactionRate: 92 };
+
+const ratingDistribution = [
+  { stars: 5, count: 32, percentage: 68 },
+  { stars: 4, count: 10, percentage: 21 },
+  { stars: 3, count: 3,  percentage: 6  },
+  { stars: 2, count: 1,  percentage: 2  },
+  { stars: 1, count: 1,  percentage: 2  },
+];
+
+const feedbackList = [
+  { id:'1', complaintId:'C-2398', serviceType:'Plumbing', rating:5, comment:'Excellent service! The technician was very professional and fixed the toilet issue quickly. The work area was left clean and tidy. Highly recommend!', date:'Mar 6, 2026', location:'Building A, Apt 401', ownerName:'Sarah Johnson' },
+  { id:'2', complaintId:'C-2395', serviceType:'Plumbing', rating:5, comment:'Fast and efficient repair work. The plumber arrived on time and completed the job within the estimated timeframe. Very satisfied with the quality of work.', date:'Mar 5, 2026', location:'Building C, Apt 205', ownerName:'Michael Chen' },
+  { id:'3', complaintId:'C-2388', serviceType:'Plumbing', rating:4, comment:'Good service overall. The repair was done well, though it took slightly longer than expected. The technician was friendly and explained everything clearly.', date:'Mar 3, 2026', location:'Building B, Apt 512', ownerName:'Emily Rodriguez' },
+  { id:'4', complaintId:'C-2380', serviceType:'Plumbing', rating:5, comment:'Outstanding work! Very knowledgeable technician who not only fixed the issue but also provided helpful maintenance tips. Will definitely request this service provider again.', date:'Feb 28, 2026', location:'Building D, Apt 103', ownerName:'David Thompson' },
+  { id:'5', complaintId:'C-2375', serviceType:'Plumbing', rating:4, comment:"Professional and courteous service. The leak was fixed properly and hasn't reoccurred. Appreciated the clear communication throughout the process.", date:'Feb 26, 2026', location:'Building A, Apt 308', ownerName:'Lisa Anderson' },
+  { id:'6', complaintId:'C-2368', serviceType:'Plumbing', rating:3, comment:'Service was adequate. The problem was resolved but I expected better attention to detail. The technician seemed rushed.', date:'Feb 24, 2026', location:'Building E, Apt 607', ownerName:'Robert Martinez' },
+];
+
+let ratingFilter = 'All';
+let serviceFilter = 'All';
+
+function getFiltered() {
+  return feedbackList.filter(f => {
+    const matchRating  = ratingFilter === 'All'  || f.rating === parseInt(ratingFilter);
+    const matchService = serviceFilter === 'All' || f.serviceType === serviceFilter;
+    return matchRating && matchService;
+  });
+}
+
+function renderFeedback() {
+  const filtered = getFiltered();
+  const container = document.getElementById('feedback-list');
+  const countEl = document.getElementById('feedback-count');
+  if (countEl) countEl.textContent = filtered.length;
+  if (!container) return;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="#D1D5DB" stroke-width="1.5" fill="none"/></svg>
+        <h3>No Feedback Found</h3>
+        <p>No feedback matches your current filters.</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = filtered.map(f => `
+    <div class="feedback-full-item">
+      <div class="feedback-full-header">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+            <span class="feedback-full-id">${f.complaintId}</span>
+            <span class="badge badge-green" style="border-radius:999px;">${f.serviceType}</span>
+          </div>
+          <div class="feedback-full-rating">
+            ${renderStars(f.rating, 16)}
+            <span style="font-size:0.9rem;font-weight:700;">${f.rating}.0</span>
+          </div>
+          <p class="feedback-full-by">by <strong style="color:var(--foreground);">${f.ownerName}</strong></p>
+          <p class="feedback-full-comment">${f.comment}</p>
+        </div>
+        <div class="feedback-full-right">
+          <div class="date-row">
+            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            ${f.date}
+          </div>
+          <p style="font-size:0.82rem;color:var(--muted-foreground);">${f.location}</p>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildPage() {
+  initShell('ratings');
+  const content = document.getElementById('page-content');
+  content.innerHTML = `
+    <div class="page-header">
+      <h1>Ratings & Feedback</h1>
+      <p>View ratings and feedback from property owners for completed services.</p>
+    </div>
+
+    <!-- Overview Stats -->
+    <div class="stat-cards-grid mb-8">
+      <div class="card">
+        <div class="card-body">
+          <div style="padding:10px;background:rgba(245,158,11,0.1);border-radius:8px;display:inline-flex;margin-bottom:12px;">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:#F59E0B;stroke:#F59E0B;stroke-width:1;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </div>
+          <p style="font-size:0.82rem;color:var(--muted-foreground);margin-bottom:4px;">Average Rating</p>
+          <div style="display:flex;align-items:baseline;gap:8px;">
+            <span style="font-size:2rem;font-weight:700;">${overviewStats.averageRating}</span>
+            <span style="color:var(--muted-foreground);">/ 5.0</span>
+          </div>
+          <div style="margin-top:6px;">${renderStars(Math.round(overviewStats.averageRating), 12)}</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div style="padding:10px;background:rgba(66,164,67,0.15);border-radius:8px;display:inline-flex;margin-bottom:12px;">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <p style="font-size:0.82rem;color:var(--muted-foreground);margin-bottom:4px;">Total Reviews</p>
+          <p style="font-size:2rem;font-weight:700;">${overviewStats.totalReviews}</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div style="padding:10px;background:rgba(104,213,176,0.25);border-radius:8px;display:inline-flex;margin-bottom:12px;">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>
+          </div>
+          <p style="font-size:0.82rem;color:var(--muted-foreground);margin-bottom:4px;">Completed Complaints</p>
+          <p style="font-size:2rem;font-weight:700;">${overviewStats.completedComplaints}</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div style="padding:10px;background:rgba(66,164,67,0.15);border-radius:8px;display:inline-flex;margin-bottom:12px;">
+            <svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          </div>
+          <p style="font-size:0.82rem;color:var(--muted-foreground);margin-bottom:4px;">Satisfaction Rate</p>
+          <p style="font-size:2rem;font-weight:700;">${overviewStats.satisfactionRate}%</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Distribution + Filters row -->
+<div style="display:flex;flex-direction:column;gap:24px;margin-bottom:32px;">      <!-- Distribution -->
+      <div class="card">
+        <div class="card-body">
+          <h2 style="font-size:1rem;margin-bottom:16px;">Rating Distribution</h2>
+          ${ratingDistribution.map(r => `
+            <div class="rating-dist-row">
+              <span class="stars-label">${r.stars}★</span>
+              <div class="rating-bar-wrap"><div class="rating-bar-fill" style="width:${r.percentage}%"></div></div>
+              <span class="rating-dist-count">${r.count}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- Filters -->
+      <div class="card">
+        <div class="card-body">
+          
+              <div style="display:flex;flex-direction:row;gap:14px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="filter-field" style="flex:1">
+              <svg class="filter-field-icon" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke-width="1.5" fill="none"/></svg>
+              <select class="filter-select" id="rating-filter">
+                <option value="All">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+              </select>
+            </div>
+            <div class="filter-field" style="flex:1">
+              <svg class="filter-field-icon" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              <select class="filter-select" id="service-filter">
+                <option value="All">All Service Types</option>
+                <option value="Plumbing">Plumbing</option>
+                <option value="Electrical">Electrical</option>
+                <option value="HVAC">HVAC</option>
+              </select>
+            </div>
+            <div class="filter-field" style="flex:1" >
+              <svg class="filter-field-icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <select class="filter-select" id="date-filter">
+                <option value="All">All Time</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="3months">Last 3 Months</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback List -->
+    <h2 style="margin-bottom:16px;">Recent Feedback (<span id="feedback-count">${feedbackList.length}</span>)</h2>
+    <div id="feedback-list"></div>
+  `;
+
+  document.getElementById('rating-filter').addEventListener('change', function() {
+    ratingFilter = this.value; renderFeedback();
+  });
+  document.getElementById('service-filter').addEventListener('change', function() {
+    serviceFilter = this.value; renderFeedback();
+  });
+
+  renderFeedback();
+}
+
+document.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
+</html>
