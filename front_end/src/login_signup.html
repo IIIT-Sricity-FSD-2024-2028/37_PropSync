@@ -4,17 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PropSync</title>
-<<<<<<< HEAD
     <link rel="icon" type="image/png" href="./public/favicon.png" />
-  </head>
-  <body>
-    <!--Login page and Signup Page code here-->
-=======
-    <link rel="icon" type="image/png" href="../public/favicon.png" />
     <link rel="stylesheet" href="./css/login_signup.css" />
   </head>
   <body>
-    <a id="home_icon" href="../index.html">
+    <div id="home_icon">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="40"
@@ -30,7 +24,7 @@
           stroke-linejoin="round"
         />
       </svg>
-    </a>
+    </div>
 
     <div class="center_box">
       <div class="content">
@@ -82,27 +76,24 @@
             </div>
           </div>
         </div>
+        <div id="signupError" class="error-message"></div>
         <div id="Owner_form" class="hidden">
           <input type="email" placeholder="Email Address" />
           <input type="password" placeholder="Password" />
           <input type="text" id="propertyUnit" placeholder="Property unit" />
           <input type="text" id="communityName" placeholder="Community name" />
-          <button class="btn" id="signupBtn">Sign Up</button>
-          <a class="signupBack">← Back</a>
         </div>
         <div id="SP_form" class="hidden">
           <input type="email" placeholder="Email Address" />
           <input type="password" placeholder="Password" />
-          <button class="btn" id="signupBtn">Sign Up</button>
-          <a class="signupBack">← Back</a>
         </div>
         <div id="MMA_form" class="hidden">
           <input type="email" placeholder="Email Address" />
           <input type="password" placeholder="Password" />
           <input type="text" placeholder="Community name" />
-          <button class="btn" id="signupBtn">Sign Up</button>
-          <a class="signupBack">← Back</a>
         </div>
+        <button class="btn hidden" id="signupBtn">Sign Up</button>
+        <a class="signupBack hidden">← Back</a>
       </div>
       <div>
         <div class="box">
@@ -123,6 +114,5 @@
       </div>
     </div>
     <script src="./js/login_signup.js"></script>
->>>>>>> origin/main
   </body>
 </html>
