@@ -135,10 +135,11 @@ body {
   align-items: center;
 }
 
-.profile {
+.profile > a {
   display: flex;
   gap: 5px;
   align-items: center;
+  color: #000000;
 }
 
 /* MAIN */
@@ -415,17 +416,16 @@ body {
   color: #bbf7d0;
 }
 
-.tag.blue {
+.tag.blue,
+.assigned {
   background: #1e3a8a;
   color: white;
 }
 
-.tag.orange,
-.waiting {
+.waiting,
+.estimating {
   background: #fed7aa;
 }
-
-/* Status */
 
 .status {
   padding: 8px 14px;
@@ -433,7 +433,7 @@ body {
   font-weight: 600;
   font-size: 13px;
 }
-.in-progress {
+.pending {
   background: #fde68a;
   color: #92400e;
 }

@@ -1,0 +1,49 @@
+[
+  {
+    "id": 1,
+    "title": "Water Leakage in Block A",
+    "caption": "Continuous water leakage in corridor room 203 causing wet floors and damage.",
+    "status": "Pending",
+    "serviceProviderQueue": ["plumber1@service.com", "maintenance@service.com"],
+    "assignedTo": null,
+    "category": "Maintenance",
+    "issuedBy": "resident1@gmail.com",
+    "image": "images/water_leakage.jpg"
+  },
+  {
+    "id": 2,
+    "title": "Street Light Not Working",
+    "caption": "Street light near the main gate has not been working for the past three days.",
+    "status": "Approved",
+    "serviceProviderQueue": ["electrician@service.com", "lighting@service.com"],
+    "assignedTo": null,
+    "category": "Electrical",
+    "issuedBy": "resident2@gmail.com",
+    "image": "images/street_light.jpg"
+  },
+  {
+    "id": 3,
+    "title": "Garbage Not Collected",
+    "caption": "Garbage bins in Block C are overflowing and need immediate collection.",
+    "status": "Estimating Cost",
+    "serviceProviderQueue": ["sanitation@service.com"],
+    "assignedTo": null,
+    "category": "Sanitation",
+    "issuedBy": "resident3@gmail.com",
+    "image": "images/garbage_issue.jpg"
+  },
+  {
+    "id": 4,
+    "title": "Lift Not Working",
+    "caption": "Lift is not working since 2 days causing trouble to old and disable residents.",
+    "status": "Assigned",
+    "serviceProviderQueue": [
+      "itsElectrics@gmail.com",
+      "rahul_electrics@gmail.com"
+    ],
+    "assignedTo": "itsElectrics@gmail.com",
+    "category": "Maintenance",
+    "issuedBy": "resident4@gmail.com",
+    "image": "images/wifi_issue.jpg"
+  }
+]
