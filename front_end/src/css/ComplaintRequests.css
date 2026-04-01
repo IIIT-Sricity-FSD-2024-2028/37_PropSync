@@ -18,28 +18,43 @@
 
   .header-right { display: flex; align-items: center; gap: 25px; }
 
-  .notif-wrapper { position: relative; cursor: pointer; }
-  .bell-icon { font-size: 26px; color: #ff4d4d  ; }
-  .badge {
-    position: absolute; top: -5px; right: -5px;
-    background:  #ff4d4d; color:white;
-    font-size: 11px; padding: 2px 5px;
-    border-radius: 50%; border: 2px solid white ;
-  }
-  .profile-pill {
-    display: flex; align-items: center; gap: 10px;
-    background: #eef2ff; padding: 7px 16px 7px 7px;
-    border-radius: 30px; cursor: pointer; transition: background 0.2s;
-  }
+.badge {
+  display: none !important;
+}
+.bell-icon {
+  font-size: 24px;
+  color: #1a0dab; 
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.profile-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent !important; 
+  padding: 0;
+  border-radius: 0;
+}
+.profile-avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #281a8c;
+  background: transparent !important; 
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #281a8c; 
+  font-size: 20px;
+  flex-shrink: 0;
+}
+.user-role {
+  font-weight: 500;
+  font-size: 16px;
+  color: #1a0dab; 
+}
   .profile-pill:hover { background: #e0e7ff; }
-  .profile-avatar-circle {
-    width: 36px; height: 36px; border-radius: 50%;
-    background: #28a745; display: flex;
-    align-items: center; justify-content: center;
-    color: #fff; font-size: 18px; flex-shrink: 0;
-  }
-  .user-role { font-weight: 600; font-size: 14px; color: #333; }
-
   .sidebar-overlay {
     display: none; position: fixed; inset: 0;
     background: rgba(0,0,0,0.25);
@@ -48,7 +63,6 @@
     z-index: 999;
   }
   .sidebar-overlay.active { display: block; }
-
   .sidebar {
     position: fixed; top: 0; left: -300px;
     width: 260px; height: 100%;
@@ -66,7 +80,6 @@
     padding: 20px;
     border-bottom: 1px solid #f0f0f0;
   }
-  
   .sidebar-brand {
     display: flex;
     align-items: center;
@@ -101,12 +114,17 @@
   .menu-item i {
     width: 24px; 
     font-size: 18px;
-    color: #555; 
+    color:#28a745 ; 
     background: transparent !important; 
     display: flex;
     justify-content: center;
     transition: color 0.2s;
   }
+.dashboard-icon {
+  width: 20px;
+  height: 20px;
+  stroke: #2E9449; 
+}
   .menu-item:hover, .menu-item.active {
     background: #e8f5ec; 
     color: #28a745;      

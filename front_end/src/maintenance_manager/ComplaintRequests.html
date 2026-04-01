@@ -26,8 +26,7 @@
 <body>
 
 <div class="sidebar-overlay" id="overlay" onclick="toggleMenu()"></div>
-
-<aside class="sidebar" id="sidebar">
+  <aside class="sidebar" id="sidebar">
   <div class="sidebar-header">
     <a href="#" class="sidebar-brand">
       <img src="../../public/Images/PropSync.png" alt="PropSync" class="sidebar-logo-img">
@@ -37,25 +36,28 @@
   
   <nav class="menu-list">
     <a href="../maintenance_manager/dashboard.html" class="menu-item">
-      <i class="fa-solid fa-gauge-high"></i> Dashboard
+    <svg class="dashboard-icon" viewBox="0 0 24 24" fill="none" stroke="#2E9449" stroke-width="2">
+    <path d="M3 10l9-7 9 7"/>
+    <path d="M5 10v10h14V10"/>
+  </svg> Dashboard
     </a>
     <a href="../maintenance_manager/ComplaintRequest.html" class="menu-item">
-      <i class="fa-solid fa-file-circle-exclamation"></i> Complaint Requests
+      <i class="fa-regular fa-clipboard"></i> Complaint Requests
     </a>
     <a href="../maintenance_manager/service-estimate.html" class="menu-item">
-    <i class="fa-solid fa-calculator"></i> Estimate Approval
-  </a>
+      <i class="fa-regular fa-calendar-check"></i> Estimate Approval
+    </a>
     <a href="../maintenance_manager/service-bills.html" class="menu-item">
-      <i class="fa-solid fa-receipt"></i> Service Bills
+      <i class="fa-regular fa-file-lines"></i> Service Bills
     </a>
     <a href="../maintenance_manager/provider-performance.html" class="menu-item">
-      <i class="fa-solid fa-chart-line"></i> Performance
+      <i class="fa-regular fa-chart-bar"></i> Performance
     </a>
     <a href="../maintenance_manager/communication.html" class="menu-item">
-      <i class="fa-solid fa-envelope"></i> Communication Center </Center>
+      <i class="fa-regular fa-comments"></i> Communication
     </a>
     <a href="../maintenance_manager/notification.html" class="menu-item">
-      <i class="fa-solid fa-bell"></i> Notifications
+      <i class="fa-regular fa-bell"></i> Notifications
     </a>
   </nav>
 
@@ -67,23 +69,24 @@
 </aside>
 <div class="main-wrapper">
   <header class="top-header">
-    <div class="header-left">
-      <i class="fa-solid fa-bars menu-trigger" onclick="toggleMenu()"></i>
-      <img src="../../public/Images/PropSync.png" alt="PropSync Logo" class="logo-img">
+  <div class="header-left">
+    <i class="fa-solid fa-bars menu-trigger" onclick="toggleMenu()"></i>
+    <img src="../../public/Images/PropSync.png" alt="PropSync Logo" class="logo-img">
+  </div>
+
+  <div class="header-right">
+    <div class="notif-wrapper" onclick="window.location.href='../maintenance_manager/notification.html'">
+      <i class="fa-regular fa-bell bell-icon"></i>
     </div>
-    <div class="header-right">
-      <div class="notif-wrapper" onclick="window.location.href='../maintenance_manager/notification.html'">
-        <i class="fa-solid fa-bell bell-icon"></i>
-        <span class="badge">1</span>
+
+    <div class="profile-pill" onclick="window.location.href='../maintenance_manager/profile.html'">
+      <div class="profile-avatar-circle">
+        <i class="fa-solid fa-user"></i>
       </div>
-      <div class="profile-pill" onclick="window.location.href='../maintenance_manager/profile.html'" style="cursor:pointer;">
-        <div class="profile-avatar-circle">
-          <i class="fa-solid fa-user"></i>
-        </div>
-        <span class="user-role">Maintenance Manager</span>
-      </div>
+      <span class="user-role">John Doe</span>
     </div>
-  </header>
+  </div>
+</header>
 
   <div class="container">
     <div class="banner" id="mainBanner">
