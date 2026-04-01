@@ -223,7 +223,7 @@ function checkPin() {
   } else if (userPin.trim() === "") {
     alert("PIN cannot be empty");
   } else if (userPin === correctPin) {
-    window.location.href = "../super_user/dashboard.html";
+    window.location.href = "../super_user/index.html";
   } else {
     alert("Wrong PIN");
   }
