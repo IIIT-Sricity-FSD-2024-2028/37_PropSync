@@ -335,6 +335,7 @@ function formatDate(dateStr) {
   return date.toLocaleDateString();
 }
 
+//notifications
 const notify_container = document.querySelector(".notifications");
 const unreadBadge = document.querySelector(".unread-badge");
 const markAllBtn = document.querySelector(".btn.green");

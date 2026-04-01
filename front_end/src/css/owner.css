@@ -415,13 +415,14 @@ body {
   color: #bbf7d0;
 }
 
-.tag.blue {
+.tag.blue,
+.assigned {
   background: #1e3a8a;
   color: white;
 }
 
 .tag.orange,
-.waiting {
+.estimating {
   background: #fed7aa;
 }
 
@@ -433,7 +434,8 @@ body {
   font-weight: 600;
   font-size: 13px;
 }
-.in-progress {
+.in-progress,
+.pending {
   background: #fde68a;
   color: #92400e;
 }
@@ -734,9 +736,11 @@ body {
 .edit-btn:hover {
   background: #1b5e20;
 }
-.profile {
+.profile > a {
   display: flex;
-  gap: 40px;
+  align-items: center;
+  color: #000000;
+  gap: 5px;
 }
 .pro_left {
   width: 250px;
