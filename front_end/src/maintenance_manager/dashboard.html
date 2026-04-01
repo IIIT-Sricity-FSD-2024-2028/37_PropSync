@@ -1,13 +1,104 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PropSync</title>
-    <link rel="icon" type="image/png" href="../../public/favicon.png" />
-    <link rel="stylesheet" href="" />
-  </head>
-  <body>
-    <!--Maintenance Manager Dashboard code here-->
-  </body>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PropSync – Dashboard</title>
+  <link rel="stylesheet" href="../css/maintenance_manager.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+
+<body class="has-sidebar">
+<div class="sidebar-overlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-left">
+      <img src="../../public/image.png" alt="Logo" class="sidebar-logo-img">
+    </div>
+    <button class="sidebar-close" title="Close menu">✕</button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <a class="nav-link" href="approved-complaints.html"><span class="nav-icon">✅</span> Approved Complaints</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts & Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
+  </div>
+</aside>
+
+<div class="page-wrapper">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" title="Open menu"><span></span><span></span><span></span></button>
+      <div class="topbar-logo">
+        <span class="topbar-logo-text">PropSync</span>
+      </div>
+    </div>
+
+    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications">
+        <i class="fa-regular fa-bell"></i>
+        <div class="topbar-notif-dot"></div>
+      </div>
+
+      <div onclick="location.href='profile.html'" title="Profile" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:50%;border:2px solid #1a0dab;display:flex;align-items:center;justify-content:center;">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <span style="font-weight:500;font-size:15px;">Maintenance Manager</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="welcome-banner">
+    <h1>Welcome Back, Maintenance Manager 👋</h1>
+    <p>Manage your property maintenance and service coordination efficiently</p>
+  </div>
+
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <div class="alert-box" id="alertBox">
+    <div class="alert-icon">⚠️</div>
+    <div style="flex:1;">
+      <h3>System Alerts</h3>
+      <ul id="alertList">
+        <li>Service estimates awaiting approval – <a href="service-estimate.html">Review Now</a></li>
+        <li>1 maintenance request overdue</li>
+        <li>1 service provider declined assignment</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="dash-grid">
+    <div class="card">
+      <div class="card-title">New Complaints Needing Approval</div>
+      <table class="data-table">
+        <thead><tr><th>ID</th><th>Issue</th><th>Location</th><th>Priority</th><th>Action</th></tr></thead>
+        <tbody id="dashComplaintsBody"></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Recent Notifications</div>
+      <div id="dashNotifs"></div>
+    </div>
+  </div>
+</div>
+
+<script src="../js/maintenance_manager.js"></script>
+</body>
 </html>

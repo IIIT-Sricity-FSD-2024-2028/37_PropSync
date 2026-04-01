@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PropSync – Provider Performance</title>
+ <link rel="stylesheet" href="../css/maintenance_manager.css"/>
+  <style>
+    .review-card{border:1px solid var(--border);border-radius:9px;padding:13px 15px;margin-top:10px;background:#FAFAFA;}
+    .review-stars{color:#F59E0B;font-size:13px;letter-spacing:1px;}
+    .review-author{font-weight:700;font-size:13px;margin-bottom:2px;}
+    .review-date{font-size:11px;color:#9CA3AF;}
+    .review-text{font-size:13px;color:#374151;margin-top:6px;line-height:1.55;}
+    .reviews-toggle{font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;margin-top:12px;display:inline-block;}
+    .reviews-toggle:hover{text-decoration:underline;}
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="has-sidebar">
+<div class="sidebar-overlay"></div>
+<aside class="sidebar">
+ <div class="sidebar-logo">
+  <div class="sidebar-logo-left">
+   <img src="../../public/image.png" alt="Logo" class="sidebar-logo-img">
+  </div>
+  <button class="sidebar-close" title="Close menu">✕</button>
+</div>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <a class="nav-link" href="approved-complaints.html"><span class="nav-icon">✅</span> Approved Complaints</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
+  </div>
+</aside>
+
+<div class="page-wrapper">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" title="Open menu"><span></span><span></span><span></span></button>
+      <div class="topbar-logo"><span class="topbar-logo-text">PropSync</span></div>
+    </div>    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications" style="position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:transparent;cursor:pointer;">
+        <i class="fa-regular fa-bell" style="font-size:22px;color:#1a0dab;"></i>
+        <div class="topbar-notif-dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;background:#DC2626;border-radius:50%;border:2px solid #fff;display:none;"></div>
+      </div>
+      <div onclick="location.href='profile.html'" title="Profile" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:50%;border:2px solid #1a0dab;background:transparent;display:flex;align-items:center;justify-content:center;color:#1a0dab;font-size:18px;flex-shrink:0;">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <span style="font-weight:500;font-size:15px;color:#1a0dab;">Maintenance Manager</span>
+      </div>
+    </div>
+  </div>
+
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:4px;">Service Provider Performance</h2>
+  <p style="color:#6B7280;font-size:13px;margin-bottom:20px;">Track provider ratings, on-time delivery, cost metrics and customer reviews</p>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;">
+    <div class="kpi-card"><div><div class="kpi-label">Total Providers</div><div class="kpi-value">8</div></div><div class="kpi-icon" style="background:#F0FDF4;color:#16A34A;">🏢</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Avg Rating</div><div class="kpi-value">4.6</div></div><div class="kpi-icon" style="background:#FEF3C7;color:#D97706;">⭐</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Avg On-Time</div><div class="kpi-value">87%</div></div><div class="kpi-icon" style="background:#DCFCE7;color:#16A34A;">⏱</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Total Jobs Done</div><div class="kpi-value">678</div></div><div class="kpi-icon" style="background:#F0FDF4;color:#16A34A;">🔧</div></div>
+  </div>
+
+  <div id="perfList"></div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="logout-modal">
+    <div class="logout-icon">👋</div><h3>Log Out?</h3>
+    <p>Are you sure you want to log out?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="hideModal('logoutModal')">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="doLogout()">Yes, Log Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/maintenance_manager.js"></script>
+<script>
+function stars(n){return '★'.repeat(Math.round(n))+'☆'.repeat(5-Math.round(n));}
+document.addEventListener('DOMContentLoaded', () => {
+  const rankLabels=['#1','#2','#3','#4','#5','#6','#7','#8'];
+  const rankBg=['#FEF3C7','#F3F4F6','#FEF3C7','#F9FAFB','#F9FAFB','#F9FAFB','#F9FAFB','#F9FAFB'];
+  const rankColor=['#D97706','#6B7280','#B45309','#374151','#374151','#374151','#374151','#374151'];
+  document.getElementById('perfList').innerHTML = providers.map((p,i) => {
+    const barColor = p.onTime>=90?'#16A34A':p.onTime>=80?'#D97706':'#DC2626';
+    const ratingPct=((p.rating/5)*100).toFixed(0);
+    const trendHtml=p.trend==='up'?`<span style="font-size:12px;font-weight:600;color:#16A34A;">↗ Trending Up</span>`:p.trend==='down'?`<span style="font-size:12px;font-weight:600;color:#DC2626;">↘ Needs Improvement</span>`:`<span style="font-size:12px;color:#9CA3AF;">— Stable</span>`;
+    const reviews=providerReviews[p.name]||[];
+    const reviewsHtml=reviews.map(r=>`<div class="review-card"><div style="display:flex;justify-content:space-between;align-items:center;"><div class="review-author">${r.author}</div><span class="review-stars">${stars(r.rating)}</span></div><div class="review-date">${r.date}</div><div class="review-text">${r.text}</div></div>`).join('');
+    return `<div class="perf-card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;">
+          <div style="width:44px;height:44px;border-radius:12px;background:${rankBg[i]};color:${rankColor[i]};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;">${rankLabels[i]}</div>
+          <div><div style="font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;">${p.name} <span class="specialty-tag">${p.specialty}</span></div><div style="font-size:12px;color:var(--text-muted);margin-top:3px;"><span style="color:#F59E0B;">${stars(p.rating)}</span> ${p.rating} &nbsp;•&nbsp; ${p.jobs} completed jobs</div></div>
+        </div>
+        <div>${trendHtml}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+        <div class="perf-stat-box"><div class="perf-stat-label">Rating</div><div class="perf-stat-value" style="color:#D97706;">${p.rating}</div></div>
+        <div class="perf-stat-box"><div class="perf-stat-label">Jobs Done</div><div class="perf-stat-value" style="color:var(--primary);">${p.jobs}</div></div>
+        <div class="perf-stat-box"><div class="perf-stat-label">On-Time %</div><div class="perf-stat-value" style="color:${barColor};">${p.onTime}%</div></div>
+        <div class="perf-stat-box"><div class="perf-stat-label">Avg Cost</div><div class="perf-stat-value" style="font-size:13px;">₹${p.avgCost.toLocaleString()}</div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+        <div class="progress-row"><div class="progress-label" style="min-width:120px;">On-Time Delivery</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${p.onTime}%;background:${barColor};"></div></div><div class="progress-pct" style="color:${barColor};">${p.onTime}%</div></div>
+        <div class="progress-row"><div class="progress-label" style="min-width:120px;">Customer Rating</div><div class="progress-bar-wrap"><div class="progress-bar" style="width:${ratingPct}%;background:#D97706;"></div></div><div class="progress-pct" style="color:#D97706;">${p.rating}/5</div></div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:12px;">
+        <div style="font-size:12.5px;font-weight:700;margin-bottom:2px;">Customer Reviews (${reviews.length})</div>
+        <div id="reviews-${i}" style="display:none;">${reviewsHtml}</div>
+        ${reviews.length>0?`<span class="reviews-toggle" onclick="toggleReviews(${i},this)">Show ${reviews.length} review${reviews.length>1?'s':''}</span>`:'<span style="font-size:12px;color:#9CA3AF;">No reviews yet</span>'}
+      </div>
+    </div>`;
+  }).join('');
+});
+function toggleReviews(i,el){
+  const box=document.getElementById('reviews-'+i);
+  if(box.style.display==='none'){box.style.display='block';el.textContent='Hide reviews';}
+  else{box.style.display='none';const count=providerReviews[providers[i].name]?.length||0;el.textContent=`Show ${count} review${count>1?'s':''}`;}
+}
+</script>
+</body>
+</html>
