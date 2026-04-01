@@ -505,3 +505,11 @@ if (clearAllBtn) {
 function saveNotifications() {
   localStorage.setItem("notifications", JSON.stringify(notifications));
 }
+
+//Complaint details Page
+const complaintCards = document.querySelectorAll(".complaint-card");
+complaintCards.forEach((complaint) => {
+  complaint.addEventListener("click", () => {
+    window.location.href = "../owner/complaint_details.html";
+  });
+});

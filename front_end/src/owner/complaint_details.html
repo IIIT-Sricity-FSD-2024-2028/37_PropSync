@@ -1,0 +1,1185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PropSync – Complaint Detail</title>
+    <link rel="icon" type="image/png" href="./public/favicon.png" />
+    <link rel="stylesheet" href="./css/login_signup.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* ──────────────── RESET & VARIABLES ──────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --blue: #1d4ed8;
+        --blue-mid: #3b6ef8;
+        --blue-lt: #eff4ff;
+        --blue-ring: rgba(29, 78, 216, 0.15);
+        --teal: #0d9488;
+        --teal-lt: #f0fdfa;
+        --amber: #d97706;
+        --amber-lt: #fffbeb;
+        --red: #dc2626;
+        --red-lt: #fef2f2;
+        --green: #16a34a;
+        --green-lt: #f0fdf4;
+        --bg: #f0f4fb;
+        --surface: #ffffff;
+        --border: #e2e8f4;
+        --text: #0f172a;
+        --text-2: #334155;
+        --muted: #64748b;
+        --muted-lt: #94a3b8;
+        --sb-width: 270px;
+        --hdr-h: 62px;
+        --r: 12px;
+        --r-lg: 16px;
+        --shadow-sm: 0 1px 4px rgba(15, 23, 42, 0.06);
+        --shadow: 0 4px 18px rgba(15, 23, 42, 0.09);
+        --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.14);
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: "Plus Jakarta Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+        overflow-x: hidden;
+      }
+
+      /* ──────────────── SIDEBAR TOGGLE (CSS-only trick) ──────────────── */
+      #sb-toggle {
+        display: none;
+        color: #34a853;
+      }
+
+      /* ──────────────── OVERLAY ──────────────── */
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(8, 16, 40, 0.52);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 200;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.32s ease;
+      }
+      #sb-toggle:checked ~ .overlay {
+        opacity: 1;
+        pointer-events: all;
+        color: #34a853;
+      }
+
+      /* ──────────────── SIDEBAR ──────────────── */
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: var(--sb-width);
+        height: 100vh;
+        background: var(--surface);
+        z-index: 300;
+        display: flex;
+        flex-direction: column;
+        transform: translateX(-100%);
+        transition: transform 0.38s cubic-bezier(0.22, 0.68, 0, 1.1);
+        box-shadow: 8px 0 40px rgba(15, 23, 42, 0.13);
+        overflow: hidden;
+      }
+      #sb-toggle:checked ~ .sidebar {
+        transform: translateX(0);
+      }
+
+      /* sidebar head */
+      .sb-head {
+        padding: 20px 20px 16px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 11px;
+      }
+      .sb-mark {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #34a853, var(--teal));
+        display: grid;
+        place-items: center;
+        font-size: 18px;
+        flex-shrink: 0;
+      }
+      .sb-brand {
+        font-family: "Fraunces", serif;
+        font-size: 20px;
+        font-weight: 800;
+        color: var(--text);
+      }
+      .sb-brand span {
+        color: #34a853;
+      }
+
+      /* sidebar nav */
+      .sb-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 10px;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+      .sb-section {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted-lt);
+        padding: 14px 10px 5px;
+      }
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 10px 12px;
+        border-radius: 9px;
+        color: var(--muted);
+        font-size: 13.5px;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+          background 0.18s,
+          color 0.18s;
+        margin-bottom: 2px;
+        position: relative;
+        cursor: pointer;
+      }
+      .nav-link:hover {
+        background: var(--blue-lt);
+        color: #34a853;
+      }
+      .nav-link.active {
+        background: var(--blue-lt);
+        color: #34a853;
+        font-weight: 700;
+      }
+      .nav-link.active::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 22%;
+        bottom: 22%;
+        width: 3px;
+        border-radius: 2px;
+        background: #34a853;
+      }
+      .nav-link svg {
+        width: 17px;
+        height: 17px;
+        flex-shrink: 0;
+      }
+      .nav-badge {
+        margin-left: auto;
+        background: #34a853;
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 20px;
+      }
+
+      /* sidebar footer */
+      .sb-foot {
+        padding: 14px;
+        border-top: 1px solid var(--border);
+      }
+      .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: var(--bg);
+      }
+      .av {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #34a853, var(--teal));
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+      .av-lg {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+      }
+      .user-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .user-role {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 1px;
+      }
+
+      /* close overlay label */
+      .overlay-label {
+        position: fixed;
+        inset: 0;
+        z-index: 200;
+        cursor: pointer;
+        display: none;
+      }
+      #sb-toggle:checked ~ .overlay-label {
+        display: block;
+      }
+
+      /* ──────────────── HEADER ──────────────── */
+      .header {
+        position: sticky;
+        top: 0;
+        height: var(--hdr-h);
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        padding: 0 22px;
+        gap: 12px;
+        z-index: 100;
+        box-shadow: var(--shadow-sm);
+      }
+
+      /* hamburger label */
+      .hamburger-label {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        border: 1.5px solid var(--border);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition:
+          background 0.18s,
+          border-color 0.18s;
+        flex-shrink: 0;
+      }
+      .hamburger-label:hover {
+        background: var(--blue-lt);
+        border-color: #34a853;
+      }
+      .hamburger-label svg {
+        width: 17px;
+        height: 17px;
+        color: var(--text-2);
+      }
+
+      .back-link {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #34a853;
+        text-decoration: none;
+        padding: 6px 10px;
+        border-radius: 8px;
+        transition: background 0.15s;
+      }
+      .back-link:hover {
+        background: var(--blue-lt);
+      }
+      .back-link svg {
+        width: 13px;
+        height: 13px;
+      }
+
+      .hdr-title {
+        font-family: "Fraunces", serif;
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text);
+        flex: 1;
+      }
+
+      .hdr-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-left: auto;
+      }
+
+      .icon-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        border: 1.5px solid var(--border);
+        background: var(--surface);
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        transition: background 0.18s;
+        position: relative;
+        text-decoration: none;
+      }
+      .icon-btn:hover {
+        background: var(--blue-lt);
+      }
+      .icon-btn svg {
+        width: 17px;
+        height: 17px;
+        color: var(--text-2);
+      }
+      .notif-dot {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        width: 8px;
+        height: 8px;
+        background: var(--red);
+        border-radius: 50%;
+        border: 2px solid var(--surface);
+      }
+
+      .profile-btn {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 4px 12px 4px 4px;
+        border-radius: 22px;
+        border: 1.5px solid var(--border);
+        background: var(--surface);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+        text-decoration: none;
+        transition: background 0.18s;
+      }
+      .profile-btn:hover {
+        background: var(--blue-lt);
+      }
+
+      /* ──────────────── MAIN CONTENT ──────────────── */
+
+      .main {
+        padding: 26px 26px 64px;
+        max-width: 1100px; /* Adjusted slightly to match header */
+
+        /* UPDATE THIS LINE */
+        margin: 0 auto; /* This centers the entire block */
+      }
+
+      /* ── PROGRESS STEPPER ── */
+      .stepper-card {
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        padding: 20px 26px 22px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border);
+      }
+      .card-section-label {
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+      .stepper {
+        display: flex;
+        align-items: flex-start;
+      }
+      .step-wrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        position: relative;
+        z-index: 2;
+      }
+      .step-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 12px;
+        font-weight: 700;
+        border: 2.5px solid var(--border);
+        background: var(--surface);
+        color: var(--muted);
+        transition: all 0.25s;
+      }
+      .step-circle.done {
+        background: #34a853;
+        border-color: #34a853;
+        color: #fff;
+        box-shadow: 0 0 0 5px #34a853;
+      }
+      .step-circle.current {
+        border-color: #34a853;
+        color: #34a853;
+        box-shadow: 0 0 0 5px #34a853;
+      }
+      .step-label {
+        font-size: 10.5px;
+        font-weight: 500;
+        color: var(--muted-lt);
+        text-align: center;
+        line-height: 1.3;
+      }
+      .step-label.active {
+        color: #34a853;
+        font-weight: 700;
+      }
+      .step-connector {
+        flex: 1;
+        height: 3px;
+        border-radius: 2px;
+        background: var(--border);
+        margin-bottom: -28px;
+        position: relative;
+        z-index: 1;
+      }
+      .step-connector.done {
+        background: #34a853;
+      }
+
+      /* ── TWO-COLUMN GRID ── */
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+        margin-bottom: 18px;
+      }
+
+      /* ── CARD BASE ── */
+      .card {
+        background: var(--surface);
+        border-radius: var(--r-lg);
+        padding: 22px 24px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border);
+      }
+      .card-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.07em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 18px;
+      }
+      .card-title svg {
+        width: 15px;
+        height: 15px;
+        color: #34a853;
+      }
+
+      /* ── COMPLAINT INFO ── */
+      .info-row {
+        margin-bottom: 14px;
+      }
+      .info-row:last-child {
+        margin-bottom: 0;
+      }
+      .info-lbl {
+        font-size: 10.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+        color: var(--muted-lt);
+        margin-bottom: 4px;
+      }
+      .info-val {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text);
+      }
+
+      .tag-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 4px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 6px;
+      }
+      .tag-blue {
+        background: var(--blue-lt);
+        color: var(--blue);
+        border: 1px solid rgba(29, 78, 216, 0.18);
+      }
+      .tag-amber {
+        background: var(--amber-lt);
+        color: var(--amber);
+        border: 1px solid rgba(217, 119, 6, 0.2);
+      }
+      .tag-red {
+        background: var(--red-lt);
+        color: var(--red);
+        border: 1px solid rgba(220, 38, 38, 0.2);
+      }
+      .tag-green {
+        background: var(--green-lt);
+        color: var(--green);
+        border: 1px solid rgba(22, 163, 74, 0.2);
+      }
+
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 5px 12px;
+        border-radius: 20px;
+        background: var(--amber-lt);
+        color: var(--amber);
+        border: 1px solid rgba(217, 119, 6, 0.25);
+      }
+      .status-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+        animation: pulse 1.8s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.5;
+          transform: scale(0.8);
+        }
+      }
+
+      /* ── LIFECYCLE ── */
+      .lc-list {
+        display: flex;
+        flex-direction: column;
+      }
+      .lc-item {
+        display: flex;
+        gap: 13px;
+        padding: 9px 0;
+        position: relative;
+      }
+      .lc-item:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        left: 9px;
+        top: 27px;
+        bottom: -9px;
+        width: 2px;
+        background: var(--border);
+      }
+      .lc-dot {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--surface);
+        flex-shrink: 0;
+        position: relative;
+        z-index: 1;
+        display: grid;
+        place-items: center;
+        margin-top: 2px;
+      }
+      .lc-dot.done {
+        border-color: var(--teal);
+        background: var(--teal);
+      }
+      .lc-dot.done::after {
+        content: "✓";
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+      }
+      .lc-dot.cur {
+        border-color: #34a853;
+        background: var(--blue-lt);
+      }
+      .lc-dot.cur::after {
+        content: "";
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #34a853;
+      }
+
+      .lc-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--text);
+      }
+      .lc-name.dim {
+        color: var(--muted);
+        font-weight: 400;
+      }
+      .lc-date {
+        font-size: 11px;
+        color: var(--muted-lt);
+        margin-top: 2px;
+      }
+      .cur-pill {
+        display: inline-block;
+        background: var(--blue-lt);
+        color: var(--blue);
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 8px;
+        border-radius: 10px;
+        margin-left: 7px;
+        vertical-align: middle;
+      }
+
+      /* ── DESCRIPTION ── */
+      .desc-text {
+        font-size: 14px;
+        line-height: 1.78;
+        color: var(--text-2);
+      }
+
+      /* ── PHOTO ── */
+      .photo-wrap {
+        border-radius: 10px;
+        overflow: hidden;
+        aspect-ratio: 21/8;
+        position: relative;
+      }
+      .photo-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.5s ease;
+      }
+      .photo-wrap:hover img {
+        transform: scale(1.03);
+      }
+      .photo-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(transparent, rgba(5, 12, 30, 0.7));
+        padding: 30px 16px 14px;
+        color: #fff;
+      }
+      .photo-caption strong {
+        font-size: 13px;
+        font-weight: 700;
+        display: block;
+      }
+      .photo-caption small {
+        font-size: 11px;
+        opacity: 0.75;
+        margin-top: 2px;
+        display: block;
+      }
+
+      /* full-width cards */
+      .card-full {
+        margin-bottom: 18px;
+      }
+
+      /* ── SCROLLBAR ── */
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 8px;
+      }
+
+      /* ── RESPONSIVE ── */
+      @media (max-width: 680px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+        .main {
+          padding: 14px 14px 48px;
+        }
+        .stepper-card {
+          padding: 16px 14px;
+        }
+        .step-circle {
+          width: 28px;
+          height: 28px;
+          font-size: 10px;
+        }
+        .step-label {
+          font-size: 9px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ── CHECKBOX TOGGLE (CSS-only sidebar) ── -->
+    <input type="checkbox" id="sb-toggle" />
+
+    <!-- ── OVERLAY + CLOSE LABEL ── -->
+    <div class="overlay"></div>
+    <label class="overlay-label" for="sb-toggle"></label>
+
+    <!-- ══════════════════ SIDEBAR ══════════════════ -->
+    <aside class="sidebar">
+      <div class="sb-head">
+        <div class="sb-mark">🏢</div>
+        <div class="sb-brand">Prop<span>Sync</span></div>
+      </div>
+
+      <div class="sb-body">
+        <p class="sb-section">Main</p>
+
+        <a class="nav-link" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="7" height="7" rx="1" />
+            <rect x="14" y="3" width="7" height="7" rx="1" />
+            <rect x="3" y="14" width="7" height="7" rx="1" />
+            <rect x="14" y="14" width="7" height="7" rx="1" />
+          </svg>
+          Dashboard
+        </a>
+
+        <a class="nav-link active" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"
+            />
+            <rect x="9" y="3" width="6" height="4" rx="1" />
+            <line x1="9" y1="12" x2="15" y2="12" />
+            <line x1="9" y1="16" x2="13" y2="16" />
+          </svg>
+          Complaints
+          <span class="nav-badge">3</span>
+        </a>
+
+        <a class="nav-link" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+            />
+          </svg>
+          Maintenance
+        </a>
+
+        <a class="nav-link" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
+          </svg>
+          Residents
+        </a>
+
+        <a class="nav-link" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+          Reports
+        </a>
+
+        <p class="sb-section">Settings</p>
+
+        <a class="nav-link" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
+            />
+          </svg>
+          Settings
+        </a>
+
+        <a class="nav-link" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 01-3.46 0" />
+          </svg>
+          Notifications
+          <span class="nav-badge">7</span>
+        </a>
+
+        <a class="nav-link" href="#">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="12" cy="8" r="4" />
+            <path d="M20 21a8 8 0 10-16 0" />
+          </svg>
+          Profile
+        </a>
+      </div>
+
+      <div class="sb-foot">
+        <div class="user-chip">
+          <div class="av">JD</div>
+          <div>
+            <div class="user-name">John Doe</div>
+            <div class="user-role">Resident · Tower A</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ══════════════════ HEADER ══════════════════ -->
+    <header class="header">
+      <!-- Hamburger -->
+      <label class="hamburger-label" for="sb-toggle" aria-label="Open menu">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+        >
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <line x1="3" y1="12" x2="21" y2="12" />
+          <line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </label>
+
+      <!-- Back link -->
+      <a href="#" class="back-link">
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        Back to Dashboard
+      </a>
+
+      <span class="hdr-title">Complaint Details</span>
+
+      <div class="hdr-right">
+        <a class="icon-btn" href="#">
+          <div class="notif-dot"></div>
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
+            <path d="M13.73 21a2 2 0 01-3.46 0" />
+          </svg>
+        </a>
+        <a class="profile-btn" href="#">
+          <div class="av av-lg">JD</div>
+          John Doe
+        </a>
+      </div>
+    </header>
+
+    <!-- ══════════════════ PAGE CONTENT ══════════════════ -->
+    <main class="main">
+      <!-- ── LIFECYCLE STEPPER ── -->
+      <div class="stepper-card">
+        <p class="card-section-label">Complaint Lifecycle Progress</p>
+        <div class="stepper">
+          <div class="step-wrap">
+            <div class="step-circle done">✓</div>
+            <div class="step-label active">Submitted</div>
+          </div>
+          <div class="step-connector done"></div>
+
+          <div class="step-wrap">
+            <div class="step-circle current">2</div>
+            <div class="step-label active">Approved</div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step-wrap">
+            <div class="step-circle">3</div>
+            <div class="step-label">Provider Assigned</div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step-wrap">
+            <div class="step-circle">4</div>
+            <div class="step-label">Estimate Submitted</div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step-wrap">
+            <div class="step-circle">5</div>
+            <div class="step-label">Work In Progress</div>
+          </div>
+          <div class="step-connector"></div>
+
+          <div class="step-wrap">
+            <div class="step-circle">6</div>
+            <div class="step-label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── TWO-COLUMN: INFO + LIFECYCLE ── -->
+      <div class="grid-2">
+        <!-- Complaint Information -->
+        <div class="card">
+          <div class="card-title">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            Complaint Information
+          </div>
+
+          <div class="info-row">
+            <div class="info-lbl">Issue</div>
+            <div class="info-val">Water Leakage</div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-lbl">Category &amp; Priority</div>
+            <div class="tag-row">
+              <span class="tag tag-blue">🔧 Plumbing</span>
+              <span class="tag tag-red">🔴 High Priority</span>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-lbl">Location</div>
+            <div class="info-val">Tower A, Apt 102</div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-lbl">Submitted By</div>
+            <div class="info-val">Resident – John Doe</div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-lbl">Submitted Date</div>
+            <div class="info-val">2024-09-18</div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-lbl">Work Status</div>
+            <div class="info-val" style="font-weight: 500; color: var(--muted)">
+              Waiting for Maintenance Manager to approve…
+            </div>
+          </div>
+
+          <div class="info-row">
+            <div class="info-lbl">Current Status</div>
+            <div style="margin-top: 5px">
+              <span class="status-badge">
+                <span class="status-dot"></span>
+                Complaint Submitted
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Complaint Lifecycle -->
+        <div class="card">
+          <div class="card-title">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+            </svg>
+            Complaint Lifecycle
+          </div>
+
+          <div class="lc-list">
+            <div class="lc-item">
+              <div class="lc-dot cur"></div>
+              <div>
+                <div class="lc-name">
+                  Complaint Submitted
+                  <span class="cur-pill">Current</span>
+                </div>
+                <div class="lc-date">2024-09-18</div>
+              </div>
+            </div>
+
+            <div class="lc-item">
+              <div class="lc-dot cur"></div>
+              <div><div class="lc-name">Complaint Approved</div></div>
+            </div>
+
+            <div class="lc-item">
+              <div class="lc-dot"></div>
+              <div>
+                <div class="lc-name dim">Service Provider Assigned</div>
+              </div>
+            </div>
+
+            <div class="lc-item">
+              <div class="lc-dot"></div>
+              <div><div class="lc-name dim">Estimate Submitted</div></div>
+            </div>
+
+            <div class="lc-item">
+              <div class="lc-dot"></div>
+              <div><div class="lc-name dim">Estimate Approved</div></div>
+            </div>
+
+            <div class="lc-item">
+              <div class="lc-dot"></div>
+              <div><div class="lc-name dim">Work In Progress</div></div>
+            </div>
+
+            <div class="lc-item">
+              <div class="lc-dot"></div>
+              <div><div class="lc-name dim">Work Completed</div></div>
+            </div>
+
+            <div class="lc-item" style="padding-bottom: 0">
+              <div class="lc-dot"></div>
+              <div><div class="lc-name dim">Payment Processed</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /grid-2 -->
+
+      <!-- ── DESCRIPTION ── -->
+      <div class="card card-full">
+        <div class="card-title">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+          Description &amp; Notes
+        </div>
+        <p class="desc-text">
+          The Faucet in play area has been leaking for the past two days. Water
+          drips constantly even when fully closed. Children are falling near the
+          play area because of this. Mosquitoes might increase because water is
+          getting stuck over there.
+        </p>
+      </div>
+
+      <!-- ── PHOTO ── -->
+      <div class="card card-full">
+        <div class="card-title">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          Complaint Issue Photo
+        </div>
+        <div class="photo-wrap">
+          <img
+            src="https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=1100&q=80"
+            alt="Leaking Faucet in Play Area"
+            loading="lazy"
+          />
+          <div class="photo-caption">
+            <strong>Leaking Faucet in Play Area</strong>
+            <small>Tower A, Apt 102 &nbsp;·&nbsp; Submitted 2024-09-18</small>
+          </div>
+        </div>
+      </div>
+    </main>
+  </body>
+</html>
