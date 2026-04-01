@@ -53,6 +53,7 @@
     .notif-item.sent-item{border-left:3px solid #6366F1;}
     .sent-badge{display:inline-block;background:#EDE9FE;color:#7C3AED;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;vertical-align:middle;}
   </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body class="has-sidebar">
 <div class="sidebar-overlay"></div>
@@ -74,7 +75,7 @@
     <div class="nav-divider"></div>
     <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
     <div class="nav-divider"></div>
-    <a class="nav-link" href="notifications.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
     <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
   </nav>
   <div class="sidebar-footer">
@@ -87,10 +88,17 @@
     <div class="topbar-left">
       <button class="hamburger" title="Open menu"><span></span><span></span><span></span></button>
       <div class="topbar-logo"><span class="topbar-logo-text">PropSync</span></div>
-    </div>
-    <div class="topbar-right">
-      <div class="topbar-icon-btn" onclick="location.href='notifications.html'" title="Notifications">🔔<div class="topbar-notif-dot"></div></div>
-      <div class="topbar-avatar" onclick="location.href='profile.html'" title="Profile">MM</div>
+    </div>    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications" style="position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:transparent;cursor:pointer;">
+        <i class="fa-regular fa-bell" style="font-size:22px;color:#1a0dab;"></i>
+        <div class="topbar-notif-dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;background:#DC2626;border-radius:50%;border:2px solid #fff;display:none;"></div>
+      </div>
+      <div onclick="location.href='profile.html'" title="Profile" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:50%;border:2px solid #1a0dab;background:transparent;display:flex;align-items:center;justify-content:center;color:#1a0dab;font-size:18px;flex-shrink:0;">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <span style="font-weight:500;font-size:15px;color:#1a0dab;">Maintenance Manager</span>
+      </div>
     </div>
   </div>
 

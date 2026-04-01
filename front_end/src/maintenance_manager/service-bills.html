@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>PropSync – Service Bills &amp; Payments</title>
  <link rel="stylesheet" href="../css/maintenance_manager.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
 </head>
 <body class="has-sidebar">
 <div class="sidebar-overlay"></div>
@@ -38,10 +39,17 @@
     <div class="topbar-left">
       <button class="hamburger" title="Open menu"><span></span><span></span><span></span></button>
       <div class="topbar-logo"><span class="topbar-logo-text">PropSync</span></div>
-    </div>
-    <div class="topbar-right">
-      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications">🔔<div class="topbar-notif-dot"></div></div>
-      <div class="topbar-avatar" onclick="location.href='profile.html'" title="Profile">MM</div>
+    </div>    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications" style="position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:50%;background:transparent;cursor:pointer;">
+        <i class="fa-regular fa-bell" style="font-size:22px;color:#1a0dab;"></i>
+        <div class="topbar-notif-dot" style="position:absolute;top:6px;right:6px;width:8px;height:8px;background:#DC2626;border-radius:50%;border:2px solid #fff;display:none;"></div>
+      </div>
+      <div onclick="location.href='profile.html'" title="Profile" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <div style="width:40px;height:40px;border-radius:50%;border:2px solid #1a0dab;background:transparent;display:flex;align-items:center;justify-content:center;color:#1a0dab;font-size:18px;flex-shrink:0;">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <span style="font-weight:500;font-size:15px;color:#1a0dab;">Maintenance Manager</span>
+      </div>
     </div>
   </div>
 
