@@ -27,7 +27,7 @@
     <div class="nav-divider"></div>
     <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
     <div class="nav-divider"></div>
-    <a class="nav-link" href="notifications.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
     <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
   </nav>
   <div class="sidebar-footer">
@@ -45,7 +45,7 @@
       </div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-icon-btn" onclick="location.href='notifications.html'" title="Notifications">
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications">
         🔔<div class="topbar-notif-dot"></div>
       </div>
       <div class="topbar-avatar" onclick="location.href='profile.html'" title="Profile">MM</div>
@@ -85,7 +85,7 @@
     <div class="card">
       <div class="card-title" style="margin-bottom:16px;">Recent Notifications</div>
       <div id="dashNotifs" style="display:flex;flex-direction:column;gap:8px;"></div>
-      <a href="notifications.html" class="btn btn-outline btn-sm" style="margin-top:14px;">View All Notifications</a>
+      <a href="notification.html" class="btn btn-outline btn-sm" style="margin-top:14px;">View All Notifications</a>
     </div>
   </div>
 
@@ -221,7 +221,7 @@ function renderDashNotifs() {
     <div style="font-size:13px;cursor:pointer;padding:10px 12px;border-radius:8px;
       background:${n.unread ? '#F0FDF4' : '#F9FAFB'};
       border-left:3px solid ${n.unread ? '#16A34A' : 'transparent'};"
-      onclick="location.href='notifications.html'">
+      onclick="location.href='notification.html'">
       <div style="font-weight:${n.unread ? '600' : '500'};color:${n.unread ? '#111827' : '#4B5563'};">
         ${notifIcon(n.icon)} ${n.title}
         ${n.unread ? '<span style="font-size:10px;background:#16A34A;color:#fff;padding:1px 6px;border-radius:10px;margin-left:6px;">New</span>' : ''}

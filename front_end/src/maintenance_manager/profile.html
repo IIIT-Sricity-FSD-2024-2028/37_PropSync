@@ -25,7 +25,7 @@
     <div class="nav-divider"></div>
     <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
     <div class="nav-divider"></div>
-    <a class="nav-link" href="notifications.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
     <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
   </nav>
   <div class="sidebar-footer">
@@ -40,7 +40,7 @@
       <div class="topbar-logo"><span class="topbar-logo-text">PropSync</span></div>
     </div>
     <div class="topbar-right">
-      <div class="topbar-icon-btn" onclick="location.href='notifications.html'" title="Notifications">🔔<div class="topbar-notif-dot"></div></div>
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications">🔔<div class="topbar-notif-dot"></div></div>
       <div class="topbar-avatar" onclick="location.href='profile.html'" title="Profile">MM</div>
     </div>
   </div>
@@ -66,7 +66,7 @@
       <div class="card-subtitle">Manage your account details and preferences.</div>
     </div>
     <div class="info-row" style="background:#EFF6FF;"><div class="info-icon" style="background:#3B82F6;color:white;">👤</div><div><div class="info-label">Full Name</div><div class="info-value" id="dispName">Maintenance Manager</div></div></div>
-    <div class="info-row" style="background:#F5F3FF;"><div class="info-icon" style="background:#7C3AED;color:white;">✉️</div><div><div class="info-label">Email Address</div><div class="info-value" id="dispEmail">maintenance.manager@email.com</div></div></div>
+    <div class="info-row" style="background:#F5F3FF;"><div class="info-icon" style="background:#7C3AED;color:white;">✉️</div><div><div class="info-label">Email Address</div><div class="info-value" id="dispEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b4d9d5dddac0d1dad5dad7d19ad9d5dad5d3d1c6f4d1d9d5ddd89ad7dbd9">[email&#160;protected]</a></div></div></div>
     <div class="info-row" style="background:#FFF7ED;"><div class="info-icon" style="background:#EA580C;color:white;">📞</div><div><div class="info-label">Phone Number</div><div class="info-value" id="dispPhone">+91 98765 43210</div></div></div>
     <div class="info-row" style="background:#FFF1F2;"><div class="info-icon" style="background:#DC2626;color:white;">🏢</div><div><div class="info-label">Property Unit</div><div class="info-value" id="dispUnit">A-402</div></div></div>
     <div class="info-row" style="background:#F0FDF4;"><div class="info-icon" style="background:#16A34A;color:white;">📍</div><div><div class="info-label">Community</div><div class="info-value" id="dispCommunity">Greenwood Heights</div></div></div>
@@ -105,7 +105,7 @@
     <div class="card-title" style="margin-bottom:14px;">⚡ Quick Actions</div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
       <a href="complaints.html" class="btn btn-outline">📋 View Complaints</a>
-      <a href="notifications.html" class="btn btn-outline">🔔 Notifications</a>
+      <a href="notification.html" class="btn btn-outline">🔔 Notifications</a>
       <a href="provider-performance.html" class="btn btn-outline">🏆 Providers</a>
     </div>
   </div>
@@ -123,7 +123,7 @@
   </div>
 </div>
 
-<script src="../js/maintenance_manager.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../js/maintenance_manager.js"></script>
 <script>
 function toggleEdit() {
   document.getElementById('editForm').style.display = 'block';
@@ -138,11 +138,4 @@ function saveProfile() {
   document.getElementById('dispName').textContent      = document.getElementById('inpName').value;
   document.getElementById('dispEmail').textContent     = document.getElementById('inpEmail').value;
   document.getElementById('dispPhone').textContent     = document.getElementById('inpPhone').value;
-  document.getElementById('dispUnit').textContent      = document.getElementById('inpUnit').value;
-  document.getElementById('dispCommunity').textContent = document.getElementById('inpCommunity').value;
-  cancelEdit();
-  showToast('Profile updated successfully!');
-}
-</script>
-</body>
-</html>
+  document.getElementById('dispUnit').textContent      = do
