@@ -612,7 +612,9 @@ body {
   align-items: flex-start;
   transition: 0.2s;
 }
-
+.notification_card.read {
+  border-left: none; /* read */
+}
 .notification_card:hover {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
 }

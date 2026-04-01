@@ -107,8 +107,13 @@ function searchUser() {
       errorBox.classList.remove("show");
       alert("Login Successful");
 
-      // optional redirect
-      // window.location.href = "dashboard.html";
+      if (selectedRoleLogin === "Owner")
+        window.location.href = "./owner/dashboard.html";
+      else if (selectedRoleLogin === "Service Provider")
+        window.location.href = "./service_provider/index.html";
+      else if (selectedRoleLogin === "Maintenance Manager")
+        window.location.href = "./maintenance_manager/dashboard.html";
+      else window.location.href = "./admin/index.html";
     } else {
       errorBox.classList.add("show");
       errorBox.textContent = "Invalid Credentials, User not Found";

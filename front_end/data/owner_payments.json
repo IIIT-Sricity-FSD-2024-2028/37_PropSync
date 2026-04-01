@@ -1,0 +1,34 @@
+[
+  {
+    "id": 1,
+    "month": "March 2026",
+    "amount": 350,
+    "status": "pending",
+    "paidOn": null,
+    "receipt": null
+  },
+  {
+    "id": 2,
+    "month": "February 2026",
+    "amount": 350,
+    "status": "paid",
+    "paidOn": "2026-02-10",
+    "receipt": "sample_receipt.png"
+  },
+  {
+    "id": 3,
+    "month": "January 2026",
+    "amount": 350,
+    "status": "paid",
+    "paidOn": "2026-02-10",
+    "receipt": "sample_receipt.png"
+  },
+  {
+    "id": 4,
+    "month": "December 2025",
+    "amount": 350,
+    "status": "paid",
+    "paidOn": "2026-02-10",
+    "receipt": "sample_receipt.png"
+  }
+]
