@@ -77,22 +77,27 @@ textarea {
 }
 
 /* ============================================================
-   LAYOUT
+   LAYOUT – full width, sidebar is overlay only, never pushes content
    ============================================================ */
 body.has-sidebar .page-wrapper {
-  margin-left: var(--nav-width);
-  padding: 0 28px 40px;
-  max-width: 1280px;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  padding: 0 32px 40px;
+  max-width: 100% !important;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .page-wrapper {
-  padding: 0 28px 40px;
-  max-width: 1100px;
-  margin: 0 auto;
+  padding: 0 32px 40px;
+  max-width: 100% !important;
+  width: 100%;
+  margin: 0;
+  box-sizing: border-box;
 }
 
 /* ============================================================
-   SIDEBAR
+   SIDEBAR – always off-screen by default, slides in as overlay
    ============================================================ */
 .sidebar {
   position: fixed;
@@ -107,21 +112,15 @@ body.has-sidebar .page-wrapper {
   z-index: 200;
   overflow-y: auto;
   transition: transform 0.25s ease;
+  /* Always hidden off-screen until .open is added */
+  transform: translateX(-100%);
 }
 
-@media (max-width: 900px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  body.has-sidebar .page-wrapper {
-    margin-left: 0;
-  }
+.sidebar.open {
+  transform: translateX(0);
 }
+
+/* No media query needed – same behaviour on ALL screen sizes */
 
 .sidebar-logo {
   padding: 18px 18px 14px;
@@ -2121,10 +2120,6 @@ textarea.form-control {
   .work-meta {
     grid-template-columns: 1fr 1fr;
   }
-
-  body.has-sidebar .page-wrapper {
-    margin-left: 0;
-  }
 }
 
 @media (max-width: 600px) {
@@ -2150,79 +2145,69 @@ textarea.form-control {
 }
 
 /* ============================================================
-   SIDEBAR OVERRIDES – clean, no section labels, no emojis
+   SIDEBAR OVERRIDES – clean white sidebar, green accents
    ============================================================ */
 .nav-section {
   display: none;
 }
 
-/* hide Main / Providers / Communication / Account */
-
 .sidebar {
-  background: #1a1f2e;
-  border-right: none;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
 }
 
 .sidebar-logo {
-  background: #1a1f2e;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 20px 18px 16px;
-}
-
-.sidebar-logo .logo-text {
-  color: #fff;
-}
-
-.sidebar-logo .logo-sub {
-  color: rgba(255, 255, 255, 0.45);
-}
-
-.sidebar-logo .logo-icon {
-  background: var(--primary);
+  background: #ffffff;
+  border-bottom: 1px solid #f3f4f6;
+  padding: 18px 18px 14px;
 }
 
 .sidebar-close {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: rgba(255, 255, 255, 0.6);
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  color: #6b7280;
 }
 
 .sidebar-close:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: #f3f4f6;
+  color: #111827;
 }
 
 .sidebar-nav {
-  padding: 16px 12px;
+  padding: 14px 10px;
 }
 
 .nav-link {
-  color: rgba(255, 255, 255, 0.55);
+  color: #374151;
   font-size: 13.5px;
   font-weight: 500;
-  padding: 10px 14px;
+  padding: 9px 13px;
   border-radius: 8px;
   margin-bottom: 2px;
-  gap: 11px;
+  gap: 10px;
 }
 
 .nav-link .nav-icon {
-  display: none;
+  font-size: 15px;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
 }
 
-/* hide emoji icons */
+/* keep emoji icons visible */
 .nav-link:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.9);
+  background: #f0fdf4;
+  color: #16a34a;
 }
 
 .nav-link.active {
-  background: var(--primary);
-  color: #fff;
-  font-weight: 600;
+  background: #dcfce7;
+  color: #15803d;
+  font-weight: 700;
 }
 
 .nav-link .nav-badge {
-  background: #ef4444;
+  background: #dc2626;
   color: #fff;
   font-size: 10px;
   padding: 1px 6px;
@@ -2231,8 +2216,8 @@ textarea.form-control {
 }
 
 .sidebar-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding: 12px;
+  border-top: 1px solid #f3f4f6;
+  padding: 10px 10px 14px;
 }
 
 .sidebar-user {
@@ -2240,15 +2225,15 @@ textarea.form-control {
 }
 
 .sidebar-user:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: #f0fdf4;
 }
 
 .sidebar-user .u-name {
-  color: rgba(255, 255, 255, 0.9);
+  color: #111827;
 }
 
 .sidebar-user .u-role {
-  color: rgba(255, 255, 255, 0.45);
+  color: #6b7280;
 }
 
 .sidebar-user .u-avatar {
@@ -2256,19 +2241,19 @@ textarea.form-control {
 }
 
 .sidebar-logout {
-  color: #f87171;
+  color: #dc2626;
   width: 100%;
 }
 
 .sidebar-logout:hover {
-  background: rgba(239, 68, 68, 0.12);
+  background: #fee2e2;
 }
 
-/* Divider between groups */
+/* Divider between nav groups */
 .nav-divider {
   height: 1px;
-  background: rgba(255, 255, 255, 0.07);
-  margin: 8px 4px;
+  background: #f3f4f6;
+  margin: 8px 6px;
 }
 
 /* ============================================================
@@ -2327,142 +2312,7 @@ textarea.form-control {
   line-height: 1.5;
 }
 
-/* ============================================================
-   SIDEBAR – hidden until hamburger click (mobile only)
-   ============================================================ */
-@media (max-width: 900px) {
-  .sidebar {
-    transform: translateX(-100%);
-    background: #fff;
-    border-right: 1px solid #e5e7eb;
-  }
-
-  .sidebar.open {
-    transform: translateX(0);
-  }
-
-  body.has-sidebar .page-wrapper {
-    margin-left: 0;
-  }
-}
-
-/* Sidebar logo area with PropSync branding */
-.sidebar-logo {
-  padding: 16px 18px 12px;
-  border-bottom: 1px solid #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.ps-logo-img {
-  height: 38px;
-  width: auto;
-  object-fit: contain;
-}
-
-.sidebar-logo-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.logo-brand-text {
-  font-size: 18px;
-  font-weight: 800;
-  color: #1a6b3a;
-  letter-spacing: -0.5px;
-}
-
-.logo-brand-sub {
-  font-size: 9px;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  line-height: 1.2;
-}
-
-/* Nav links – clean minimal style like screenshot */
-.sidebar-nav {
-  padding: 14px 10px;
-  flex: 1;
-}
-
-.nav-link {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 13px;
-  border-radius: 8px;
-  color: #374151;
-  font-size: 13.5px;
-  font-weight: 500;
-  transition:
-    background 0.15s,
-    color 0.15s;
-  margin-bottom: 1px;
-}
-
-.nav-link:hover {
-  background: #f0fdf4;
-  color: #16a34a;
-}
-
-.nav-link.active {
-  background: #dcfce7;
-  color: #15803d;
-  font-weight: 700;
-}
-
-.nav-link .nav-icon {
-  font-size: 15px;
-  flex-shrink: 0;
-  width: 20px;
-  text-align: center;
-}
-
-.nav-link .nav-badge {
-  margin-left: auto;
-  background: #dc2626;
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 10px;
-}
-
-.nav-divider {
-  height: 1px;
-  background: #f3f4f6;
-  margin: 8px 6px;
-}
-
-/* Footer – logout only, no user info block */
-.sidebar-footer {
-  padding: 10px 10px 14px;
-  border-top: 1px solid #f3f4f6;
-  flex-shrink: 0;
-}
-
-.sidebar-logout {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  padding: 9px 13px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #dc2626;
-  transition: background 0.15s;
-  border: none;
-  background: none;
-  width: 100%;
-}
-
-.sidebar-logout:hover {
-  background: #fee2e2;
-}
+/* Sidebar is always hidden/overlay - no media query needed, handled globally above */
 
 /* ============================================================
    TOPBAR – common header with logo + hamburger + icons
@@ -2697,3 +2547,4 @@ textarea.form-control {
   background: #dcfce7;
   color: #15803d;
 }
+/* Sidebar is always a pure overlay - open/close only, no layout classes needed */

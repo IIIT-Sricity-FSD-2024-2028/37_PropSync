@@ -1,446 +1,167 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-    <title>PropSync – Service Bills &amp; Payments</title>
-    <link rel="stylesheet" href="../css/maintenance_manager.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
-  </head>
-  <body class="has-sidebar">
-    <div class="sidebar-overlay"></div>
-    <aside class="sidebar">
-      <div class="sidebar-logo">
-        <div class="sidebar-logo-left">
-          <img
-            src="../../public/image.png"
-            alt="Logo"
-            class="sidebar-logo-img"
-          />
-        </div>
-        <button class="sidebar-close" title="Close menu">✕</button>
-      </div>
-      <nav class="sidebar-nav">
-        <a class="nav-link" href="dashboard.html"
-          ><span class="nav-icon">🏠</span> Dashboard</a
-        >
-        <a class="nav-link" href="complaints.html"
-          ><span class="nav-icon">📋</span> New Complaint
-          <span
-            class="nav-badge notif-complaints-count"
-            style="display: none"
-          ></span
-        ></a>
-        <a class="nav-link" href="approved-complaints.html"
-          ><span class="nav-icon">✅</span> Approved Complaints</a
-        >
-        <div class="nav-divider"></div>
-        <a class="nav-link" href="service-estimate.html"
-          ><span class="nav-icon">📄</span> Service Estimate</a
-        >
-        <a class="nav-link" href="service-bills.html"
-          ><span class="nav-icon">💰</span> Payment History</a
-        >
-        <div class="nav-divider"></div>
-        <a class="nav-link" href="provider-performance.html"
-          ><span class="nav-icon">🏆</span> Provider Performance</a
-        >
-        <div class="nav-divider"></div>
-        <a class="nav-link" href="notification.html"
-          ><span class="nav-icon">🔔</span> Alerts &amp; Notifications
-          <span class="nav-badge notif-badge-count" style="display: none"></span
-        ></a>
-        <a class="nav-link" href="profile.html"
-          ><span class="nav-icon">👤</span> Profile</a
-        >
-      </nav>
-      <div class="sidebar-footer">
-        <button class="sidebar-logout" onclick="confirmLogout()">
-          → &nbsp;Logout
-        </button>
-      </div>
-    </aside>
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>PropSync – Service Bills &amp; Payments</title>
+ <link rel="stylesheet" href="../css/maintenance_manager.css"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body class="has-sidebar">
+<div class="sidebar-overlay"></div>
+<aside class="sidebar">
+ <div class="sidebar-logo">
+  <div class="sidebar-logo-left">
+   <img src="../../public/image.png" alt="Logo" class="sidebar-logo-img">
+  </div>
+  <button class="sidebar-close" title="Close menu">✕</button>
+</div>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <a class="nav-link" href="approved-complaints.html"><span class="nav-icon">✅</span> Approved Complaints</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
+  </div>
+</aside>
 
-    <div class="page-wrapper">
-      <div class="topbar">
-        <div class="topbar-left">
-          <button class="hamburger" title="Open menu">
-            <span></span><span></span><span></span>
-          </button>
-          <div class="topbar-logo">
-            <img
-              src="../../public/image.png"
-              alt="PropSync"
-              style="height: 34px; width: auto; object-fit: contain"
-            />
-          </div>
-        </div>
-        <div class="topbar-right">
-          <div
-            class="topbar-icon-btn"
-            onclick="location.href = 'notification.html'"
-            title="Notifications"
-          >
-            <i
-              class="fa-regular fa-bell"
-              style="font-size: 20px; color: #1a0dab"
-            ></i>
-            <div class="topbar-notif-dot"></div>
-          </div>
-          <div
-            onclick="location.href = 'profile.html'"
-            title="Profile"
-            style="
-              display: flex;
-              align-items: center;
-              gap: 10px;
-              cursor: pointer;
-            "
-          >
-            <div
-              style="
-                width: 38px;
-                height: 38px;
-                border-radius: 50%;
-                border: 2px solid #1a0dab;
-                background: transparent;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: #1a0dab;
-                font-size: 17px;
-                flex-shrink: 0;
-              "
-            >
-              <i class="fa-solid fa-user"></i>
-            </div>
-            <span style="font-weight: 600; font-size: 14px; color: #1a0dab"
-              >Maintenance Manager</span
-            >
-          </div>
-        </div>
+<div class="page-wrapper">
+  <div class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" title="Open menu"><span></span><span></span><span></span></button>
+      <div class="topbar-logo"><img src="../../public/image.png" alt="PropSync" style="height:34px;width:auto;object-fit:contain;"></div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications">
+        <i class="fa-regular fa-bell" style="font-size:20px;color:#1a0dab;"></i>
+        <div class="topbar-notif-dot"></div>
       </div>
-
-      <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
-      <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 4px">
-        💰 Service Bills &amp; Payments
-      </h2>
-      <p style="color: #6b7280; font-size: 13px; margin-bottom: 20px">
-        2 bills require your approval — only bills from approved estimates are
-        shown
-      </p>
-
-      <div
-        style="
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 16px;
-          margin-bottom: 20px;
-        "
-      >
-        <div class="kpi-card">
-          <div>
-            <div class="kpi-label">Pending Payment</div>
-            <div class="kpi-value" style="font-size: 22px">₹8,000</div>
-          </div>
-          <div class="kpi-icon" style="background: #fef3c7; color: #d97706">
-            ⏳
-          </div>
+      <div onclick="location.href='profile.html'" title="Profile" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <div style="width:38px;height:38px;border-radius:50%;border:2px solid #1a0dab;background:transparent;display:flex;align-items:center;justify-content:center;color:#1a0dab;font-size:17px;flex-shrink:0;">
+          <i class="fa-solid fa-user"></i>
         </div>
-        <div class="kpi-card">
-          <div>
-            <div class="kpi-label">Total Paid (This Month)</div>
-            <div class="kpi-value" style="font-size: 22px">₹7,300</div>
-          </div>
-          <div class="kpi-icon" style="background: #dcfce7; color: #16a34a">
-            ✅
-          </div>
-        </div>
-        <div class="kpi-card">
-          <div>
-            <div class="kpi-label">Total Bills</div>
-            <div class="kpi-value" style="font-size: 22px">5</div>
-          </div>
-          <div class="kpi-icon" style="background: #f0fdf4; color: #16a34a">
-            📋
-          </div>
-        </div>
-      </div>
-
-      <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px">
-        ⏳ Pending Payments
-      </div>
-
-      <div class="bill-card" id="bill-C-2399">
-        <div class="bill-card-header">
-          <div class="bill-info">
-            <h3>
-              AC Not Cooling &nbsp;<a
-                class="complaint-link"
-                href="complaint-details.html?id=C-2399"
-                >C-2399</a
-              >
-            </h3>
-            <p>
-              Provider: CoolAir Services &nbsp;•&nbsp; Bill No: BILL-2399-001
-              &nbsp;•&nbsp; Submitted: 2024-03-04
-            </p>
-          </div>
-          <span class="badge badge-payment">⏳ Pending Payment</span>
-        </div>
-        <div class="bill-amounts">
-          <div class="bill-amount-box bill-submitted">
-            <div class="amount-label">📄 Submitted Bill</div>
-            <div class="amount-value">₹5,000</div>
-          </div>
-          <div class="bill-amount-box bill-discount">
-            <div class="amount-label">🏷 Discount</div>
-            <div class="amount-value" style="color: #dc2626">-₹500</div>
-          </div>
-          <div class="bill-amount-box bill-final">
-            <div class="amount-label">✅ Final Amount</div>
-            <div class="amount-value" style="color: #16a34a">₹4,500</div>
-          </div>
-        </div>
-        <button
-          class="btn btn-success btn-full"
-          onclick="
-            openPayModal(
-              'C-2399',
-              'BILL-2399-001',
-              'AC Not Cooling',
-              'CoolAir Services',
-              '4,500',
-            )
-          "
-        >
-          💳 Approve &amp; Process Payment
-        </button>
-      </div>
-
-      <div class="bill-card" id="bill-C-2398">
-        <div class="bill-card-header">
-          <div class="bill-info">
-            <h3>
-              Boiler Servicing &nbsp;<a
-                class="complaint-link"
-                href="complaint-details.html?id=C-2398"
-                >C-2398</a
-              >
-            </h3>
-            <p>
-              Provider: HeatPro Services &nbsp;•&nbsp; Bill No: BILL-2398-001
-              &nbsp;•&nbsp; Submitted: 2024-03-03
-            </p>
-          </div>
-          <span class="badge badge-payment">⏳ Pending Payment</span>
-        </div>
-        <div class="bill-amounts">
-          <div class="bill-amount-box bill-submitted">
-            <div class="amount-label">📄 Submitted Bill</div>
-            <div class="amount-value">₹3,500</div>
-          </div>
-          <div class="bill-amount-box bill-discount">
-            <div class="amount-label">🏷 Discount</div>
-            <div class="amount-value" style="color: #dc2626">-₹0</div>
-          </div>
-          <div class="bill-amount-box bill-final">
-            <div class="amount-label">✅ Final Amount</div>
-            <div class="amount-value" style="color: #16a34a">₹3,500</div>
-          </div>
-        </div>
-        <button
-          class="btn btn-success btn-full"
-          onclick="
-            openPayModal(
-              'C-2398',
-              'BILL-2398-001',
-              'Boiler Servicing',
-              'HeatPro Services',
-              '3,500',
-            )
-          "
-        >
-          💳 Approve &amp; Process Payment
-        </button>
-      </div>
-
-      <div class="card" style="margin-top: 24px">
-        <div class="card-title" style="margin-bottom: 4px">
-          📜 Payment History
-        </div>
-        <p style="font-size: 12px; color: #6b7280; margin-bottom: 16px">
-          Only bills from approved estimates are visible here
-        </p>
-        <div style="overflow-x: auto">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Complaint ID</th>
-                <th>Issue</th>
-                <th>Provider</th>
-                <th>Submitted</th>
-                <th>Discount</th>
-                <th>Final Amount</th>
-                <th>Paid On</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>
-                  <a
-                    class="complaint-link"
-                    href="complaint-details.html?id=C-2395"
-                    >C-2395</a
-                  >
-                </td>
-                <td>Sink Blockage</td>
-                <td>QuickFix Plumbing</td>
-                <td>₹800</td>
-                <td style="color: #dc2626">-₹0</td>
-                <td style="color: #16a34a; font-weight: 700">₹800</td>
-                <td>2024-02-28</td>
-                <td><span class="badge badge-completed">✅ Paid</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <a
-                    class="complaint-link"
-                    href="complaint-details.html?id=C-2390"
-                    >C-2390</a
-                  >
-                </td>
-                <td>AC Repair</td>
-                <td>CoolAir Services</td>
-                <td>₹2,200</td>
-                <td style="color: #dc2626">-₹200</td>
-                <td style="color: #16a34a; font-weight: 700">₹2,000</td>
-                <td>2024-02-20</td>
-                <td><span class="badge badge-completed">✅ Paid</span></td>
-              </tr>
-              <tr>
-                <td>
-                  <a
-                    class="complaint-link"
-                    href="complaint-details.html?id=C-2385"
-                    >C-2385</a
-                  >
-                </td>
-                <td>Lift Maintenance</td>
-                <td>Urban Lift Repairs</td>
-                <td>₹4,500</td>
-                <td style="color: #dc2626">-₹0</td>
-                <td style="color: #16a34a; font-weight: 700">₹4,500</td>
-                <td>2024-02-15</td>
-                <td><span class="badge badge-completed">✅ Paid</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <span style="font-weight:600;font-size:14px;color:#1a0dab;">Maintenance Manager</span>
       </div>
     </div>
 
-    <!-- Payment Modal -->
-    <div class="modal-overlay" id="payModal">
-      <div class="modal">
-        <div class="modal-header">
-          <div class="modal-icon">💳</div>
-          <div class="modal-title">Approve Payment</div>
-        </div>
-        <p style="font-size: 13px; color: #6b7280; margin-bottom: 14px">
-          You are about to approve and process the payment for:
-        </p>
-        <div class="modal-row">
-          <span class="label">Complaint ID:</span
-          ><span class="value blue" id="m-id">—</span>
-        </div>
-        <div class="modal-row">
-          <span class="label">Bill No:</span
-          ><span class="value" id="m-bill">—</span>
-        </div>
-        <div class="modal-row">
-          <span class="label">Issue:</span
-          ><span class="value" id="m-issue">—</span>
-        </div>
-        <div class="modal-row">
-          <span class="label">Provider:</span
-          ><span class="value" id="m-provider">—</span>
-        </div>
-        <div class="modal-row">
-          <span class="label">Final Amount:</span
-          ><span class="value green" id="m-amount">—</span>
-        </div>
-        <p class="modal-note">
-          ⚠️ This action will process the payment and mark this bill as paid.
-          This cannot be undone.
-        </p>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="hideModal('payModal')">
-            Cancel
-          </button>
-          <button class="btn btn-success" onclick="confirmPayment()">
-            Confirm Payment
-          </button>
-        </div>
-      </div>
-    </div>
+  </div>
 
-    <!-- Logout Modal -->
-    <div class="modal-overlay" id="logoutModal">
-      <div class="logout-modal">
-        <div class="logout-icon">👋</div>
-        <h3>Log Out?</h3>
-        <p>Are you sure you want to log out of PropSync?</p>
-        <div style="display: flex; gap: 10px; justify-content: center">
-          <button
-            class="btn btn-ghost"
-            style="flex: 1"
-            onclick="hideModal('logoutModal')"
-          >
-            Cancel
-          </button>
-          <button class="btn btn-danger" style="flex: 1" onclick="doLogout()">
-            Yes, Log Out
-          </button>
-        </div>
-      </div>
-    </div>
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+  <h2 style="font-size:22px;font-weight:700;margin-bottom:4px;">💰 Service Bills &amp; Payments</h2>
+  <p style="color:#6B7280;font-size:13px;margin-bottom:20px;">2 bills require your approval — only bills from approved estimates are shown</p>
 
-    <script src="../js/maintenance_manager.js"></script>
-    <script>
-      let currentPayId = "";
-      function openPayModal(id, bill, issue, provider, amount) {
-        currentPayId = id;
-        document.getElementById("m-id").textContent = id;
-        document.getElementById("m-bill").textContent = bill;
-        document.getElementById("m-issue").textContent = issue;
-        document.getElementById("m-provider").textContent = provider;
-        document.getElementById("m-amount").textContent = "₹" + amount;
-        showModal("payModal");
-      }
-      function confirmPayment() {
-        hideModal("payModal");
-        const billCard = document.getElementById("bill-" + currentPayId);
-        if (billCard) {
-          billCard.querySelector(".bill-card-header .badge").outerHTML =
-            `<span class="badge badge-completed">✅ Paid</span>`;
-          billCard.querySelector("button").outerHTML =
-            `<div style="text-align:center;padding:10px;background:#DCFCE7;border-radius:7px;font-weight:600;color:#15803D;">✅ Payment Processed Successfully</div>`;
-          billCard.style.opacity = "0.7";
-        }
-        addNotification(
-          "money",
-          "#DCFCE7",
-          "Payment Processed",
-          `Payment for ${currentPayId} has been processed successfully`,
-          "owner",
-        );
-        showToast("✅ Payment processed successfully!");
-      }
-    </script>
-  </body>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+    <div class="kpi-card"><div><div class="kpi-label">Pending Payment</div><div class="kpi-value" style="font-size:22px;">₹8,000</div></div><div class="kpi-icon" style="background:#FEF3C7;color:#D97706;">⏳</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Total Paid (This Month)</div><div class="kpi-value" style="font-size:22px;">₹7,300</div></div><div class="kpi-icon" style="background:#DCFCE7;color:#16A34A;">✅</div></div>
+    <div class="kpi-card"><div><div class="kpi-label">Total Bills</div><div class="kpi-value" style="font-size:22px;">5</div></div><div class="kpi-icon" style="background:#F0FDF4;color:#16A34A;">📋</div></div>
+  </div>
+
+  <div style="font-size:14px;font-weight:700;margin-bottom:12px;">⏳ Pending Payments</div>
+
+  <div class="bill-card" id="bill-C-2399">
+    <div class="bill-card-header">
+      <div class="bill-info"><h3>AC Not Cooling &nbsp;<a class="complaint-link" href="complaint-details.html?id=C-2399">C-2399</a></h3><p>Provider: CoolAir Services &nbsp;•&nbsp; Bill No: BILL-2399-001 &nbsp;•&nbsp; Submitted: 2024-03-04</p></div>
+      <span class="badge badge-payment">⏳ Pending Payment</span>
+    </div>
+    <div class="bill-amounts">
+      <div class="bill-amount-box bill-submitted"><div class="amount-label">📄 Submitted Bill</div><div class="amount-value">₹5,000</div></div>
+      <div class="bill-amount-box bill-discount"><div class="amount-label">🏷 Discount</div><div class="amount-value" style="color:#DC2626;">-₹500</div></div>
+      <div class="bill-amount-box bill-final"><div class="amount-label">✅ Final Amount</div><div class="amount-value" style="color:#16A34A;">₹4,500</div></div>
+    </div>
+    <button class="btn btn-success btn-full" onclick="openPayModal('C-2399','BILL-2399-001','AC Not Cooling','CoolAir Services','4,500')">💳 Approve &amp; Process Payment</button>
+  </div>
+
+  <div class="bill-card" id="bill-C-2398">
+    <div class="bill-card-header">
+      <div class="bill-info"><h3>Boiler Servicing &nbsp;<a class="complaint-link" href="complaint-details.html?id=C-2398">C-2398</a></h3><p>Provider: HeatPro Services &nbsp;•&nbsp; Bill No: BILL-2398-001 &nbsp;•&nbsp; Submitted: 2024-03-03</p></div>
+      <span class="badge badge-payment">⏳ Pending Payment</span>
+    </div>
+    <div class="bill-amounts">
+      <div class="bill-amount-box bill-submitted"><div class="amount-label">📄 Submitted Bill</div><div class="amount-value">₹3,500</div></div>
+      <div class="bill-amount-box bill-discount"><div class="amount-label">🏷 Discount</div><div class="amount-value" style="color:#DC2626;">-₹0</div></div>
+      <div class="bill-amount-box bill-final"><div class="amount-label">✅ Final Amount</div><div class="amount-value" style="color:#16A34A;">₹3,500</div></div>
+    </div>
+    <button class="btn btn-success btn-full" onclick="openPayModal('C-2398','BILL-2398-001','Boiler Servicing','HeatPro Services','3,500')">💳 Approve &amp; Process Payment</button>
+  </div>
+
+  <div class="card" style="margin-top:24px;">
+    <div class="card-title" style="margin-bottom:4px;">📜 Payment History</div>
+    <p style="font-size:12px;color:#6B7280;margin-bottom:16px;">Only bills from approved estimates are visible here</p>
+    <div style="overflow-x:auto;">
+      <table class="data-table">
+        <thead><tr><th>Complaint ID</th><th>Issue</th><th>Provider</th><th>Submitted</th><th>Discount</th><th>Final Amount</th><th>Paid On</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td><a class="complaint-link" href="complaint-details.html?id=C-2395">C-2395</a></td><td>Sink Blockage</td><td>QuickFix Plumbing</td><td>₹800</td><td style="color:#DC2626;">-₹0</td><td style="color:#16A34A;font-weight:700;">₹800</td><td>2024-02-28</td><td><span class="badge badge-completed">✅ Paid</span></td></tr>
+          <tr><td><a class="complaint-link" href="complaint-details.html?id=C-2390">C-2390</a></td><td>AC Repair</td><td>CoolAir Services</td><td>₹2,200</td><td style="color:#DC2626;">-₹200</td><td style="color:#16A34A;font-weight:700;">₹2,000</td><td>2024-02-20</td><td><span class="badge badge-completed">✅ Paid</span></td></tr>
+          <tr><td><a class="complaint-link" href="complaint-details.html?id=C-2385">C-2385</a></td><td>Lift Maintenance</td><td>Urban Lift Repairs</td><td>₹4,500</td><td style="color:#DC2626;">-₹0</td><td style="color:#16A34A;font-weight:700;">₹4,500</td><td>2024-02-15</td><td><span class="badge badge-completed">✅ Paid</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal-overlay" id="payModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-icon">💳</div><div class="modal-title">Approve Payment</div></div>
+    <p style="font-size:13px;color:#6B7280;margin-bottom:14px;">You are about to approve and process the payment for:</p>
+    <div class="modal-row"><span class="label">Complaint ID:</span><span class="value blue" id="m-id">—</span></div>
+    <div class="modal-row"><span class="label">Bill No:</span><span class="value" id="m-bill">—</span></div>
+    <div class="modal-row"><span class="label">Issue:</span><span class="value" id="m-issue">—</span></div>
+    <div class="modal-row"><span class="label">Provider:</span><span class="value" id="m-provider">—</span></div>
+    <div class="modal-row"><span class="label">Final Amount:</span><span class="value green" id="m-amount">—</span></div>
+    <p class="modal-note">⚠️ This action will process the payment and mark this bill as paid. This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="hideModal('payModal')">Cancel</button>
+      <button class="btn btn-success" onclick="confirmPayment()">Confirm Payment</button>
+    </div>
+  </div>
+</div>
+
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="logout-modal">
+    <div class="logout-icon">👋</div><h3>Log Out?</h3>
+    <p>Are you sure you want to log out of PropSync?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="hideModal('logoutModal')">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="doLogout()">Yes, Log Out</button>
+    </div>
+  </div>
+</div>
+
+<script src="../js/maintenance_manager.js"></script>
+<script>
+let currentPayId = '';
+function openPayModal(id, bill, issue, provider, amount) {
+  currentPayId = id;
+  document.getElementById('m-id').textContent       = id;
+  document.getElementById('m-bill').textContent     = bill;
+  document.getElementById('m-issue').textContent    = issue;
+  document.getElementById('m-provider').textContent = provider;
+  document.getElementById('m-amount').textContent   = '₹' + amount;
+  showModal('payModal');
+}
+function confirmPayment() {
+  hideModal('payModal');
+  const billCard = document.getElementById('bill-' + currentPayId);
+  if (billCard) {
+    billCard.querySelector('.bill-card-header .badge').outerHTML = `<span class="badge badge-completed">✅ Paid</span>`;
+    billCard.querySelector('button').outerHTML = `<div style="text-align:center;padding:10px;background:#DCFCE7;border-radius:7px;font-weight:600;color:#15803D;">✅ Payment Processed Successfully</div>`;
+    billCard.style.opacity = '0.7';
+  }
+  addNotification('money','#DCFCE7','Payment Processed',`Payment for ${currentPayId} has been processed successfully`, 'owner');
+  showToast('✅ Payment processed successfully!');
+}
+</script>
+</body>
 </html>

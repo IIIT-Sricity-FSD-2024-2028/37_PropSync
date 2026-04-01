@@ -58,14 +58,14 @@
   <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
 
   <div class="profile-banner" style="margin-bottom:20px;">
-    <div class="profile-avatar">👤</div>
+    <div class="profile-avatar" id="bannerAvatar">👤</div>
     <div>
-      <h2 style="font-size:22px;font-weight:800;">Maintenance Manager</h2>
-      <p style="opacity:0.8;font-size:13px;margin-top:3px;">Maintenance Manager · Greenwood Heights</p>
+      <h2 style="font-size:22px;font-weight:800;color:rgba(255,255,255,0.9);" id="bannerName">Maintenance Manager</h2>
+      <p style="opacity:0.75;font-size:13px;margin-top:3px;" id="bannerRole">Maintenance Manager · Greenwood Heights</p>
       <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">🏢 Property: A-402</span>
-        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">✅ Active</span>
-        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;">📅 Member since 2022</span>
+        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);" id="bannerUnit">🏢 Property: A-402</span>
+        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);">✅ Active</span>
+        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);">📅 Member since 2022</span>
       </div>
     </div>
   </div>
@@ -136,16 +136,49 @@
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../js/maintenance_manager.js"></script>
 <script>
 function toggleEdit() {
+  // Pre-fill inputs with current displayed values before showing
+  document.getElementById('inpName').value      = document.getElementById('dispName').textContent.trim();
+  document.getElementById('inpEmail').value     = document.getElementById('dispEmail').textContent.trim();
+  document.getElementById('inpPhone').value     = document.getElementById('dispPhone').textContent.trim();
+  document.getElementById('inpUnit').value      = document.getElementById('dispUnit').textContent.trim();
+  document.getElementById('inpCommunity').value = document.getElementById('dispCommunity').textContent.trim();
+
   document.getElementById('editForm').style.display = 'block';
   document.getElementById('editBtn').style.display = 'none';
   document.getElementById('editForm').scrollIntoView({behavior:'smooth'});
 }
+
 function cancelEdit() {
   document.getElementById('editForm').style.display = 'none';
   document.getElementById('editBtn').style.display = 'block';
 }
+
 function saveProfile() {
-  document.getElementById('dispName').textContent      = document.getElementById('inpName').value;
-  document.getElementById('dispEmail').textContent     = document.getElementById('inpEmail').value;
-  document.getElementById('dispPhone').textContent     = document.getElementById('inpPhone').value;
-  document.getElementById('dispUnit').textContent      = do
+  const name      = document.getElementById('inpName').value.trim();
+  const email     = document.getElementById('inpEmail').value.trim();
+  const phone     = document.getElementById('inpPhone').value.trim();
+  const unit      = document.getElementById('inpUnit').value.trim();
+  const community = document.getElementById('inpCommunity').value.trim();
+
+  // Validate
+  if (!name)  { showToast('⚠️ Full name cannot be empty.'); return; }
+  if (!email) { showToast('⚠️ Email address cannot be empty.'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('⚠️ Please enter a valid email address.'); return; }
+
+  // Update display values
+  document.getElementById('dispName').textContent      = name;
+  document.getElementById('dispEmail').textContent     = email;
+  document.getElementById('dispPhone').textContent     = phone;
+  document.getElementById('dispUnit').textContent      = unit;
+  document.getElementById('dispCommunity').textContent = community;
+
+  // Update the banner too
+  document.getElementById('bannerName').textContent = name;
+  document.getElementById('bannerRole').textContent = name + ' · ' + community;
+  document.getElementById('bannerUnit').textContent = '🏢 Property: ' + unit;
+
+  cancelEdit();
+  showToast('✅ Profile updated successfully!');
+}
+</script></body>
+</html>
