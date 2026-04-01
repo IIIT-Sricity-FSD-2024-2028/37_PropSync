@@ -211,3 +211,20 @@ function handleSignup(form, roleName) {
 handleSignup(owner_form, "Owner");
 handleSignup(sp_form, "Service Provider");
 handleSignup(mma_form, "Maintenance Manager");
+
+const superUser = document.querySelector("#superUser");
+superUser.addEventListener("click", checkPin);
+function checkPin() {
+  const correctPin = "1234";
+  const userPin = prompt("Enter your PIN:");
+
+  if (userPin === null) {
+    alert("Cancelled");
+  } else if (userPin.trim() === "") {
+    alert("PIN cannot be empty");
+  } else if (userPin === correctPin) {
+    window.location.href = "../super_user/dashboard.html";
+  } else {
+    alert("Wrong PIN");
+  }
+}
