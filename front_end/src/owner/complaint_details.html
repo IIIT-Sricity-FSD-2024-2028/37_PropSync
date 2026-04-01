@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PropSync – Complaint Detail</title>
     <link rel="icon" type="image/png" href="./public/favicon.png" />
-    <link rel="stylesheet" href="./css/login_signup.css" />
+    <link rel="stylesheet" href="../css/owner.css" />
     <link
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Fraunces:wght@700;800&display=swap"
       rel="stylesheet"
@@ -755,203 +755,179 @@
     </style>
   </head>
   <body>
-    <!-- ── CHECKBOX TOGGLE (CSS-only sidebar) ── -->
-    <input type="checkbox" id="sb-toggle" />
+    <div id="overlay"></div>
 
-    <!-- ── OVERLAY + CLOSE LABEL ── -->
-    <div class="overlay"></div>
-    <label class="overlay-label" for="sb-toggle"></label>
-
-    <!-- ══════════════════ SIDEBAR ══════════════════ -->
-    <aside class="sidebar">
-      <div class="sb-head">
-        <div class="sb-mark">🏢</div>
-        <div class="sb-brand">Prop<span>Sync</span></div>
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <img src="../../public/image.png" alt="logo" height="45px" />
+        <span id="closeBtn">✖</span>
       </div>
 
-      <div class="sb-body">
-        <p class="sb-section">Main</p>
-
-        <a class="nav-link" href="#">
+      <ul>
+        <a class="nav-item active" href="./dashboard.html">
           <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-house w-5 h-5 flex-shrink-0"
           >
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="3" y="14" width="7" height="7" rx="1" />
-            <rect x="14" y="14" width="7" height="7" rx="1" />
-          </svg>
-          Dashboard
+            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"></path>
+            <path
+              d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
+            ></path></svg
+          >Dashboard
         </a>
-
-        <a class="nav-link active" href="#">
+        <a class="nav-item" href="./new-complaint.html">
           <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-clipboard-list w-5 h-5 flex-shrink-0"
+          >
+            <rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect>
+            <path
+              d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
+            ></path>
+            <path d="M12 11h4"></path>
+            <path d="M12 16h4"></path>
+            <path d="M8 11h.01"></path>
+            <path d="M8 16h.01"></path></svg
+          >New Complaint
+        </a>
+        <a class="nav-item" href="./payment-history.html">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="22"
+            viewBox="0 0 40 42"
+            fill="currentColor"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-bell w-5 h-5 flex-shrink-0"
           >
             <path
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"
-            />
-            <rect x="9" y="3" width="6" height="4" rx="1" />
-            <line x1="9" y1="12" x2="15" y2="12" />
-            <line x1="9" y1="16" x2="13" y2="16" />
-          </svg>
-          Complaints
-          <span class="nav-badge">3</span>
+              d="M25.4545 21H28.1818V26.922L32.6182 29.883L31.2545 32.613L25.4545 28.749V21ZM40 27.3C40 31.1987 38.6591 34.9377 36.2723 37.6945C33.8854 40.4513 30.6482 42 27.2727 42C22.2 42 17.8182 38.556 15.7636 33.6H3.63636C2.67194 33.6 1.74702 33.1575 1.06507 32.3698C0.383116 31.5822 0 30.5139 0 29.4V4.2C0 1.869 1.61818 0 3.63636 0H32.7273C33.6917 0 34.6166 0.442499 35.2986 1.23015C35.9805 2.0178 36.3636 3.08609 36.3636 4.2V17.01C38.6182 19.656 40 23.289 40 27.3ZM14.5455 27.3C14.5455 23.184 16.0182 19.467 18.3636 16.8H3.63636V29.4H14.6727C14.5455 28.707 14.5455 28.014 14.5455 27.3ZM27.2727 16.8C24.8617 16.8 22.5494 17.9062 20.8445 19.8754C19.1396 21.8445 18.1818 24.5152 18.1818 27.3C18.1818 30.0848 19.1396 32.7555 20.8445 34.7246C22.5494 36.6938 24.8617 37.8 27.2727 37.8C29.6838 37.8 31.9961 36.6938 33.701 34.7246C35.4058 32.7555 36.3636 30.0848 36.3636 27.3C36.3636 24.5152 35.4058 21.8445 33.701 19.8754C31.9961 17.9062 29.6838 16.8 27.2727 16.8ZM32.7273 8.4V4.2H3.63636V8.4H32.7273Z"
+              fill="none"
+            /></svg
+          >Payment History
         </a>
-
-        <a class="nav-link" href="#">
+        <a class="nav-item" href="./alerts.html">
           <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-bell w-5 h-5 flex-shrink-0"
+          >
+            <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
+            <path
+              d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+            ></path></svg
+          >Alerts & Notifications
+        </a>
+        <a class="nav-item" href="./profile.html">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-user w-5 h-5 flex-shrink-0"
+          >
+            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle></svg
+          >Profile
+        </a>
+        <a class="nav-item" href="../login_signup.html">
+          <p id="arrow">&rarr;</p>
+          Logout
+        </a>
+      </ul>
+    </div>
+    <!-- ===== NAVBAR ===== -->
+    <header class="navbar">
+      <div class="left">
+        <span class="menu"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 30 30"
+            fill="none"
           >
             <path
-              d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"
+              d="M3.75 15H26.25M3.75 7.5H26.25M3.75 22.5H26.25"
+              stroke="rgb(55, 65, 81)"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
             />
           </svg>
-          Maintenance
-        </a>
-
-        <a class="nav-link" href="#">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" />
-          </svg>
-          Residents
-        </a>
-
-        <a class="nav-link" href="#">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-            <polyline points="14 2 14 8 20 8" />
-            <line x1="16" y1="13" x2="8" y2="13" />
-            <line x1="16" y1="17" x2="8" y2="17" />
-          </svg>
-          Reports
-        </a>
-
-        <p class="sb-section">Settings</p>
-
-        <a class="nav-link" href="#">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="12" r="3" />
-            <path
-              d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06-.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"
-            />
-          </svg>
-          Settings
-        </a>
-
-        <a class="nav-link" href="#">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 01-3.46 0" />
-          </svg>
-          Notifications
-          <span class="nav-badge">7</span>
-        </a>
-
-        <a class="nav-link" href="#">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-          >
-            <circle cx="12" cy="8" r="4" />
-            <path d="M20 21a8 8 0 10-16 0" />
-          </svg>
-          Profile
-        </a>
-      </div>
-
-      <div class="sb-foot">
-        <div class="user-chip">
-          <div class="av">JD</div>
-          <div>
-            <div class="user-name">John Doe</div>
-            <div class="user-role">Resident · Tower A</div>
-          </div>
+        </span>
+        <div class="logo">
+          <img src="../../public/image.png" alt="logo" height="40px" />
         </div>
       </div>
-    </aside>
 
-    <!-- ══════════════════ HEADER ══════════════════ -->
-    <header class="header">
-      <!-- Hamburger -->
-      <label class="hamburger-label" for="sb-toggle" aria-label="Open menu">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-        >
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </label>
-
-      <!-- Back link -->
-      <a href="#" class="back-link">
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
-        >
-          <polyline points="15 18 9 12 15 6" />
-        </svg>
-        Back to Dashboard
-      </a>
-
-      <span class="hdr-title">Complaint Details</span>
-
-      <div class="hdr-right">
-        <a class="icon-btn" href="#">
-          <div class="notif-dot"></div>
-          <svg
+      <div class="right">
+        <a class="icon" href="./alerts.html"
+          ><svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            class="lucide lucide-bell w-5 h-5 flex-shrink-0"
           >
-            <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
-            <path d="M13.73 21a2 2 0 01-3.46 0" />
+            <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
+            <path
+              d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+            ></path>
           </svg>
         </a>
-        <a class="profile-btn" href="#">
-          <div class="av av-lg">JD</div>
-          John Doe
-        </a>
+        <div class="profile">
+          <a class="avatar" href="./profile.html"
+            ><svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="35"
+              height="35"
+              viewBox="0 0 45 45"
+              fill="none"
+            >
+              <path
+                d="M10.9688 32.0625C12.5625 30.8438 14.3438 29.8828 16.3125 29.1797C18.2813 28.4766 20.3438 28.125 22.5 28.125C24.6562 28.125 26.7188 28.4766 28.6875 29.1797C30.6562 29.8828 32.4375 30.8438 34.0312 32.0625C35.125 30.7812 35.9766 29.3281 36.5859 27.7031C37.1953 26.0781 37.5 24.3438 37.5 22.5C37.5 18.3438 36.0391 14.8047 33.1172 11.8828C30.1953 8.96094 26.6562 7.5 22.5 7.5C18.3438 7.5 14.8047 8.96094 11.8828 11.8828C8.96094 14.8047 7.5 18.3438 7.5 22.5C7.5 24.3438 7.80469 26.0781 8.41406 27.7031C9.02344 29.3281 9.875 30.7812 10.9688 32.0625ZM22.5 24.375C20.6562 24.375 19.1016 23.7422 17.8359 22.4766C16.5703 21.2109 15.9375 19.6562 15.9375 17.8125C15.9375 15.9688 16.5703 14.4141 17.8359 13.1484C19.1016 11.8828 20.6562 11.25 22.5 11.25C24.3438 11.25 25.8984 11.8828 27.1641 13.1484C28.4297 14.4141 29.0625 15.9688 29.0625 17.8125C29.0625 19.6562 28.4297 21.2109 27.1641 22.4766C25.8984 23.7422 24.3438 24.375 22.5 24.375ZM22.5 41.25C19.9062 41.25 17.4688 40.7578 15.1875 39.7734C12.9062 38.7891 10.9219 37.4531 9.23438 35.7656C7.54687 34.0781 6.21094 32.0938 5.22656 29.8125C4.24219 27.5313 3.75 25.0938 3.75 22.5C3.75 19.9062 4.24219 17.4688 5.22656 15.1875C6.21094 12.9062 7.54687 10.9219 9.23438 9.23438C10.9219 7.54687 12.9062 6.21094 15.1875 5.22656C17.4688 4.24219 19.9062 3.75 22.5 3.75C25.0938 3.75 27.5313 4.24219 29.8125 5.22656C32.0938 6.21094 34.0781 7.54687 35.7656 9.23438C37.4531 10.9219 38.7891 12.9062 39.7734 15.1875C40.7578 17.4688 41.25 19.9062 41.25 22.5C41.25 25.0938 40.7578 27.5313 39.7734 29.8125C38.7891 32.0938 37.4531 34.0781 35.7656 35.7656C34.0781 37.4531 32.0938 38.7891 29.8125 39.7734C27.5313 40.7578 25.0938 41.25 22.5 41.25Z"
+                fill="#2D1067"
+              /></svg
+            >John Doe
+          </a>
+        </div>
       </div>
     </header>
 
@@ -1022,26 +998,18 @@
           </div>
 
           <div class="info-row">
-            <div class="info-lbl">Category &amp; Priority</div>
-            <div class="tag-row">
-              <span class="tag tag-blue">🔧 Plumbing</span>
-              <span class="tag tag-red">🔴 High Priority</span>
-            </div>
+            <div class="info-lbl">Category</div>
+            <div class="info-val">Water Leakage</div>
           </div>
 
           <div class="info-row">
-            <div class="info-lbl">Location</div>
+            <div class="info-lbl">Complaint Id</div>
             <div class="info-val">Tower A, Apt 102</div>
           </div>
 
           <div class="info-row">
             <div class="info-lbl">Submitted By</div>
             <div class="info-val">Resident – John Doe</div>
-          </div>
-
-          <div class="info-row">
-            <div class="info-lbl">Submitted Date</div>
-            <div class="info-val">2024-09-18</div>
           </div>
 
           <div class="info-row">
@@ -1181,5 +1149,6 @@
         </div>
       </div>
     </main>
+    <script src="../js/owner.js"></script>
   </body>
 </html>

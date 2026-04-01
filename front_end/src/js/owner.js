@@ -507,9 +507,16 @@ function saveNotifications() {
 }
 
 //Complaint details Page
-const complaintCards = document.querySelectorAll(".complaint-card");
+const complaintCards = comp_container.querySelectorAll(".complaint-card");
+console.log(complaintCards);
 complaintCards.forEach((complaint) => {
   complaint.addEventListener("click", () => {
     window.location.href = "../owner/complaint_details.html";
+    const values = document.querySelectorAll("info-val");
+    values[0] = complaint.title;
+    values[1] = complaint.category;
+    values[2] = complaint.id;
+    values[3] = complaint.issuedBy;
+    values[4] = complaint.status;
   });
 });
