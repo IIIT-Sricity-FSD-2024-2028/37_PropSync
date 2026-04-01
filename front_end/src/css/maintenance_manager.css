@@ -2320,20 +2320,22 @@ textarea.form-control {
 }
 
 /* ============================================================
-   SIDEBAR – always hidden until hamburger click
+   SIDEBAR – hidden until hamburger click (mobile only)
    ============================================================ */
-.sidebar {
-  transform: translateX(-100%);
-  background: #fff;
-  border-right: 1px solid #E5E7EB;
-}
+@media (max-width: 900px) {
+  .sidebar {
+    transform: translateX(-100%);
+    background: #fff;
+    border-right: 1px solid #E5E7EB;
+  }
 
-.sidebar.open {
-  transform: translateX(0);
-}
+  .sidebar.open {
+    transform: translateX(0);
+  }
 
-body.has-sidebar .page-wrapper {
-  margin-left: 0;
+  body.has-sidebar .page-wrapper {
+    margin-left: 0;
+  }
 }
 
 /* Sidebar logo area with PropSync branding */
