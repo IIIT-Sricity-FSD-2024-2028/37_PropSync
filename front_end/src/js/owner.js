@@ -696,3 +696,133 @@ async function loadComplaintDetails() {
 if (document.querySelector(".stepper")) {
   loadComplaintDetails();
 }
+
+let currentEditType = "";
+
+const modal = document.getElementById("editModal");
+const modalFields = document.getElementById("modalFields");
+const modalTitle = document.getElementById("modalTitle");
+
+// OPEN PROFILE EDIT
+document.querySelector(".edit-btn").addEventListener("click", () => {
+  currentEditType = "profile";
+  modalTitle.innerText = "Edit Profile";
+
+  const values = document.querySelectorAll(".pro_item p");
+
+  modalFields.innerHTML = `
+    <input id="name" placeholder="Full Name" value="${values[0].innerText}">
+    <input id="email" placeholder="Email" value="${values[1].innerText}">
+    <input id="community" placeholder="Community" value="${values[2].innerText}">
+    <input id="unit" placeholder="Unit" value="${values[3].innerText}">
+  `;
+
+  modal.classList.remove("hidden");
+});
+
+// SETTINGS BUTTONS
+function editSetting(type) {
+  currentEditType = type;
+
+  if (type === "password") {
+    modalTitle.innerText = "Change Password";
+
+    modalFields.innerHTML = `
+      <input id="newPass" type="password" placeholder="New Password">
+      <input id="confirmPass" type="password" placeholder="Confirm Password">
+      <p id="error" style="color:red;"></p>
+    `;
+  }
+
+  if (type === "contact") {
+    modalTitle.innerText = "Change Email";
+
+    const email = document.querySelectorAll(".pro_item p")[1].innerText;
+
+    modalFields.innerHTML = `
+      <input id="newEmail" placeholder="New Email" value="${email}">
+      <p id="error" style="color:red;"></p>
+    `;
+  }
+
+  modal.classList.remove("hidden");
+}
+
+// SAVE CHANGES
+function saveChanges() {
+  const error = document.getElementById("error");
+  if (error) error.innerText = ""; // reset error
+
+  // 👉 PROFILE EDIT
+  if (currentEditType === "profile") {
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const community = document.getElementById("community").value.trim();
+    const unit = document.getElementById("unit").value.trim();
+
+    if (!name || !email || !community || !unit) {
+      if (error) error.innerText = "All fields are required";
+      return; // ❌ stops closing (correct)
+    }
+
+    const items = document.querySelectorAll(".pro_item p");
+    items[0].innerText = name;
+    items[1].innerText = email;
+    items[2].innerText = community;
+    items[3].innerText = unit;
+
+    // avatar update
+    const initials = name
+      .split(" ")
+      .map((w) => w[0])
+      .join("")
+      .toUpperCase();
+
+    document.querySelector(".pro_avatar").innerText = initials;
+
+    closeModal(); // ✅ will run ONLY if valid
+  }
+
+  // 👉 EMAIL CHANGE
+  if (currentEditType === "contact") {
+    const newEmail = document.getElementById("newEmail").value.trim();
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    if (!newEmail) {
+      error.innerText = "Email cannot be empty";
+      return;
+    }
+
+    if (!emailRegex.test(newEmail)) {
+      error.innerText = "Enter a valid email";
+      return;
+    }
+
+    document.querySelectorAll(".pro_item p")[1].innerText = newEmail;
+
+    closeModal(); // ✅ only runs if valid
+  }
+
+  // 👉 PASSWORD CHANGE
+  if (currentEditType === "password") {
+    const pass = document.getElementById("newPass").value;
+    const confirm = document.getElementById("confirmPass").value;
+
+    if (!pass || !confirm) {
+      error.innerText = "Fields cannot be empty";
+      return;
+    }
+
+    if (pass !== confirm) {
+      error.innerText = "Passwords do not match";
+      return;
+    }
+
+    closeModal(); // ✅ only runs if valid
+  }
+}
+// CLOSE MODAL
+function closeModal() {
+  modal.classList.add("hidden");
+}

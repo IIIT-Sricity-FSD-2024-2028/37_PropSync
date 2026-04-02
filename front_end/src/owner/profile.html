@@ -6,7 +6,6 @@
     <title>PropSync - Profile</title>
     <link rel="icon" type="image/png" href="../../public/favicon.png" />
     <link rel="stylesheet" href="../css/owner.css" />
-    <link rel="stylesheet" href="../css/form.css" />
   </head>
   <body>
     <div id="overlay"></div>
@@ -333,6 +332,19 @@
             ></path>
           </svg>
         </button>
+      </div>
+    </div>
+    <!-- EDIT MODAL -->
+    <div id="editModal" class="modal hidden">
+      <div class="modal-content">
+        <h3 id="modalTitle">Edit</h3>
+
+        <div id="modalFields"></div>
+
+        <div class="modal-actions">
+          <button onclick="saveChanges()">Save</button>
+          <button onclick="closeModal()">Cancel</button>
+        </div>
       </div>
     </div>
     <script src="../js/owner.js"></script>

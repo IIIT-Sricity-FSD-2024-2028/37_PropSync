@@ -225,8 +225,18 @@ body.has-sidebar .page-wrapper {
 }
 
 .nav-link .nav-icon {
-  font-size: 16px;
+  font-size: 14px;
   flex-shrink: 0;
+  width: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  opacity: 0.75;
+}
+.nav-link.active .nav-icon,
+.nav-link:hover .nav-icon {
+  opacity: 1;
 }
 
 .nav-link .nav-badge {
