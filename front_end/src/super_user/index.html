@@ -256,8 +256,8 @@
       <div class="modal-header"><div><h2>Add New Participant</h2><p class="modal-subtitle">Fill in the details to create a new participant account</p></div><button class="modal-close" data-close="add-participant-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
       <div class="modal-body">
         <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ap-name" class="form-control" placeholder="John Doe" /><p class="form-error" id="ap-name-error"></p></div>
-        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ap-email" class="form-control" placeholder="email@example.com" /></div>
-        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ap-contact" class="form-control" placeholder="+91 9734298517" /><p class="form-error" id="ap-contact-error"></p></div>
+        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ap-email" class="form-control" placeholder="email@example.com" /><p class="form-error" id="ap-email-error"></p></div>
+        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ap-contact" class="form-control" placeholder="+91 9876543210" /><p class="form-error" id="ap-contact-error"></p></div>
         <div class="form-group"><label>Password <span class="req">*</span></label><div class="pass-wrap"><input type="password" id="ap-password" class="form-control" placeholder="••••••••" /><button type="button" class="pass-toggle" data-target="ap-password"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button></div><p class="form-error" id="ap-password-error"></p></div>
         <div class="form-group"><label>Role Selection <span class="req">*</span></label><select id="ap-role" class="form-control"><option>Property Owner</option><option>Service Provider</option><option>Maintenance Manager</option><option>Administrator</option></select></div>
       </div>
@@ -271,9 +271,9 @@
       <div class="modal-header"><div><h2>Edit Participant</h2><p class="modal-subtitle">Update participant details</p></div><button class="modal-close" data-close="edit-participant-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
       <div class="modal-body">
         <input type="hidden" id="ep-id" />
-        <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ep-name" class="form-control" /><p class="form-error" id="ep-name-error"></p></div>
-        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ep-email" class="form-control" /></div>
-        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ep-contact" class="form-control" /><p class="form-error" id="ep-contact-error"></p></div>
+        <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ep-name" class="form-control" placeholder="John Doe" /><p class="form-error" id="ep-name-error"></p></div>
+        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ep-email" class="form-control" placeholder="email@example.com" /><p class="form-error" id="ep-email-error"></p></div>
+        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ep-contact" class="form-control" placeholder="+91 9876543210" /><p class="form-error" id="ep-contact-error"></p></div>
         <div class="form-group"><label>Role Selection <span class="req">*</span></label><select id="ep-role" class="form-control"><option>Property Owner</option><option>Service Provider</option><option>Maintenance Manager</option><option>Administrator</option></select></div>
       </div>
       <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="edit-participant-modal">Cancel</button><button class="btn btn-green" id="ep-save-btn">Save Changes</button></div>
@@ -386,8 +386,10 @@
     <div class="modal modal-sm">
       <div class="modal-header"><h2>Update Contact Information</h2><button class="modal-close" data-close="contact-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
       <div class="modal-body">
-        <div class="form-group"><label>Phone Number</label><input type="tel" id="ct-phone" class="form-control" /></div>
-        <div class="form-group"><label>Email Address</label><input type="email" id="ct-email" class="form-control" /></div>
+        <div class="form-group"><label>Phone Number</label><input type="tel" id="ct-phone" class="form-control" />
+              <p class="form-error" id="ct-phone-error"></p></div>
+        <div class="form-group"><label>Email Address</label><input type="email" id="ct-email" class="form-control" />
+              <p class="form-error" id="ct-email-error"></p></div>
         <div class="form-group"><label>Emergency Contact Name</label><input type="text" id="ct-ename" class="form-control" placeholder="John Doe" /></div>
         <div class="form-group"><label>Emergency Contact Number</label><input type="tel" id="ct-ephone" class="form-control" placeholder="+1 9876543210" /></div>
       </div>

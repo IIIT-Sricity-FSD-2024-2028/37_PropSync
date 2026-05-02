@@ -9,6 +9,7 @@
   <link rel="stylesheet" href="../css/styles.css">
 </head>
 <body>
+<script src="../js/complaint_bridge.js"></script>
 <script src="../js/taskData.js"></script>
 <script>
 const svgIcons = {
@@ -36,8 +37,20 @@ function buildPage() {
   const completed      = tasks.filter(t => t.status === 'Completed').length;
   const pendingEst     = tasks.filter(t => !t.estimateSubmitted).length;
 
-  // Recent complaints — use available complaints list, show first 3
-  const recentComplaints = complaints.slice(0, 3);
+  // Recent complaints — show accepted/assigned tasks on dashboard (not unaccepted available)
+  const recentComplaints = tasks.length > 0
+    ? tasks.slice(0, 3).map(t => ({
+        id: t.id,
+        issueType: t.issueType,
+        title: t.title,
+        description: t.description,
+        imageUrl: t.image || 'https://placehold.co/128x128/e5e7eb/6b7280?text=Image',
+        location: t.location,
+        deadline: t.deadline,
+        accepted: true,
+        status: t.status
+      }))
+    : complaints.filter(c => c.accepted).slice(0, 3);
 
   // Tasks table — show latest 4 assigned tasks
   const tableTasks = tasks.slice(0, 4);

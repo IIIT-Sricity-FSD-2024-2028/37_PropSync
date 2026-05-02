@@ -1,68 +1,141 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ratings & Feedback — PropSync</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/styles.css">
-</head>
-<body>
-<script src="../js/taskData.js"></script>
-<script>
-/* =========================================================
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ratings & Feedback — PropSync</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+  </head>
+  <body>
+    <script src="../js/complaint_bridge.js"></script>
+    <script src="../js/taskData.js"></script>
+    <script>
+      /* =========================================================
    Ratings & Feedback Page
    ========================================================= */
 
-const overviewStats = { averageRating: 4.6, totalReviews: 47, completedComplaints: 52, satisfactionRate: 92 };
+      const overviewStats = {
+        averageRating: 4.6,
+        totalReviews: 47,
+        completedComplaints: 52,
+        satisfactionRate: 92,
+      };
 
-const ratingDistribution = [
-  { stars: 5, count: 32, percentage: 68 },
-  { stars: 4, count: 10, percentage: 21 },
-  { stars: 3, count: 3,  percentage: 6  },
-  { stars: 2, count: 1,  percentage: 2  },
-  { stars: 1, count: 1,  percentage: 2  },
-];
+      const ratingDistribution = [
+        { stars: 5, count: 32, percentage: 68 },
+        { stars: 4, count: 10, percentage: 21 },
+        { stars: 3, count: 3, percentage: 6 },
+        { stars: 2, count: 1, percentage: 2 },
+        { stars: 1, count: 1, percentage: 2 },
+      ];
 
-const feedbackList = [
-  { id:'1', complaintId:'C-2398', serviceType:'Plumbing', rating:5, comment:'Excellent service! The technician was very professional and fixed the toilet issue quickly. The work area was left clean and tidy. Highly recommend!', date:'Mar 6, 2026', location:'Building A, Apt 401', ownerName:'Sarah Johnson' },
-  { id:'2', complaintId:'C-2395', serviceType:'Plumbing', rating:5, comment:'Fast and efficient repair work. The plumber arrived on time and completed the job within the estimated timeframe. Very satisfied with the quality of work.', date:'Mar 5, 2026', location:'Building C, Apt 205', ownerName:'Michael Chen' },
-  { id:'3', complaintId:'C-2388', serviceType:'Plumbing', rating:4, comment:'Good service overall. The repair was done well, though it took slightly longer than expected. The technician was friendly and explained everything clearly.', date:'Mar 3, 2026', location:'Building B, Apt 512', ownerName:'Emily Rodriguez' },
-  { id:'4', complaintId:'C-2380', serviceType:'Plumbing', rating:5, comment:'Outstanding work! Very knowledgeable technician who not only fixed the issue but also provided helpful maintenance tips. Will definitely request this service provider again.', date:'Feb 28, 2026', location:'Building D, Apt 103', ownerName:'David Thompson' },
-  { id:'5', complaintId:'C-2375', serviceType:'Plumbing', rating:4, comment:"Professional and courteous service. The leak was fixed properly and hasn't reoccurred. Appreciated the clear communication throughout the process.", date:'Feb 26, 2026', location:'Building A, Apt 308', ownerName:'Lisa Anderson' },
-  { id:'6', complaintId:'C-2368', serviceType:'Plumbing', rating:3, comment:'Service was adequate. The problem was resolved but I expected better attention to detail. The technician seemed rushed.', date:'Feb 24, 2026', location:'Building E, Apt 607', ownerName:'Robert Martinez' },
-];
+      const feedbackList = [
+        {
+          id: "1",
+          complaintId: "C-2398",
+          serviceType: "Plumbing",
+          rating: 5,
+          comment:
+            "Excellent service! The technician was very professional and fixed the toilet issue quickly. The work area was left clean and tidy. Highly recommend!",
+          date: "Mar 6, 2026",
+          location: "Building A, Apt 401",
+          ownerName: "Sarah Johnson",
+        },
+        {
+          id: "2",
+          complaintId: "C-2395",
+          serviceType: "Plumbing",
+          rating: 5,
+          comment:
+            "Fast and efficient repair work. The plumber arrived on time and completed the job within the estimated timeframe. Very satisfied with the quality of work.",
+          date: "Mar 5, 2026",
+          location: "Building C, Apt 205",
+          ownerName: "Michael Chen",
+        },
+        {
+          id: "3",
+          complaintId: "C-2388",
+          serviceType: "Plumbing",
+          rating: 4,
+          comment:
+            "Good service overall. The repair was done well, though it took slightly longer than expected. The technician was friendly and explained everything clearly.",
+          date: "Mar 3, 2026",
+          location: "Building B, Apt 512",
+          ownerName: "Emily Rodriguez",
+        },
+        {
+          id: "4",
+          complaintId: "C-2380",
+          serviceType: "Plumbing",
+          rating: 5,
+          comment:
+            "Outstanding work! Very knowledgeable technician who not only fixed the issue but also provided helpful maintenance tips. Will definitely request this service provider again.",
+          date: "Feb 28, 2026",
+          location: "Building D, Apt 103",
+          ownerName: "David Thompson",
+        },
+        {
+          id: "5",
+          complaintId: "C-2375",
+          serviceType: "Plumbing",
+          rating: 4,
+          comment:
+            "Professional and courteous service. The leak was fixed properly and hasn't reoccurred. Appreciated the clear communication throughout the process.",
+          date: "Feb 26, 2026",
+          location: "Building A, Apt 308",
+          ownerName: "Lisa Anderson",
+        },
+        {
+          id: "6",
+          complaintId: "C-2368",
+          serviceType: "Plumbing",
+          rating: 3,
+          comment:
+            "Service was adequate. The problem was resolved but I expected better attention to detail. The technician seemed rushed.",
+          date: "Feb 24, 2026",
+          location: "Building E, Apt 607",
+          ownerName: "Robert Martinez",
+        },
+      ];
 
-let ratingFilter = 'All';
-let serviceFilter = 'All';
+      let ratingFilter = "All";
+      let serviceFilter = "All";
 
-function getFiltered() {
-  return feedbackList.filter(f => {
-    const matchRating  = ratingFilter === 'All'  || f.rating === parseInt(ratingFilter);
-    const matchService = serviceFilter === 'All' || f.serviceType === serviceFilter;
-    return matchRating && matchService;
-  });
-}
+      function getFiltered() {
+        return feedbackList.filter((f) => {
+          const matchRating =
+            ratingFilter === "All" || f.rating === parseInt(ratingFilter);
+          const matchService =
+            serviceFilter === "All" || f.serviceType === serviceFilter;
+          return matchRating && matchService;
+        });
+      }
 
-function renderFeedback() {
-  const filtered = getFiltered();
-  const container = document.getElementById('feedback-list');
-  const countEl = document.getElementById('feedback-count');
-  if (countEl) countEl.textContent = filtered.length;
-  if (!container) return;
+      function renderFeedback() {
+        const filtered = getFiltered();
+        const container = document.getElementById("feedback-list");
+        const countEl = document.getElementById("feedback-count");
+        if (countEl) countEl.textContent = filtered.length;
+        if (!container) return;
 
-  if (filtered.length === 0) {
-    container.innerHTML = `
+        if (filtered.length === 0) {
+          container.innerHTML = `
       <div class="empty-state">
         <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="#D1D5DB" stroke-width="1.5" fill="none"/></svg>
         <h3>No Feedback Found</h3>
         <p>No feedback matches your current filters.</p>
       </div>`;
-    return;
-  }
+          return;
+        }
 
-  container.innerHTML = filtered.map(f => `
+        container.innerHTML = filtered
+          .map(
+            (f) => `
     <div class="feedback-full-item">
       <div class="feedback-full-header">
         <div>
@@ -86,13 +159,15 @@ function renderFeedback() {
         </div>
       </div>
     </div>
-  `).join('');
-}
+  `,
+          )
+          .join("");
+      }
 
-function buildPage() {
-  initShell('ratings');
-  const content = document.getElementById('page-content');
-  content.innerHTML = `
+      function buildPage() {
+        initShell("ratings");
+        const content = document.getElementById("page-content");
+        content.innerHTML = `
     <div class="page-header">
       <h1>Ratings & Feedback</h1>
       <p>View ratings and feedback from property owners for completed services.</p>
@@ -147,13 +222,17 @@ function buildPage() {
       <div class="card">
         <div class="card-body">
           <h2 style="font-size:1rem;margin-bottom:16px;">Rating Distribution</h2>
-          ${ratingDistribution.map(r => `
+          ${ratingDistribution
+            .map(
+              (r) => `
             <div class="rating-dist-row">
               <span class="stars-label">${r.stars}★</span>
               <div class="rating-bar-wrap"><div class="rating-bar-fill" style="width:${r.percentage}%"></div></div>
               <span class="rating-dist-count">${r.count}</span>
             </div>
-          `).join('')}
+          `,
+            )
+            .join("")}
         </div>
       </div>
 
@@ -201,17 +280,23 @@ function buildPage() {
     <div id="feedback-list"></div>
   `;
 
-  document.getElementById('rating-filter').addEventListener('change', function() {
-    ratingFilter = this.value; renderFeedback();
-  });
-  document.getElementById('service-filter').addEventListener('change', function() {
-    serviceFilter = this.value; renderFeedback();
-  });
+        document
+          .getElementById("rating-filter")
+          .addEventListener("change", function () {
+            ratingFilter = this.value;
+            renderFeedback();
+          });
+        document
+          .getElementById("service-filter")
+          .addEventListener("change", function () {
+            serviceFilter = this.value;
+            renderFeedback();
+          });
 
-  renderFeedback();
-}
+        renderFeedback();
+      }
 
-document.addEventListener('DOMContentLoaded', buildPage);
-</script>
-</body>
+      document.addEventListener("DOMContentLoaded", buildPage);
+    </script>
+  </body>
 </html>
