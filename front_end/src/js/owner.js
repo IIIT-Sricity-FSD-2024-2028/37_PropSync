@@ -38,7 +38,27 @@ async function fetchComplaint() {
     const localComplaint =
       JSON.parse(localStorage.getItem("newComplaint")) || [];
 
-    complaints = [...jsonComplaints, ...localComplaint];
+    // 🔗 Bridge: sync statuses from manager actions
+    if (typeof bridgeSyncOwnerStatus === "function") {
+      bridgeSyncOwnerStatus();
+    }
+
+    // Re-read after sync
+    const syncedLocal = JSON.parse(localStorage.getItem("newComplaint")) || [];
+
+    // 🔗 Bridge: overlay manager decision statuses onto local complaints
+    if (typeof bridgeGetAll === "function") {
+      const bridgeMap = {};
+      bridgeGetAll().forEach((bc) => {
+        bridgeMap[String(bc.id)] = bc.status;
+      });
+      syncedLocal.forEach((lc) => {
+        const bs = bridgeMap[String(lc.id)];
+        if (bs && bs !== "pending") lc.status = bs;
+      });
+    }
+
+    complaints = [...jsonComplaints, ...syncedLocal];
 
     console.log("All complaints:", complaints);
 
@@ -50,7 +70,44 @@ async function fetchComplaint() {
 
 fetchComplaint();
 
-const comp_container = document.querySelector(".complaints-container");
+// ✅ Poll every 15 seconds to pick up manager approve/reject decisions dynamically
+setInterval(async () => {
+  if (typeof bridgeSyncOwnerStatus === "function") {
+    bridgeSyncOwnerStatus();
+  }
+
+  let jsonComplaints = [];
+  try {
+    const response = await fetch("../../data/complaints.json");
+    jsonComplaints = await response.json();
+  } catch (_) {}
+
+  const syncedLocal = JSON.parse(localStorage.getItem("newComplaint")) || [];
+
+  if (typeof bridgeGetAll === "function") {
+    const bridgeMap = {};
+    bridgeGetAll().forEach((bc) => {
+      bridgeMap[String(bc.id)] = bc.status;
+    });
+    syncedLocal.forEach((lc) => {
+      const bs = bridgeMap[String(lc.id)];
+      if (bs) lc.status = bs; // always sync, including pending
+    });
+  }
+
+  complaints = [...jsonComplaints, ...syncedLocal];
+
+  // Re-apply current search/filter without resetting UI
+  if (typeof applyFilters === "function") {
+    applyFilters();
+  } else {
+    loadComplaints(complaints);
+  }
+}, 15000);
+
+const comp_container =
+  document.querySelector(".complaint-cards-list") ||
+  document.querySelector(".complaints-container");
 
 function loadComplaints(data) {
   if (!comp_container) return;
@@ -73,26 +130,32 @@ function loadComplaints(data) {
     });
 
     let statusClass = "pending";
+    let statusText = c.status || "pending";
 
     switch ((c.status || "").toLowerCase()) {
       case "pending":
         statusClass = "pending";
+        statusText = "Pending";
         break;
-
       case "approved":
         statusClass = "approved";
+        statusText = "Approved";
         break;
-
+      case "rejected":
+        statusClass = "rejected";
+        statusText = "Rejected";
+        break;
       case "estimating cost":
         statusClass = "estimating";
+        statusText = "Estimating Cost";
         break;
-
       case "assigned":
         statusClass = "assigned";
+        statusText = "Assigned";
         break;
-
       case "resolved":
         statusClass = "resolved";
+        statusText = "Resolved";
         break;
     }
 
@@ -116,7 +179,7 @@ function loadComplaints(data) {
       </div>
 
       <div class="status ${statusClass}">
-        ${c.status}
+        ${statusText}
       </div>
     `;
 
@@ -127,24 +190,29 @@ function loadComplaints(data) {
 const search = document.querySelector(".search-box");
 const statusFilter = document.querySelector(".status-filter");
 
-if (search && statusFilter) {
-  function applyFilters() {
-    const searchValue = search.value.toLowerCase();
-    const selectedStatus = statusFilter.value.toLowerCase();
-
-    const filtered = complaints.filter((c) => {
-      const matchesSearch = c.title.toLowerCase().includes(searchValue);
-
-      const matchesStatus =
-        selectedStatus === "all status" ||
-        (c.status || "").toLowerCase() === selectedStatus;
-
-      return matchesSearch && matchesStatus;
-    });
-
-    loadComplaints(filtered);
+function applyFilters() {
+  if (!search || !statusFilter) {
+    loadComplaints(complaints);
+    return;
   }
+  const searchValue = search.value.toLowerCase();
+  const selectedStatus = statusFilter.value.toLowerCase();
 
+  const filtered = complaints.filter((c) => {
+    const matchesSearch = c.title.toLowerCase().includes(searchValue);
+
+    const matchesStatus =
+      selectedStatus === "all status" ||
+      selectedStatus === "" ||
+      (c.status || "").toLowerCase() === selectedStatus;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  loadComplaints(filtered);
+}
+
+if (search && statusFilter) {
   search.addEventListener("input", applyFilters);
   statusFilter.addEventListener("change", applyFilters);
 }
@@ -183,6 +251,12 @@ if (form) {
     let stored = JSON.parse(localStorage.getItem("newComplaint")) || [];
     stored.push(newComplaint);
     localStorage.setItem("newComplaint", JSON.stringify(stored));
+
+    // 🔗 Bridge: push to shared store so Maintenance Manager can see & act on it
+    if (typeof bridgeAddComplaint === "function") {
+      bridgeAddComplaint(newComplaint);
+    }
+
     alert("Complaint submitted successfully!");
     window.location.href = "../owner/dashboard.html";
   });
@@ -519,6 +593,11 @@ async function loadComplaintDetails() {
 
   if (!id) return;
 
+  // ✅ FIX: Sync bridge statuses into localStorage FIRST before reading
+  if (typeof bridgeSyncOwnerStatus === "function") {
+    bridgeSyncOwnerStatus();
+  }
+
   // Load all complaints (JSON + localStorage)
   let allComplaints = [];
   try {
@@ -532,17 +611,49 @@ async function loadComplaintDetails() {
   }
 
   // Match by id (loose comparison handles both string and number ids)
-  const c = allComplaints.find((x) => String(x.id) === String(id));
+  let c = allComplaints.find((x) => String(x.id) === String(id));
+
+  // ✅ FIX: If not found in allComplaints, look directly in bridge (edge case for freshly submitted)
+  if (!c && typeof bridgeGetAll === "function") {
+    const bc = bridgeGetAll().find((b) => String(b.id) === String(id));
+    if (bc) {
+      c = {
+        id: bc.id,
+        title: bc.title,
+        caption: bc.caption || "",
+        category: bc.category || "General",
+        status: bc.status,
+        issuedBy: bc.issuedBy || "",
+        image: bc.image || "",
+        submittedOn: bc.submittedOn || "",
+        rejectionReason: bc.rejectionReason || "",
+      };
+    }
+  }
 
   if (!c) {
-    document.querySelector(".main").innerHTML =
-      `<p style="padding:2rem;color:red;">Complaint not found.</p>`;
+    const main = document.querySelector(".main");
+    if (main)
+      main.innerHTML = `<p style="padding:2rem;color:red;">Complaint not found.</p>`;
     return;
+  }
+
+  // 🔗 Bridge: always sync latest status from bridge (approved/rejected/pending)
+  if (typeof bridgeGetAll === "function") {
+    const bc = bridgeGetAll().find((b) => String(b.id) === String(id));
+    if (bc) {
+      c = {
+        ...c,
+        status: bc.status,
+        rejectionReason: bc.rejectionReason || "",
+      };
+    }
   }
 
   // ── Helper: map status → stepper step index (1-based) ──
   const statusStepMap = {
     pending: 1,
+    rejected: 1,
     approved: 2,
     assigned: 3,
     "estimating cost": 4,
@@ -587,6 +698,9 @@ async function loadComplaintDetails() {
   const workStatusMap = {
     pending: "Waiting for Maintenance Manager to approve…",
     approved: "Complaint approved. Waiting for provider assignment.",
+    rejected: c.rejectionReason
+      ? `Complaint rejected. Reason: ${c.rejectionReason}`
+      : "Complaint was rejected by the Maintenance Manager.",
     assigned: `Assigned to: ${c.assignedTo || "a service provider"}`,
     "estimating cost": "Service provider is submitting cost estimate.",
     "in progress": "Work is currently in progress.",
@@ -606,6 +720,8 @@ async function loadComplaintDetails() {
         "background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,.25)",
       approved:
         "background:var(--green-lt);color:var(--green);border-color:rgba(22,163,74,.25)",
+      rejected:
+        "background:#fee2e2;color:#b91c1c;border-color:rgba(185,28,28,.25)",
       assigned:
         "background:var(--blue-lt);color:var(--blue);border-color:rgba(29,78,216,.25)",
       "estimating cost":
@@ -695,134 +811,6 @@ async function loadComplaintDetails() {
 // Run on detail page (only if the stepper element exists)
 if (document.querySelector(".stepper")) {
   loadComplaintDetails();
-}
-
-let currentEditType = "";
-
-const modal = document.getElementById("editModal");
-const modalFields = document.getElementById("modalFields");
-const modalTitle = document.getElementById("modalTitle");
-
-// OPEN PROFILE EDIT
-document.querySelector(".edit-btn").addEventListener("click", () => {
-  currentEditType = "profile";
-  modalTitle.innerText = "Edit Profile";
-
-  const values = document.querySelectorAll(".pro_item p");
-
-  modalFields.innerHTML = `
-    <input id="name" placeholder="Full Name" value="${values[0].innerText}">
-    <input id="email" placeholder="Email" value="${values[1].innerText}">
-    <input id="community" placeholder="Community" value="${values[2].innerText}">
-    <input id="unit" placeholder="Unit" value="${values[3].innerText}">
-  `;
-
-  modal.classList.remove("hidden");
-});
-
-// SETTINGS BUTTONS
-function editSetting(type) {
-  currentEditType = type;
-
-  if (type === "password") {
-    modalTitle.innerText = "Change Password";
-
-    modalFields.innerHTML = `
-      <input id="newPass" type="password" placeholder="New Password">
-      <input id="confirmPass" type="password" placeholder="Confirm Password">
-      <p id="error" style="color:red;"></p>
-    `;
-  }
-
-  if (type === "contact") {
-    modalTitle.innerText = "Change Email";
-
-    const email = document.querySelectorAll(".pro_item p")[1].innerText;
-
-    modalFields.innerHTML = `
-      <input id="newEmail" placeholder="New Email" value="${email}">
-      <p id="error" style="color:red;"></p>
-    `;
-  }
-
-  modal.classList.remove("hidden");
-}
-
-// SAVE CHANGES
-function saveChanges() {
-  const error = document.getElementById("error");
-  if (error) error.innerText = ""; // reset error
-
-  // 👉 PROFILE EDIT
-  if (currentEditType === "profile") {
-    const name = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const community = document.getElementById("community").value.trim();
-    const unit = document.getElementById("unit").value.trim();
-
-    if (!name || !email || !community || !unit) {
-      if (error) error.innerText = "All fields are required";
-      return; // ❌ stops closing (correct)
-    }
-
-    const items = document.querySelectorAll(".pro_item p");
-    items[0].innerText = name;
-    items[1].innerText = email;
-    items[2].innerText = community;
-    items[3].innerText = unit;
-
-    // avatar update
-    const initials = name
-      .split(" ")
-      .map((w) => w[0])
-      .join("")
-      .toUpperCase();
-
-    document.querySelector(".pro_avatar").innerText = initials;
-
-    closeModal(); // ✅ will run ONLY if valid
-  }
-
-  // 👉 EMAIL CHANGE
-  if (currentEditType === "contact") {
-    const newEmail = document.getElementById("newEmail").value.trim();
-
-    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-
-    if (!newEmail) {
-      error.innerText = "Email cannot be empty";
-      return;
-    }
-
-    if (!emailRegex.test(newEmail)) {
-      error.innerText = "Enter a valid email";
-      return;
-    }
-
-    document.querySelectorAll(".pro_item p")[1].innerText = newEmail;
-
-    closeModal(); // ✅ only runs if valid
-  }
-
-  // 👉 PASSWORD CHANGE
-  if (currentEditType === "password") {
-    const pass = document.getElementById("newPass").value;
-    const confirm = document.getElementById("confirmPass").value;
-
-    if (!pass || !confirm) {
-      error.innerText = "Fields cannot be empty";
-      return;
-    }
-
-    if (pass !== confirm) {
-      error.innerText = "Passwords do not match";
-      return;
-    }
-
-    closeModal(); // ✅ only runs if valid
-  }
-}
-// CLOSE MODAL
-function closeModal() {
-  modal.classList.add("hidden");
+  // ✅ Poll every 15 seconds so status updates from manager appear without manual refresh
+  setInterval(loadComplaintDetails, 15000);
 }

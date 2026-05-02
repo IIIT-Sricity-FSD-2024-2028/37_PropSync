@@ -404,6 +404,28 @@ function submitEstimate(taskId, estimate) {
       message: `Your estimate for complaint ${taskId} has been submitted and is awaiting approval.`,
       complaintId: taskId,
     });
+
+    // Also write a manager-side notification so they see it on their dashboard
+    try {
+      const mmNotifsRaw = localStorage.getItem("ps_notifications");
+      const mmNotifs = mmNotifsRaw ? JSON.parse(mmNotifsRaw) : [];
+      const time = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      mmNotifs.unshift({
+        id: Date.now(),
+        icon: "clipboard",
+        color: "#FEF3C7",
+        title: "New Service Estimate Received",
+        desc: `Service provider submitted an estimate for complaint ${taskId}. Cost: ${estimate.cost}. Review on Service Estimate page.`,
+        time: "Just now at " + time,
+        unread: true,
+        recipient: "all",
+        userCreated: false,
+      });
+      localStorage.setItem("ps_notifications", JSON.stringify(mmNotifs));
+    } catch (e) {}
   }
 }
 function getTasksArray() {
@@ -446,7 +468,37 @@ function addTask(complaint) {
    COMPLAINTS API
 ───────────────────────────────────────────── */
 function getAllComplaints() {
-  return JSON.parse(localStorage.getItem(COMPLAINTS_KEY));
+  const stored = JSON.parse(localStorage.getItem(COMPLAINTS_KEY));
+
+  // 🔗 Bridge: merge in manager-approved owner complaints
+  if (typeof bridgeGetAll === "function") {
+    const bridgeApproved = bridgeGetAll().filter(
+      (c) => c.status === "approved",
+    );
+    const existingIds = new Set(stored.map((x) => x.id));
+    bridgeApproved.forEach((bc) => {
+      if (!existingIds.has(bc.id)) {
+        stored.push({
+          id: bc.id,
+          issueType: bc.category,
+          title: bc.title,
+          description: bc.caption,
+          imageUrl:
+            bc.image ||
+            "https://placehold.co/400x180/e5e7eb/6b7280?text=No+Image",
+          location: bc.location || "Property",
+          deadline: bc.deadline || "TBD",
+          urgency: bc.urgency || "Medium",
+          accepted: false,
+          rejected: false,
+          fromOwner: true,
+          submittedBy: bc.issuedBy,
+        });
+      }
+    });
+  }
+
+  return stored;
 }
 function saveComplaints(list) {
   localStorage.setItem(COMPLAINTS_KEY, JSON.stringify(list));

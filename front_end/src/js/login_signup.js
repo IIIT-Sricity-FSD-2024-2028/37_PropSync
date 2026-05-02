@@ -60,38 +60,63 @@ signupBack.addEventListener("click", () => {
   signupBack.classList.add("hidden");
 });
 
-// Helper Function for Final Submit Email Validation
+// Email validation helper
 function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// Global users array
-let users = [];
+// ─────────────────────────────────────────────────────────────
+// USER STORE
+// Hardcoded fallback ensures login works even when fetch fails
+// (file:// protocol, network error, or slow async timing)
+// ─────────────────────────────────────────────────────────────
+const FALLBACK_USERS = [
+  { email: "johndoe@gmail.com", password: "123456", role: "Owner" },
+  { email: "johndoe@gmail.com", password: "123456", role: "Service Provider" },
+  {
+    email: "johndoe@gmail.com",
+    password: "123456",
+    role: "Maintenance Manager",
+  },
+  { email: "johndoe@gmail.com", password: "123456", role: "Administrator" },
+];
 
-async function fetchUser() {
-  try {
-    const response = await fetch("../data/users.json");
-    const jsonUsers = await response.json();
+let users = [...FALLBACK_USERS];
 
-    let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
-    if (!Array.isArray(localUsers)) localUsers = [localUsers];
+// Kick off fetch immediately; login awaits this before searching
+const usersFetchPromise = (async () => {
+  const paths = ["../data/users.json", "./data/users.json", "data/users.json"];
+  for (const path of paths) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) continue;
+      const jsonUsers = await res.json();
+      if (!Array.isArray(jsonUsers) || jsonUsers.length === 0) continue;
 
-    users = [...jsonUsers, ...localUsers];
-  } catch (error) {
-    console.log("Error loading users:", error);
+      let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
+      if (!Array.isArray(localUsers)) localUsers = [localUsers];
+      users = [...jsonUsers, ...localUsers];
+      return; // success — stop trying
+    } catch (_) {
+      // try next path
+    }
   }
-}
-fetchUser();
+  // All fetches failed — merge fallback + any local signups
+  let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
+  if (!Array.isArray(localUsers)) localUsers = [localUsers];
+  users = [...FALLBACK_USERS, ...localUsers];
+})();
 
-// --- LOGIN VALIDATION & SUBMIT ---
+// ─────────────────────────────────────────────────────────────
+// LOGIN
+// ─────────────────────────────────────────────────────────────
 const loginBtn = document.querySelector(".btn");
 loginBtn.addEventListener("click", searchUser);
 
-function searchUser() {
+async function searchUser() {
   const errorBox = document.getElementById("loginError");
-  let email = document.querySelector("#log_email").value.trim();
-  let password = document.querySelector("#log_pass").value.trim();
+  const email = document.querySelector("#log_email").value.trim();
+  const password = document.querySelector("#log_pass").value.trim();
 
   errorBox.classList.remove("show");
 
@@ -111,35 +136,37 @@ function searchUser() {
     return;
   }
 
-  try {
-    const user = users.find(
-      (u) =>
-        u.email.toLowerCase() === email.toLowerCase() &&
-        u.password === password &&
-        u.role.toLowerCase() === selectedRoleLogin.toLowerCase(),
-    );
+  // Always wait for the fetch to finish before searching
+  await usersFetchPromise;
 
-    if (user) {
-      errorBox.classList.remove("show");
-      alert("Login Successful");
+  const user = users.find(
+    (u) =>
+      u.email.toLowerCase() === email.toLowerCase() &&
+      u.password === password &&
+      u.role.toLowerCase() === selectedRoleLogin.toLowerCase(),
+  );
 
-      if (selectedRoleLogin === "Owner")
-        window.location.href = "./owner/dashboard.html";
-      else if (selectedRoleLogin === "Service Provider")
-        window.location.href = "./service_provider/index.html";
-      else if (selectedRoleLogin === "Maintenance Manager")
-        window.location.href = "./maintenance_manager/dashboard.html";
-      else window.location.href = "./admin/index.html";
-    } else {
-      errorBox.textContent = "Invalid Credentials. User not found.";
-      errorBox.classList.add("show");
-    }
-  } catch (error) {
-    console.log(error);
+  if (user) {
+    errorBox.classList.remove("show");
+    alert("Login Successful");
+
+    if (selectedRoleLogin === "Owner")
+      window.location.href = "./owner/dashboard.html";
+    else if (selectedRoleLogin === "Service Provider")
+      window.location.href = "./service_provider/index.html";
+    else if (selectedRoleLogin === "Maintenance Manager")
+      window.location.href = "./maintenance_manager/dashboard.html";
+    else window.location.href = "./admin/index.html";
+  } else {
+    errorBox.textContent =
+      "Invalid credentials. Please check your email, password, and selected role.";
+    errorBox.classList.add("show");
   }
 }
 
-// --- SIGNUP VALIDATION & SUBMIT ---
+// ─────────────────────────────────────────────────────────────
+// SIGNUP
+// ─────────────────────────────────────────────────────────────
 signUpBtn.addEventListener("click", function (e) {
   e.preventDefault();
   const errorBox = document.querySelector("#signupError");
@@ -213,30 +240,29 @@ signUpBtn.addEventListener("click", function (e) {
 
   const newUser = {
     id: Date.now(),
-    email: email,
-    password: password,
+    email,
+    password,
     role: selectedRoleSignUp,
-    propertyUnit: propertyUnit,
-    communityName: communityName,
+    propertyUnit,
+    communityName,
   };
 
   let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
   if (!Array.isArray(localUsers)) localUsers = [localUsers];
-
   localUsers.push(newUser);
   localStorage.setItem("newUsers", JSON.stringify(localUsers));
-
   users.push(newUser);
 
   alert("Account successfully created! Please log in.");
-
   inputs.forEach((input) => (input.value = ""));
   document.querySelectorAll(".toggleBtn")[1].click();
 });
 
-// --- SLIDING ANIMATION ---
+// ─────────────────────────────────────────────────────────────
+// SLIDING ANIMATION
+// ─────────────────────────────────────────────────────────────
 const toggleBtn = document.querySelectorAll(".toggleBtn");
-let toggle = 0; // 0-login, 1-signup
+let toggle = 0;
 const center_box = document.querySelector(".center_box");
 const box = document.querySelectorAll(".box");
 const content = document.querySelectorAll(".content");
@@ -265,20 +291,16 @@ toggleBtn.forEach((btn) => {
   });
 });
 
-// --- REAL-TIME INPUT VALIDATION (NEW) ---
+// ─────────────────────────────────────────────────────────────
+// REAL-TIME FIELD VALIDATION
+// ─────────────────────────────────────────────────────────────
 function showFieldError(input, message) {
-  // Check if we already have a span for this input to avoid duplicates
   let errorSpan = input.nextElementSibling;
   if (!errorSpan || !errorSpan.classList.contains("realtime-error")) {
     errorSpan = document.createElement("span");
     errorSpan.className = "realtime-error error-message show";
-    // Small inline styles so you don't need to change CSS
-    errorSpan.style.fontSize = "12px";
-    errorSpan.style.marginTop = "-5px";
-    errorSpan.style.marginBottom = "5px";
-    errorSpan.style.textAlign = "left";
-    errorSpan.style.width = "300px";
-    errorSpan.style.display = "block";
+    errorSpan.style.cssText =
+      "font-size:12px;margin-top:-5px;margin-bottom:5px;text-align:left;width:300px;display:block;";
     input.parentNode.insertBefore(errorSpan, input.nextSibling);
   }
   errorSpan.textContent = message;
@@ -291,7 +313,6 @@ function clearFieldError(input) {
   }
 }
 
-// Attach listeners to all Email fields
 document.querySelectorAll('input[type="email"]').forEach((emailInput) => {
   emailInput.addEventListener("input", (e) => {
     const val = e.target.value;
@@ -303,7 +324,6 @@ document.querySelectorAll('input[type="email"]').forEach((emailInput) => {
   });
 });
 
-// Attach listeners to all Password fields
 document.querySelectorAll('input[type="password"]').forEach((passInput) => {
   passInput.addEventListener("input", (e) => {
     const val = e.target.value;
