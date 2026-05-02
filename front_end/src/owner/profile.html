@@ -6,6 +6,7 @@
     <title>PropSync - Profile</title>
     <link rel="icon" type="image/png" href="../../public/favicon.png" />
     <link rel="stylesheet" href="../css/owner.css" />
+    <link rel="stylesheet" href="../css/form.css" />
   </head>
   <body>
     <div id="overlay"></div>
@@ -334,19 +335,325 @@
         </button>
       </div>
     </div>
-    <!-- EDIT MODAL -->
-    <div id="editModal" class="modal hidden">
-      <div class="modal-content">
-        <h3 id="modalTitle">Edit</h3>
+    <script src="../js/complaint_bridge.js"></script>
+<script src="../js/owner.js"></script>
 
-        <div id="modalFields"></div>
-
-        <div class="modal-actions">
-          <button onclick="saveChanges()">Save</button>
-          <button onclick="closeModal()">Cancel</button>
-        </div>
-      </div>
+<!-- ===== PROFILE MODALS ===== -->
+<!-- Edit Profile Modal -->
+<div id="editProfileModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);display:none;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:480px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <h2 style="margin:0 0 6px;font-size:20px;color:#1a1a2e;">Edit Profile</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px;">Update your personal information below.</p>
+    <div id="editProfileError" style="display:none;background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Full Name <span style="color:#dc2626;">*</span></label>
+      <input id="ep-name" type="text" placeholder="John Doe" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+      <p id="ep-name-err" style="color:#dc2626;font-size:12px;margin:4px 0 0;display:none;"></p>
     </div>
-    <script src="../js/owner.js"></script>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Community Name <span style="color:#dc2626;">*</span></label>
+      <input id="ep-community" type="text" placeholder="Creekside Community" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+      <p id="ep-community-err" style="color:#dc2626;font-size:12px;margin:4px 0 0;display:none;"></p>
+    </div>
+    <div style="margin-bottom:24px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Property Unit <span style="color:#dc2626;">*</span></label>
+      <input id="ep-unit" type="text" placeholder="Unit A-304" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+      <p id="ep-unit-err" style="color:#dc2626;font-size:12px;margin:4px 0 0;display:none;"></p>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button onclick="closeOwnerModal('editProfileModal')" style="flex:1;padding:11px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+      <button onclick="saveOwnerProfile()" style="flex:1;padding:11px;border:none;border-radius:8px;background:#42a443;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div id="changePasswordModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <h2 style="margin:0 0 6px;font-size:20px;color:#1a1a2e;">Change Password</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px;">Enter your current password and choose a new one.</p>
+    <div id="cpError" style="display:none;background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Current Password <span style="color:#dc2626;">*</span></label>
+      <input id="cp-current" type="password" placeholder="Enter current password" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">New Password <span style="color:#dc2626;">*</span></label>
+      <input id="cp-new" type="password" placeholder="At least 6 characters" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+      <p id="cp-new-err" style="color:#dc2626;font-size:12px;margin:4px 0 0;display:none;"></p>
+    </div>
+    <div style="margin-bottom:24px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirm New Password <span style="color:#dc2626;">*</span></label>
+      <input id="cp-confirm" type="password" placeholder="Re-enter new password" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+      <p id="cp-confirm-err" style="color:#dc2626;font-size:12px;margin:4px 0 0;display:none;"></p>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button onclick="closeOwnerModal('changePasswordModal')" style="flex:1;padding:11px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+      <button onclick="submitChangePassword()" style="flex:1;padding:11px;border:none;border-radius:8px;background:#42a443;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Email Modal -->
+<div id="changeEmailModal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:90%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <h2 style="margin:0 0 6px;font-size:20px;color:#1a1a2e;">Change Email</h2>
+    <p style="margin:0 0 24px;color:#6b7280;font-size:14px;">Enter your new email address below.</p>
+    <div id="ceError" style="display:none;background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;margin-bottom:16px;font-size:13px;"></div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Current Email</label>
+      <input id="ce-current" type="email" readonly style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;background:#f9fafb;color:#6b7280;outline:none;"/>
+    </div>
+    <div style="margin-bottom:14px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">New Email Address <span style="color:#dc2626;">*</span></label>
+      <input id="ce-new" type="email" placeholder="newemail@example.com" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+      <p id="ce-new-err" style="color:#dc2626;font-size:12px;margin:4px 0 0;display:none;"></p>
+    </div>
+    <div style="margin-bottom:24px;">
+      <label style="display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;">Confirm New Email <span style="color:#dc2626;">*</span></label>
+      <input id="ce-confirm" type="email" placeholder="Confirm new email" style="width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;"/>
+      <p id="ce-confirm-err" style="color:#dc2626;font-size:12px;margin:4px 0 0;display:none;"></p>
+    </div>
+    <div style="display:flex;gap:12px;">
+      <button onclick="closeOwnerModal('changeEmailModal')" style="flex:1;padding:11px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer;">Cancel</button>
+      <button onclick="submitChangeEmail()" style="flex:1;padding:11px;border:none;border-radius:8px;background:#42a443;color:#fff;font-size:14px;font-weight:600;cursor:pointer;">Update Email</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="ownerToast" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,0.2);"></div>
+
+<script>
+// ── Profile state stored in localStorage ──
+const OWNER_PROFILE_KEY = 'ownerProfile';
+
+function getOwnerProfile() {
+  return JSON.parse(localStorage.getItem(OWNER_PROFILE_KEY)) || {
+    name: 'John Doe',
+    email: 'john.doe@example.com',
+    community: 'Creekside Community',
+    unit: 'Unit A-304',
+    password: 'password123'
+  };
+}
+function setOwnerProfile(data) {
+  localStorage.setItem(OWNER_PROFILE_KEY, JSON.stringify(data));
+}
+
+function refreshProfileDisplay() {
+  const p = getOwnerProfile();
+  const nameEls = document.querySelectorAll('.pro_item p');
+  if (nameEls[0]) nameEls[0].textContent = p.name;
+  if (nameEls[1]) nameEls[1].textContent = p.email;
+  if (nameEls[2]) nameEls[2].textContent = p.community;
+  if (nameEls[3]) nameEls[3].textContent = p.unit;
+  // Update avatar initials
+  const av = document.querySelector('.pro_avatar');
+  if (av) av.textContent = p.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+  // Update navbar name
+  const navName = document.querySelector('.avatar');
+  if (navName) navName.childNodes[navName.childNodes.length-1].textContent = p.name.split(' ')[0];
+}
+
+// ── Modal helpers ──
+function openOwnerModal(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'flex';
+}
+function closeOwnerModal(id) {
+  const el = document.getElementById(id);
+  el.style.display = 'none';
+  // Clear errors
+  el.querySelectorAll('p[id$="-err"]').forEach(e => { e.style.display='none'; e.textContent=''; });
+  const errBox = el.querySelector('[id$="Error"],[id="cpError"],[id="ceError"]');
+  if (errBox) { errBox.style.display='none'; errBox.textContent=''; }
+}
+
+// Close on backdrop click
+['editProfileModal','changePasswordModal','changeEmailModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) closeOwnerModal(id);
+  });
+});
+
+// ── Edit Profile ──
+document.querySelector('.edit-btn').addEventListener('click', function() {
+  const p = getOwnerProfile();
+  document.getElementById('ep-name').value = p.name;
+  document.getElementById('ep-community').value = p.community;
+  document.getElementById('ep-unit').value = p.unit;
+  openOwnerModal('editProfileModal');
+});
+
+// Live validation on edit profile fields
+document.getElementById('ep-name').addEventListener('input', function() {
+  const err = document.getElementById('ep-name-err');
+  if (!this.value.trim()) {
+    err.textContent = 'Full name is required.'; err.style.display = 'block';
+    this.style.borderColor = '#dc2626';
+  } else if (!/^[a-zA-Z\s'-]+$/.test(this.value.trim())) {
+    err.textContent = 'Name should only contain letters.'; err.style.display = 'block';
+    this.style.borderColor = '#dc2626';
+  } else {
+    err.style.display = 'none'; this.style.borderColor = '#42a443';
+  }
+});
+
+function saveOwnerProfile() {
+  const name = document.getElementById('ep-name').value.trim();
+  const community = document.getElementById('ep-community').value.trim();
+  const unit = document.getElementById('ep-unit').value.trim();
+  const errBox = document.getElementById('editProfileError');
+
+  let valid = true;
+  errBox.style.display = 'none';
+
+  if (!name) {
+    document.getElementById('ep-name-err').textContent = 'Full name is required.';
+    document.getElementById('ep-name-err').style.display = 'block';
+    document.getElementById('ep-name').style.borderColor = '#dc2626';
+    valid = false;
+  } else if (!/^[a-zA-Z\s'-]+$/.test(name)) {
+    document.getElementById('ep-name-err').textContent = 'Name should only contain letters.';
+    document.getElementById('ep-name-err').style.display = 'block';
+    document.getElementById('ep-name').style.borderColor = '#dc2626';
+    valid = false;
+  }
+  if (!community) {
+    document.getElementById('ep-community-err').textContent = 'Community name is required.';
+    document.getElementById('ep-community-err').style.display = 'block';
+    document.getElementById('ep-community').style.borderColor = '#dc2626';
+    valid = false;
+  }
+  if (!unit) {
+    document.getElementById('ep-unit-err').textContent = 'Property unit is required.';
+    document.getElementById('ep-unit-err').style.display = 'block';
+    document.getElementById('ep-unit').style.borderColor = '#dc2626';
+    valid = false;
+  }
+  if (!valid) return;
+
+  const p = getOwnerProfile();
+  p.name = name; p.community = community; p.unit = unit;
+  setOwnerProfile(p);
+  refreshProfileDisplay();
+  closeOwnerModal('editProfileModal');
+  showOwnerToast('✅ Profile updated successfully!');
+}
+
+// ── editSetting — called from HTML buttons ──
+function editSetting(type) {
+  if (type === 'password') {
+    document.getElementById('cp-current').value = '';
+    document.getElementById('cp-new').value = '';
+    document.getElementById('cp-confirm').value = '';
+    document.getElementById('cpError').style.display = 'none';
+    openOwnerModal('changePasswordModal');
+  } else if (type === 'contact') {
+    const p = getOwnerProfile();
+    document.getElementById('ce-current').value = p.email;
+    document.getElementById('ce-new').value = '';
+    document.getElementById('ce-confirm').value = '';
+    document.getElementById('ceError').style.display = 'none';
+    openOwnerModal('changeEmailModal');
+  }
+}
+
+// ── Change Password ──
+document.getElementById('cp-new').addEventListener('input', function() {
+  const err = document.getElementById('cp-new-err');
+  if (this.value.length > 0 && this.value.length < 6) {
+    err.textContent = 'Password must be at least 6 characters.'; err.style.display = 'block';
+  } else { err.style.display = 'none'; }
+});
+document.getElementById('cp-confirm').addEventListener('input', function() {
+  const err = document.getElementById('cp-confirm-err');
+  const newPw = document.getElementById('cp-new').value;
+  if (this.value && this.value !== newPw) {
+    err.textContent = 'Passwords do not match.'; err.style.display = 'block';
+  } else { err.style.display = 'none'; }
+});
+
+function submitChangePassword() {
+  const current = document.getElementById('cp-current').value;
+  const newPw   = document.getElementById('cp-new').value;
+  const confirm = document.getElementById('cp-confirm').value;
+  const errBox  = document.getElementById('cpError');
+  errBox.style.display = 'none';
+
+  if (!current || !newPw || !confirm) {
+    errBox.textContent = '⚠️ Please fill in all fields.'; errBox.style.display = 'block'; return;
+  }
+  const p = getOwnerProfile();
+  if (current !== p.password) {
+    errBox.textContent = '❌ Current password is incorrect.'; errBox.style.display = 'block'; return;
+  }
+  if (newPw.length < 6) {
+    errBox.textContent = '❌ New password must be at least 6 characters.'; errBox.style.display = 'block'; return;
+  }
+  if (newPw === current) {
+    errBox.textContent = '❌ New password must be different from your current password.'; errBox.style.display = 'block'; return;
+  }
+  if (newPw !== confirm) {
+    errBox.textContent = '❌ Passwords do not match.'; errBox.style.display = 'block'; return;
+  }
+  p.password = newPw;
+  setOwnerProfile(p);
+  closeOwnerModal('changePasswordModal');
+  showOwnerToast('✅ Password updated successfully!');
+}
+
+// ── Change Email ──
+document.getElementById('ce-new').addEventListener('input', function() {
+  const err = document.getElementById('ce-new-err');
+  if (this.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.value)) {
+    err.textContent = 'Please enter a valid email address.'; err.style.display = 'block';
+  } else { err.style.display = 'none'; }
+});
+document.getElementById('ce-confirm').addEventListener('input', function() {
+  const err = document.getElementById('ce-confirm-err');
+  if (this.value && this.value !== document.getElementById('ce-new').value) {
+    err.textContent = 'Email addresses do not match.'; err.style.display = 'block';
+  } else { err.style.display = 'none'; }
+});
+
+function submitChangeEmail() {
+  const newEmail  = document.getElementById('ce-new').value.trim();
+  const confirm   = document.getElementById('ce-confirm').value.trim();
+  const errBox    = document.getElementById('ceError');
+  errBox.style.display = 'none';
+
+  if (!newEmail || !confirm) {
+    errBox.textContent = '⚠️ Please fill in all fields.'; errBox.style.display = 'block'; return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+    errBox.textContent = '❌ Please enter a valid email address.'; errBox.style.display = 'block'; return;
+  }
+  if (newEmail !== confirm) {
+    errBox.textContent = '❌ Email addresses do not match.'; errBox.style.display = 'block'; return;
+  }
+  const p = getOwnerProfile();
+  if (newEmail === p.email) {
+    errBox.textContent = '❌ New email must be different from your current email.'; errBox.style.display = 'block'; return;
+  }
+  p.email = newEmail;
+  setOwnerProfile(p);
+  refreshProfileDisplay();
+  closeOwnerModal('changeEmailModal');
+  showOwnerToast('✅ Email updated successfully!');
+}
+
+// ── Toast ──
+function showOwnerToast(msg, dur = 3500) {
+  const t = document.getElementById('ownerToast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, dur);
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', refreshProfileDisplay);
+</script>
   </body>
 </html>

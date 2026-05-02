@@ -16,19 +16,18 @@
   </div>
   <button class="sidebar-close" title="Close menu">✕</button>
 </div>
-      <nav class="sidebar-nav">
-      <a class="nav-link" href="dashboard.html"><span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard</a>
-      <a class="nav-link" href="complaints.html"><span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span> Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
-      <a class="nav-link" href="approved-complaints.html"><span class="nav-icon"><i class="fa-solid fa-circle-check"></i></span> Approved Complaints</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="service-estimate.html"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span> Service Estimate</a>
-      <a class="nav-link" href="service-bills.html"><span class="nav-icon"><i class="fa-solid fa-coins"></i></span> Payment History</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="provider-performance.html"><span class="nav-icon"><i class="fa-solid fa-trophy"></i></span> Provider Performance</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="notification.html"><span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
-      <a class="nav-link" href="profile.html"><span class="nav-icon"><i class="fa-solid fa-user"></i></span> Profile</a>
-    </nav>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
   <div class="sidebar-footer">
     <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
   </div>
@@ -85,15 +84,50 @@
 
   <div class="card" id="editForm" style="margin-top:20px;display:none;">
     <div class="card-title" style="margin-bottom:16px;">✏️ Edit Profile</div>
-    <div class="form-group"><label>Full Name</label><input class="form-control" id="inpName" value="Maintenance Manager"/></div>
-    <div class="form-group"><label>Email Address</label><input class="form-control" id="inpEmail" type="email" value="maintenance.manager@email.com"/></div>
-    <div class="form-group"><label>Phone Number</label><input class="form-control" id="inpPhone" type="tel" value="+91 98765 43210"/></div>
-    <div class="form-group"><label>Property Unit</label><input class="form-control" id="inpUnit" value="A-402"/></div>
-    <div class="form-group"><label>Community</label><input class="form-control" id="inpCommunity" value="Greenwood Heights"/></div>
-    <div style="border-top:1px solid #E5E7EB;padding-top:16px;margin-top:4px;">
-      <div class="card-title" style="margin-bottom:12px;font-size:13px;">🔐 Change Password</div>
-      <div class="form-group"><label>Current Password</label><input class="form-control" type="password" placeholder="Enter current password"/></div>
-      <div class="form-group"><label>New Password (leave blank to keep current)</label><input class="form-control" type="password" placeholder="Enter new password"/></div>
+    <div id="mmFormError" style="display:none;background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;"></div>
+    <div class="form-group">
+      <label>Full Name <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpName" value="Maintenance Manager"/>
+      <p id="err-name" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Email Address <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpEmail" type="email" value="maintenance.manager@email.com"/>
+      <p id="err-email" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Phone Number <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpPhone" type="tel" value="+91 98765 43210"/>
+      <p id="err-phone" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Property Unit <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpUnit" value="A-402"/>
+      <p id="err-unit" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Community <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpCommunity" value="Greenwood Heights"/>
+      <p id="err-community" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div style="border-top:1px solid #E5E7EB;padding-top:16px;margin-top:8px;">
+      <div class="card-title" style="margin-bottom:4px;font-size:13px;">🔐 Change Password</div>
+      <p style="font-size:12px;color:#6B7280;margin:0 0 12px;">Leave all password fields blank to keep your current password.</p>
+      <div class="form-group">
+        <label>Current Password</label>
+        <input class="form-control" id="inpCurrentPw" type="password" placeholder="Enter current password"/>
+        <p id="err-current-pw" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input class="form-control" id="inpNewPw" type="password" placeholder="At least 6 characters"/>
+        <p id="err-new-pw" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input class="form-control" id="inpConfirmPw" type="password" placeholder="Re-enter new password"/>
+        <p id="err-confirm-pw" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+      </div>
     </div>
     <div style="display:flex;gap:12px;margin-top:8px;">
       <button class="btn btn-ghost" style="flex:1;" onclick="cancelEdit()">Cancel</button>
@@ -133,52 +167,216 @@
   </div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../js/maintenance_manager.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../js/complaint_bridge.js"></script>
+<script src="../js/maintenance_manager.js"></script>
 <script>
+// ── Persist profile in localStorage ──
+const MM_PROFILE_KEY = 'mmProfile';
+function getMmProfile() {
+  return JSON.parse(localStorage.getItem(MM_PROFILE_KEY)) || {
+    name: 'Maintenance Manager',
+    email: 'maintenance.manager@email.com',
+    phone: '+91 98765 43210',
+    unit: 'A-402',
+    community: 'Greenwood Heights',
+    password: 'password123'
+  };
+}
+function setMmProfile(data) { localStorage.setItem(MM_PROFILE_KEY, JSON.stringify(data)); }
+
+// ── Init display from stored profile ──
+document.addEventListener('DOMContentLoaded', function() {
+  const p = getMmProfile();
+  document.getElementById('dispName').textContent      = p.name;
+  document.getElementById('dispEmail').textContent     = p.email;
+  document.getElementById('dispPhone').textContent     = p.phone;
+  document.getElementById('dispUnit').textContent      = p.unit;
+  document.getElementById('dispCommunity').textContent = p.community;
+  document.getElementById('bannerName').textContent    = p.name;
+  document.getElementById('bannerRole').textContent    = p.name + ' · ' + p.community;
+  document.getElementById('bannerUnit').textContent    = '🏢 Property: ' + p.unit;
+});
+
+// ── Helpers ──
+function setFieldErr(id, msg) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
+}
+function clearAllErrors() {
+  ['err-name','err-email','err-phone','err-unit','err-community',
+   'err-current-pw','err-new-pw','err-confirm-pw'].forEach(id => setFieldErr(id, ''));
+  const fb = document.getElementById('mmFormError');
+  if (fb) { fb.style.display='none'; fb.textContent=''; }
+}
+function highlightField(inputId, hasError) {
+  const el = document.getElementById(inputId);
+  if (el) el.style.borderColor = hasError ? '#dc2626' : '';
+}
+
+// ── Attach real-time validation listeners after DOM ready ──
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('inpName').addEventListener('input', function() {
+    const v = this.value.trim();
+    if (!v) { setFieldErr('err-name','Full name is required.'); highlightField('inpName',true); }
+    else if (!/^[a-zA-Z\s'\-]+$/.test(v)) { setFieldErr('err-name','Name should only contain letters.'); highlightField('inpName',true); }
+    else { setFieldErr('err-name',''); highlightField('inpName',false); }
+  });
+
+  document.getElementById('inpEmail').addEventListener('input', function() {
+    const v = this.value.trim();
+    if (!v) { setFieldErr('err-email','Email is required.'); highlightField('inpEmail',true); }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { setFieldErr('err-email','Please enter a valid email address.'); highlightField('inpEmail',true); }
+    else { setFieldErr('err-email',''); highlightField('inpEmail',false); }
+  });
+
+  document.getElementById('inpPhone').addEventListener('input', function() {
+    const v = this.value.trim();
+    if (!v) { setFieldErr('err-phone','Phone number is required.'); highlightField('inpPhone',true); }
+    else if (!/^[\+]?[\d\s\-\(\)]{7,15}$/.test(v)) { setFieldErr('err-phone','Enter a valid phone number (7–15 digits).'); highlightField('inpPhone',true); }
+    else { setFieldErr('err-phone',''); highlightField('inpPhone',false); }
+  });
+
+  document.getElementById('inpUnit').addEventListener('input', function() {
+    if (!this.value.trim()) { setFieldErr('err-unit','Property unit is required.'); highlightField('inpUnit',true); }
+    else { setFieldErr('err-unit',''); highlightField('inpUnit',false); }
+  });
+
+  document.getElementById('inpCommunity').addEventListener('input', function() {
+    if (!this.value.trim()) { setFieldErr('err-community','Community name is required.'); highlightField('inpCommunity',true); }
+    else { setFieldErr('err-community',''); highlightField('inpCommunity',false); }
+  });
+
+  document.getElementById('inpNewPw').addEventListener('input', function() {
+    const v = this.value;
+    if (v && v.length < 6) { setFieldErr('err-new-pw','Password must be at least 6 characters.'); highlightField('inpNewPw',true); }
+    else { setFieldErr('err-new-pw',''); highlightField('inpNewPw',false); }
+    // re-check confirm
+    const c = document.getElementById('inpConfirmPw').value;
+    if (c && c !== v) { setFieldErr('err-confirm-pw','Passwords do not match.'); highlightField('inpConfirmPw',true); }
+    else if (c) { setFieldErr('err-confirm-pw',''); highlightField('inpConfirmPw',false); }
+  });
+
+  document.getElementById('inpConfirmPw').addEventListener('input', function() {
+    const newPw = document.getElementById('inpNewPw').value;
+    if (this.value && this.value !== newPw) { setFieldErr('err-confirm-pw','Passwords do not match.'); highlightField('inpConfirmPw',true); }
+    else { setFieldErr('err-confirm-pw',''); highlightField('inpConfirmPw',false); }
+  });
+});
+
 function toggleEdit() {
-  // Pre-fill inputs with current displayed values before showing
-  document.getElementById('inpName').value      = document.getElementById('dispName').textContent.trim();
-  document.getElementById('inpEmail').value     = document.getElementById('dispEmail').textContent.trim();
-  document.getElementById('inpPhone').value     = document.getElementById('dispPhone').textContent.trim();
-  document.getElementById('inpUnit').value      = document.getElementById('dispUnit').textContent.trim();
-  document.getElementById('inpCommunity').value = document.getElementById('dispCommunity').textContent.trim();
+  const p = getMmProfile();
+  document.getElementById('inpName').value      = p.name;
+  document.getElementById('inpEmail').value     = p.email;
+  document.getElementById('inpPhone').value     = p.phone;
+  document.getElementById('inpUnit').value      = p.unit;
+  document.getElementById('inpCommunity').value = p.community;
+  document.getElementById('inpCurrentPw').value = '';
+  document.getElementById('inpNewPw').value     = '';
+  document.getElementById('inpConfirmPw').value = '';
+  clearAllErrors();
 
   document.getElementById('editForm').style.display = 'block';
-  document.getElementById('editBtn').style.display = 'none';
+  document.getElementById('editBtn').style.display  = 'none';
   document.getElementById('editForm').scrollIntoView({behavior:'smooth'});
 }
 
 function cancelEdit() {
+  clearAllErrors();
   document.getElementById('editForm').style.display = 'none';
-  document.getElementById('editBtn').style.display = 'block';
+  document.getElementById('editBtn').style.display  = 'block';
 }
 
 function saveProfile() {
+  clearAllErrors();
   const name      = document.getElementById('inpName').value.trim();
   const email     = document.getElementById('inpEmail').value.trim();
   const phone     = document.getElementById('inpPhone').value.trim();
   const unit      = document.getElementById('inpUnit').value.trim();
   const community = document.getElementById('inpCommunity').value.trim();
+  const currentPw = document.getElementById('inpCurrentPw').value;
+  const newPw     = document.getElementById('inpNewPw').value;
+  const confirmPw = document.getElementById('inpConfirmPw').value;
 
-  // Validate
-  if (!name)  { showToast('⚠️ Full name cannot be empty.'); return; }
-  if (!email) { showToast('⚠️ Email address cannot be empty.'); return; }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showToast('⚠️ Please enter a valid email address.'); return; }
+  let valid = true;
 
-  // Update display values
+  // ── Profile field validation ──
+  if (!name) {
+    setFieldErr('err-name','Full name is required.'); highlightField('inpName',true); valid = false;
+  } else if (!/^[a-zA-Z\s'\-]+$/.test(name)) {
+    setFieldErr('err-name','Name should only contain letters.'); highlightField('inpName',true); valid = false;
+  }
+
+  if (!email) {
+    setFieldErr('err-email','Email is required.'); highlightField('inpEmail',true); valid = false;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setFieldErr('err-email','Please enter a valid email address.'); highlightField('inpEmail',true); valid = false;
+  }
+
+  if (!phone) {
+    setFieldErr('err-phone','Phone number is required.'); highlightField('inpPhone',true); valid = false;
+  } else if (!/^[\+]?[\d\s\-\(\)]{7,15}$/.test(phone)) {
+    setFieldErr('err-phone','Enter a valid phone number (7–15 digits).'); highlightField('inpPhone',true); valid = false;
+  }
+
+  if (!unit) {
+    setFieldErr('err-unit','Property unit is required.'); highlightField('inpUnit',true); valid = false;
+  }
+
+  if (!community) {
+    setFieldErr('err-community','Community name is required.'); highlightField('inpCommunity',true); valid = false;
+  }
+
+  // ── Password section — only validate if any pw field is filled ──
+  const pwAttempted = currentPw || newPw || confirmPw;
+  if (pwAttempted) {
+    const p = getMmProfile();
+    if (!currentPw) {
+      setFieldErr('err-current-pw','Please enter your current password.'); highlightField('inpCurrentPw',true); valid = false;
+    } else if (currentPw !== p.password) {
+      setFieldErr('err-current-pw','Current password is incorrect.'); highlightField('inpCurrentPw',true); valid = false;
+    }
+
+    if (!newPw) {
+      setFieldErr('err-new-pw','Please enter a new password.'); highlightField('inpNewPw',true); valid = false;
+    } else if (newPw.length < 6) {
+      setFieldErr('err-new-pw','Password must be at least 6 characters.'); highlightField('inpNewPw',true); valid = false;
+    } else if (newPw === currentPw) {
+      setFieldErr('err-new-pw','New password must differ from your current password.'); highlightField('inpNewPw',true); valid = false;
+    }
+
+    if (!confirmPw) {
+      setFieldErr('err-confirm-pw','Please confirm your new password.'); highlightField('inpConfirmPw',true); valid = false;
+    } else if (confirmPw !== newPw) {
+      setFieldErr('err-confirm-pw','Passwords do not match.'); highlightField('inpConfirmPw',true); valid = false;
+    }
+  }
+
+  if (!valid) return;
+
+  // ── Persist ──
+  const saved = getMmProfile();
+  saved.name      = name;
+  saved.email     = email;
+  saved.phone     = phone;
+  saved.unit      = unit;
+  saved.community = community;
+  if (pwAttempted) saved.password = newPw;
+  setMmProfile(saved);
+
+  // ── Refresh display ──
   document.getElementById('dispName').textContent      = name;
   document.getElementById('dispEmail').textContent     = email;
   document.getElementById('dispPhone').textContent     = phone;
   document.getElementById('dispUnit').textContent      = unit;
   document.getElementById('dispCommunity').textContent = community;
-
-  // Update the banner too
-  document.getElementById('bannerName').textContent = name;
-  document.getElementById('bannerRole').textContent = name + ' · ' + community;
-  document.getElementById('bannerUnit').textContent = '🏢 Property: ' + unit;
+  document.getElementById('bannerName').textContent    = name;
+  document.getElementById('bannerRole').textContent    = name + ' · ' + community;
+  document.getElementById('bannerUnit').textContent    = '🏢 Property: ' + unit;
 
   cancelEdit();
-  showToast('✅ Profile updated successfully!');
+  showToast(pwAttempted ? '✅ Profile and password updated successfully!' : '✅ Profile updated successfully!');
 }
 </script></body>
 </html>

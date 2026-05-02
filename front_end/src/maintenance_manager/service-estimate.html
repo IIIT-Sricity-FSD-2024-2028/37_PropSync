@@ -16,19 +16,18 @@
   </div>
   <button class="sidebar-close" title="Close menu">✕</button>
 </div>
-      <nav class="sidebar-nav">
-      <a class="nav-link" href="dashboard.html"><span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard</a>
-      <a class="nav-link" href="complaints.html"><span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span> Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
-      <a class="nav-link" href="approved-complaints.html"><span class="nav-icon"><i class="fa-solid fa-circle-check"></i></span> Approved Complaints</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="service-estimate.html"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span> Service Estimate</a>
-      <a class="nav-link" href="service-bills.html"><span class="nav-icon"><i class="fa-solid fa-coins"></i></span> Payment History</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="provider-performance.html"><span class="nav-icon"><i class="fa-solid fa-trophy"></i></span> Provider Performance</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="notification.html"><span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
-      <a class="nav-link" href="profile.html"><span class="nav-icon"><i class="fa-solid fa-user"></i></span> Profile</a>
-    </nav>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
   <div class="sidebar-footer">
     <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
   </div>
@@ -61,7 +60,7 @@
 
   <div style="margin-bottom:8px;display:flex;align-items:center;gap:8px;">
     <span style="font-size:14px;font-weight:700;">Pending Estimates</span>
-    <span style="background:#FEF3C7;color:#B45309;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;" id="pendingCount">0</span>
+    <span style="background:#FEF3C7;color:#B45309;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;" id="pendingCount">3</span>
   </div>
   <div id="pendingEstimates"></div>
 
@@ -94,27 +93,59 @@
   </div>
 </div>
 
+<script src="../js/complaint_bridge.js"></script>
 <script src="../js/maintenance_manager.js"></script>
 <script>
-let estimateHistory = JSON.parse(sessionStorage.getItem('ps_est_history') || 'null') || [
-  {id:'C-2395',issue:'Sink Blockage',   provider:'QuickFix Plumbing',  cost:'₹800',   submitted:'2024-02-27',decision:'approved',decisionDate:'2024-02-27'},
-  {id:'C-2390',issue:'AC Repair',        provider:'CoolAir Services',   cost:'₹2,200', submitted:'2024-02-15',decision:'approved',decisionDate:'2024-02-16'},
-  {id:'C-2385',issue:'Lift Maintenance', provider:'Urban Lift Repairs', cost:'₹4,500', submitted:'2024-02-11',decision:'approved',decisionDate:'2024-02-12'},
-  {id:'C-2401',issue:'AC Not Cooling',   provider:'CoolAir Services',   cost:'₹120',   submitted:'2024-02-21',decision:'approved',decisionDate:'2024-02-22'},
-  {id:'C-2402',issue:'Ceiling Fan Not Working',provider:'UrbanFix Electrical',cost:'₹85',submitted:'2024-02-23',decision:'approved',decisionDate:'2024-02-24'},
-  {id:'C-2403',issue:'Lift Maintenance', provider:'Urban Lift Repairs', cost:'₹450',   submitted:'2024-02-26',decision:'approved',decisionDate:'2024-02-27'},
-  {id:'C-2380',issue:'Paint Work',        provider:'ProPaint Co.',       cost:'₹6,000', submitted:'2024-02-05',decision:'rejected',decisionDate:'2024-02-06'},
-  {id:'C-2375',issue:'Electrical Issue',  provider:'UrbanFix Electrical',cost:'₹3,200', submitted:'2024-01-28',decision:'rejected',decisionDate:'2024-01-29'}
-];
+/* ── Dynamic estimate data from Service Provider's propSyncTasks ── */
 
-let pendingEstimates = JSON.parse(sessionStorage.getItem('ps_pending_est') || 'null') || [
-  {id:'C-2407',issue:'Plumbing Problem',   date:'2024-03-05',provider:'QuickFix Plumbing',  cost:'₹1,200',desc:'Unblock kitchen drain and check pipe condition. Estimated 1–2 hours of work required.'},
-  {id:'C-2408',issue:'Electrical Issue',   date:'2024-03-06',provider:'UrbanFix Electrical', cost:'₹1,800',desc:'Inspect faulty MCB and rewire kitchen circuit. Includes parts and safety testing.'},
-];
+const ESTIMATE_HISTORY_KEY = 'ps_est_history_v2';
+
+function getEstimateHistory() {
+  try {
+    const stored = localStorage.getItem(ESTIMATE_HISTORY_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch(e) {}
+  // Default history
+  return [
+    {id:'C-2395',issue:'Sink Blockage',provider:'QuickFix Plumbing',cost:'₹800',submitted:'2024-02-27',decision:'approved',decisionDate:'2024-02-27'},
+    {id:'C-2390',issue:'AC Repair',provider:'CoolAir Services',cost:'₹2,200',submitted:'2024-02-15',decision:'approved',decisionDate:'2024-02-16'},
+    {id:'C-2385',issue:'Lift Maintenance',provider:'Urban Lift Repairs',cost:'₹4,500',submitted:'2024-02-11',decision:'approved',decisionDate:'2024-02-12'},
+    {id:'C-2380',issue:'Paint Work',provider:'ProPaint Co.',cost:'₹6,000',submitted:'2024-02-05',decision:'rejected',decisionDate:'2024-02-06'},
+    {id:'C-2375',issue:'Electrical Issue',provider:'UrbanFix Electrical',cost:'₹3,200',submitted:'2024-01-28',decision:'rejected',decisionDate:'2024-01-29'}
+  ];
+}
+
+function saveEstimateHistory(list) {
+  localStorage.setItem(ESTIMATE_HISTORY_KEY, JSON.stringify(list));
+}
+
+/* Build pending estimates live from SP's propSyncTasks */
+function getLivePendingEstimates() {
+  let spTasks = {};
+  try { spTasks = JSON.parse(localStorage.getItem('propSyncTasks') || '{}'); } catch(e) {}
+
+  const history = getEstimateHistory();
+  const decidedIds = new Set(history.map(h => h.id));
+
+  return Object.values(spTasks)
+    .filter(t => t.estimateSubmitted && t.estimate && !decidedIds.has(t.id))
+    .map(t => ({
+      id: t.id,
+      issue: t.title || t.issueType,
+      date: t.assignedDate || '—',
+      provider: 'Service Provider',
+      cost: t.estimate.cost || '—',
+      completionTime: t.estimate.completionTime || '—',
+      desc: t.estimate.workDescription || '—',
+      file: t.estimate.uploadedFile || null
+    }));
+}
+
+let estimateHistory = getEstimateHistory();
+let pendingEstimates = getLivePendingEstimates();
 
 function saveState() {
-  sessionStorage.setItem('ps_est_history', JSON.stringify(estimateHistory));
-  sessionStorage.setItem('ps_pending_est', JSON.stringify(pendingEstimates));
+  saveEstimateHistory(estimateHistory);
 }
 
 let currentHistTab = 'all';
@@ -141,9 +172,11 @@ function renderHistory() {
 }
 
 function renderPending() {
+  // Always re-fetch live data to catch newly submitted estimates
+  pendingEstimates = getLivePendingEstimates();
   document.getElementById('pendingCount').textContent = pendingEstimates.length;
   if (!pendingEstimates.length) {
-    document.getElementById('pendingEstimates').innerHTML = `<div class="card" style="text-align:center;padding:32px;color:#9CA3AF;"><div style="font-size:32px;margin-bottom:10px;">✅</div><div style="font-weight:600;">All estimates have been reviewed</div></div>`;
+    document.getElementById('pendingEstimates').innerHTML = `<div class="card" style="text-align:center;padding:32px;color:#9CA3AF;"><div style="font-size:32px;margin-bottom:10px;">✅</div><div style="font-weight:600;">All estimates have been reviewed</div><div style="font-size:13px;margin-top:8px;color:#9CA3AF;">New estimates submitted by service providers will appear here automatically.</div></div>`;
     return;
   }
   document.getElementById('pendingEstimates').innerHTML = pendingEstimates.map(e => `
@@ -153,6 +186,8 @@ function renderPending() {
           <span class="estimate-issue">${e.issue}</span>
           <a class="estimate-id" href="complaint-details.html?id=${e.id}">${e.id}</a>
           <div class="estimate-provider">Submitted on ${e.date} &nbsp;|&nbsp; Provider: <span>${e.provider}</span></div>
+          ${e.completionTime ? `<div style="font-size:12px;color:#6B7280;margin-top:3px;">⏱ Estimated time: <strong>${e.completionTime}</strong></div>` : ''}
+          ${e.file ? `<div style="font-size:12px;color:#1D4ED8;margin-top:3px;">📎 ${e.file}</div>` : ''}
         </div>
         <div style="text-align:right;"><div class="estimate-cost">${e.cost}<small>Estimated cost</small></div></div>
       </div>
@@ -170,14 +205,37 @@ function approveEst(id) {
   const card = document.getElementById('est-'+id);
   if (card) { card.style.transition='opacity .3s'; card.style.opacity='0'; }
   setTimeout(() => {
-    pendingEstimates = pendingEstimates.filter(e => e.id !== id);
     const today = new Date().toISOString().split('T')[0];
     estimateHistory.unshift({id, issue:est.issue, provider:est.provider, cost:est.cost, submitted:est.date, decision:'approved', decisionDate:today});
-    saveState(); renderPending(); renderHistory();
-    addNotification('checkmark','#DCFCE7','Estimate Approved',`Estimate for ${id} (${est.issue}) has been approved`, 'provider');
+    saveState();
+
+    // ✅ FIX: Update complaint status in ps_complaints to 'In Progress'
+    try {
+      const allComplaints = getComplaints();
+      const comp = allComplaints.find(c => String(c.id) === String(id));
+      if (comp) {
+        comp.status = 'In Progress';
+        comp.subStatus = '';
+        comp.estimatedCost = est.cost;
+        saveComplaints(allComplaints);
+      }
+    } catch(e) {}
+
+    // Update the SP's task so they know it's approved
+    try {
+      const spTasks = JSON.parse(localStorage.getItem('propSyncTasks') || '{}');
+      if (spTasks[id]) {
+        spTasks[id].status = 'In Progress';
+        spTasks[id].progress = { ...spTasks[id].progress, approved: true, inProgress: true };
+        localStorage.setItem('propSyncTasks', JSON.stringify(spTasks));
+      }
+    } catch(e) {}
+
+    renderPending(); renderHistory();
+    addNotification('checkmark','#DCFCE7','Estimate Approved',`Estimate for ${id} (${est.issue}) has been approved. Provider can proceed.`, 'provider');
     updateNotifDot();
   }, 300);
-  showToast(`Estimate for ${id} approved.`);
+  showToast(`Estimate for ${id} approved. Provider notified.`);
 }
 
 function rejectEst(id) {
@@ -186,14 +244,38 @@ function rejectEst(id) {
   const card = document.getElementById('est-'+id);
   if (card) { card.style.transition='opacity .3s'; card.style.opacity='0'; }
   setTimeout(() => {
-    pendingEstimates = pendingEstimates.filter(e => e.id !== id);
     const today = new Date().toISOString().split('T')[0];
     estimateHistory.unshift({id, issue:est.issue, provider:est.provider, cost:est.cost, submitted:est.date, decision:'rejected', decisionDate:today});
-    saveState(); renderPending(); renderHistory();
-    addNotification('cross','#FEE2E2','Estimate Rejected',`Estimate for ${id} (${est.issue}) has been rejected`, 'provider');
+    saveState();
+
+    // ✅ FIX: Revert complaint status back to Approved/Provider Assigned
+    try {
+      const allComplaints = getComplaints();
+      const comp = allComplaints.find(c => String(c.id) === String(id));
+      if (comp) {
+        comp.status = 'Approved';
+        comp.subStatus = 'Provider Assigned';
+        saveComplaints(allComplaints);
+      }
+    } catch(e) {}
+
+    // Update SP's task to Assigned (re-estimate needed)
+    try {
+      const spTasks = JSON.parse(localStorage.getItem('propSyncTasks') || '{}');
+      if (spTasks[id]) {
+        spTasks[id].status = 'Assigned';
+        spTasks[id].estimateSubmitted = false;
+        spTasks[id].estimate = null;
+        spTasks[id].progress = { ...spTasks[id].progress, estimateSent: false, approved: false, inProgress: false };
+        localStorage.setItem('propSyncTasks', JSON.stringify(spTasks));
+      }
+    } catch(e) {}
+
+    renderPending(); renderHistory();
+    addNotification('cross','#FEE2E2','Estimate Rejected',`Estimate for ${id} (${est.issue}) was rejected. Provider must re-submit.`, 'provider');
     updateNotifDot();
   }, 300);
-  showToast(`Estimate for ${id} rejected.`);
+  showToast(`Estimate for ${id} rejected. Provider must re-submit.`);
 }
 
 document.addEventListener('DOMContentLoaded', () => { renderPending(); renderHistory(); });

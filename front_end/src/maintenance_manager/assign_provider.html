@@ -18,18 +18,19 @@
       </div>
       <button class="sidebar-close" title="Close menu">✕</button>
     </div>
-        <nav class="sidebar-nav">
-      <a class="nav-link" href="dashboard.html"><span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard</a>
-      <a class="nav-link" href="complaints.html"><span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span> Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
-      <a class="nav-link" href="approved-complaints.html"><span class="nav-icon"><i class="fa-solid fa-circle-check"></i></span> Approved Complaints</a>
+    <nav class="sidebar-nav">
+      <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span
+          class="nav-badge notif-complaints-count" style="display:none;"></span></a>
       <div class="nav-divider"></div>
-      <a class="nav-link" href="service-estimate.html"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span> Service Estimate</a>
-      <a class="nav-link" href="service-bills.html"><span class="nav-icon"><i class="fa-solid fa-coins"></i></span> Payment History</a>
+      <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+      <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
       <div class="nav-divider"></div>
-      <a class="nav-link" href="provider-performance.html"><span class="nav-icon"><i class="fa-solid fa-trophy"></i></span> Provider Performance</a>
+      <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
       <div class="nav-divider"></div>
-      <a class="nav-link" href="notification.html"><span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
-      <a class="nav-link" href="profile.html"><span class="nav-icon"><i class="fa-solid fa-user"></i></span> Profile</a>
+      <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span
+          class="nav-badge notif-badge-count" style="display:none;"></span></a>
+      <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
     </nav>
     <div class="sidebar-footer">
       <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
@@ -138,7 +139,8 @@
     </div>
   </div>
 
-  <script src="../js/maintenance_manager.js"></script>
+  <script src="../js/complaint_bridge.js"></script>
+<script src="../js/maintenance_manager.js"></script>
   <script>
     let selectedProvider = null;
 
@@ -188,7 +190,42 @@
       const due = document.getElementById('dueDate').value;
       if (!due) { showToast('⚠️ Please set a due date.'); return; }
       const p = providers[selectedProvider];
-      addNotification('wrench', '#DCFCE7', 'Provider Assigned', `${p.name} assigned to ${document.getElementById('assignId').textContent}. Due: ${due}`, 'provider');
+      const assignedId = document.getElementById('assignId').textContent;
+
+      // ✅ FIX: Save provider assignment + status update back to ps_complaints
+      try {
+        const allComplaints = getComplaints();
+        const comp = allComplaints.find(c => String(c.id) === String(assignedId));
+        if (comp) {
+          comp.status = 'Approved';
+          comp.subStatus = 'Waiting Provider Response';
+          comp.provider = p.name;
+          comp.deadline = due;
+          saveComplaints(allComplaints);
+        }
+      } catch(e) {}
+
+      // ✅ FIX: Also write to propSyncTasks so SP can see the assignment
+      try {
+        const spTasks = JSON.parse(localStorage.getItem('propSyncTasks') || '{}');
+        const existingTask = spTasks[assignedId] || {};
+        spTasks[assignedId] = {
+          ...existingTask,
+          id: assignedId,
+          title: document.getElementById('assignIssue').textContent,
+          location: document.getElementById('assignLocation').textContent,
+          urgency: existingTask.urgency || 'Medium',
+          status: 'Assigned',
+          assignedDate: new Date().toISOString().split('T')[0],
+          deadline: due,
+          estimateSubmitted: false,
+          estimate: null,
+          progress: { assigned: true, estimateSent: false, approved: false, inProgress: false, completed: false }
+        };
+        localStorage.setItem('propSyncTasks', JSON.stringify(spTasks));
+      } catch(e) {}
+
+      addNotification('wrench', '#DCFCE7', 'Provider Assigned', `${p.name} assigned to ${assignedId}. Due: ${due}`, 'provider');
       document.getElementById('successMsg').textContent = `${p.name} has been assigned. Due: ${due}`;
       showModal('successModal');
     }

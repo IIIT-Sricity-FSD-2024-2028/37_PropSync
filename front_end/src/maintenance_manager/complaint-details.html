@@ -18,18 +18,19 @@
       </div>
       <button class="sidebar-close" title="Close menu">✕</button>
     </div>
-        <nav class="sidebar-nav">
-      <a class="nav-link" href="dashboard.html"><span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard</a>
-      <a class="nav-link" href="complaints.html"><span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span> Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
-      <a class="nav-link" href="approved-complaints.html"><span class="nav-icon"><i class="fa-solid fa-circle-check"></i></span> Approved Complaints</a>
+    <nav class="sidebar-nav">
+      <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span
+          class="nav-badge notif-complaints-count" style="display:none;"></span></a>
       <div class="nav-divider"></div>
-      <a class="nav-link" href="service-estimate.html"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span> Service Estimate</a>
-      <a class="nav-link" href="service-bills.html"><span class="nav-icon"><i class="fa-solid fa-coins"></i></span> Payment History</a>
+      <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+      <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
       <div class="nav-divider"></div>
-      <a class="nav-link" href="provider-performance.html"><span class="nav-icon"><i class="fa-solid fa-trophy"></i></span> Provider Performance</a>
+      <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
       <div class="nav-divider"></div>
-      <a class="nav-link" href="notification.html"><span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
-      <a class="nav-link" href="profile.html"><span class="nav-icon"><i class="fa-solid fa-user"></i></span> Profile</a>
+      <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span
+          class="nav-badge notif-badge-count" style="display:none;"></span></a>
+      <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
     </nav>
     <div class="sidebar-footer">
       <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
@@ -165,7 +166,8 @@
     </div>
   </div>
 
-  <script src="../js/maintenance_manager.js"></script>
+  <script src="../js/complaint_bridge.js"></script>
+<script src="../js/maintenance_manager.js"></script>
   <script>
     const stepLabels = ['Submitted', 'Approved', 'Provider Assigned', 'Estimate Submitted', 'Work in Progress', 'Completed'];
     const lifecycleSteps = ['Complaint Submitted', 'Complaint Approved', 'Service Provider Assigned', 'Estimate Submitted', 'Estimate Approved', 'Work In Progress', 'Work Completed', 'Payment Processed'];
@@ -180,15 +182,86 @@
       'C-2403': 'Annual lift maintenance service and safety inspection is due. The lift is operational but making unusual sounds.',
       'default': 'The resident has reported a maintenance issue that requires prompt attention from the assigned service provider.'
     };
-    const progressMap = { 'Pending': 0, 'Approved': 15, 'In Progress': 55, 'Completed': 100, 'Payment Pending': 100, 'Rejected': 0 };
+    const progressMap = { 'Pending': 0, 'Approved': 25, 'In Progress': 65, 'Completed': 100, 'Payment Pending': 100, 'Rejected': 0 };
+    // stepIndexMap: 0=Submitted,1=Approved,2=Provider Assigned,3=Estimate Submitted,4=Work in Progress,5=Completed
+    // 'current' step = the step we are ON right now
     const stepIndexMap = { 'Pending': 0, 'Approved': 1, 'In Progress': 4, 'Completed': 5, 'Payment Pending': 5, 'Rejected': 0 };
+    // lifecycleIndexMap: maps status to how many lifecycle steps are "done"
+    const lifecycleIndexMap = { 'Pending': 0, 'Approved': 1, 'In Progress': 4, 'Completed': 6, 'Payment Pending': 7, 'Rejected': 0 };
     const costMap = { 'C-2399': '₹4,500', 'C-2398': '₹3,500', 'C-2403': '₹450', 'C-2402': '₹85', 'C-2401': '₹120' };
 
     document.addEventListener('DOMContentLoaded', () => {
       complaints = getComplaints();
       const params = new URLSearchParams(location.search);
       const id = params.get('id') || 'C-2410';
-      const c = complaints.find(x => x.id === id) || complaints[0];
+
+      // ✅ FIX: Use loose String comparison so numeric/string IDs both match
+      let c = complaints.find(x => String(x.id) === String(id));
+      let isOwnerComplaint = false;
+
+      if (!c) {
+        // Look in bridge for owner-submitted complaints
+        const bc = bridgeGetAll().find(x => String(x.id) === String(id));
+        if (bc) {
+          isOwnerComplaint = true;
+          // ✅ FIX: map bridge status correctly, show submittedBy not issuedBy as provider
+          const bridgeStatus = bc.status === 'approved' ? 'Approved'
+                             : bc.status === 'rejected' ? 'Rejected'
+                             : 'Pending';
+          c = {
+            id: String(bc.id),
+            issue: bc.title,
+            location: bc.location || 'Property',
+            priority: bc.urgency || 'Medium',
+            status: bridgeStatus,
+            subStatus: bc.status === 'approved' ? 'Provider Assigned' : '',
+            submitted: bc.submittedOn || '—',
+            deadline: bc.deadline || '—',
+            provider: '—',
+            rejectionReason: bc.rejectionReason || '',
+            description: bc.caption || '',
+            fromOwner: true,
+            submittedBy: bc.issuedBy
+          };
+        } else {
+          // ✅ FIX: Check propSyncTasks for SP-assigned complaints not in main list
+          try {
+            const spTasks = JSON.parse(localStorage.getItem('propSyncTasks') || '{}');
+            const spTask = spTasks[id];
+            if (spTask) {
+              c = {
+                id: spTask.id,
+                issue: spTask.title || spTask.issueType || id,
+                location: spTask.location || 'Property',
+                priority: spTask.urgency || 'Medium',
+                status: spTask.status || 'Approved',
+                subStatus: '',
+                submitted: spTask.assignedDate || '—',
+                deadline: spTask.deadline || '—',
+                provider: 'Service Provider',
+                description: spTask.description || '',
+                estimatedCost: spTask.estimate ? spTask.estimate.cost : ''
+              };
+            }
+          } catch(e) {}
+          if (!c) c = complaints[0];
+        }
+      }
+
+      if (!c) return;
+
+      // ✅ FIX: Override status from propSyncTasks if SP has updated it (e.g. In Progress after estimate approved)
+      try {
+        const spTasks = JSON.parse(localStorage.getItem('propSyncTasks') || '{}');
+        const spTask = spTasks[String(c.id)];
+        if (spTask) {
+          const spStatusMap = { 'In Progress': 'In Progress', 'Completed': 'Completed', 'Assigned': 'Approved' };
+          const mappedStatus = spStatusMap[spTask.status];
+          if (mappedStatus) { c = { ...c, status: mappedStatus }; }
+          if (spTask.estimate && spTask.estimate.cost) { c = { ...c, estimatedCost: spTask.estimate.cost }; }
+        }
+      } catch(e) {}
+
       const si = stepIndexMap[c.status] || 0;
 
       document.getElementById('stepper').innerHTML = stepLabels.map((s, i) => `<div class="step ${i < si ? 'done' : i === si ? 'current' : ''}"><div class="step-circle">${i < si ? '✓' : i + 1}</div><div class="step-label">${s}</div></div>`).join('');
@@ -197,23 +270,130 @@
       document.getElementById('detailIssue').textContent = c.issue;
       document.getElementById('detailLocation').textContent = c.location;
       document.getElementById('detailDate').textContent = c.submitted;
-      document.getElementById('detailProvider').textContent = c.provider || '—';
+      // ✅ FIX: Show assigned provider if set, else 'Not yet assigned' for owner complaints
+      document.getElementById('detailProvider').textContent = (c.provider && c.provider !== '—') ? c.provider : (isOwnerComplaint ? 'Not yet assigned' : '—');
       document.getElementById('detailDeadline').textContent = c.deadline || '—';
       document.getElementById('detailStatus').innerHTML = statusBadge(c.status, c.subStatus);
-      document.getElementById('detailCost').textContent = costMap[c.id] || '—';
-      document.getElementById('detailDesc').textContent = descriptions[c.id] || descriptions['default'];
+
+      // ✅ FIX: Dynamic cost from complaint object (set during estimate approval), then fallback to costMap
+      let displayCost = c.estimatedCost || costMap[c.id] || '—';
+      try {
+        const spTasks = JSON.parse(localStorage.getItem('propSyncTasks') || '{}');
+        const spTask = spTasks[String(c.id)];
+        if (spTask && spTask.estimate && spTask.estimate.cost) {
+          displayCost = spTask.estimate.cost;
+        }
+      } catch(e) {}
+      document.getElementById('detailCost').textContent = displayCost;
+
+      // Description: use bridge caption for owner complaints, else use map or default
+      const descText = isOwnerComplaint
+        ? (c.description || descriptions['default'])
+        : (descriptions[c.id] || descriptions['default']);
+      document.getElementById('detailDesc').textContent = descText;
+
       const pct = progressMap[c.status] || 0;
       document.getElementById('progressPct').textContent = pct + '%';
       document.getElementById('progressBar').style.width = pct + '%';
       document.getElementById('metaSubmitted').textContent = c.submitted;
       document.getElementById('metaDeadline').textContent = c.deadline || '—';
-      document.getElementById('metaProvider').textContent = c.provider || 'Not assigned';
-      const activeIdx = Math.min(si, lifecycleSteps.length - 1);
-      document.getElementById('lifecycleList').innerHTML = lifecycleSteps.map((s, i) => `<div class="lifecycle-item"><div class="lifecycle-radio ${i <= activeIdx ? 'active' : ''}"></div><div><div class="lifecycle-text ${i <= activeIdx ? 'active' : ''}">${s}${i === activeIdx ? ' <span style="font-size:10px;color:#16A34A;">(Current)</span>' : ''}</div>${i === 0 ? `<div class="lifecycle-date">${c.submitted}</div>` : ''}</div></div>`).join('');
-      const timelines = { 'Pending': [{ dot: '🔵', title: 'Complaint submitted and awaiting review', by: 'Resident – John Doe', time: c.submitted + ' 10:00 AM' }], 'Approved': [{ dot: '✅', title: 'Complaint approved by manager', by: 'Maintenance Manager', time: c.submitted + ' 02:00 PM' }, { dot: '🔵', title: 'Complaint submitted and awaiting review', by: 'Resident – John Doe', time: c.submitted + ' 10:00 AM' }], 'In Progress': [{ dot: '🔧', title: 'Work in progress – technician on-site', by: c.provider || 'Technician', time: (c.deadline || '') + ' 09:00 AM' }, { dot: '👤', title: 'Service provider assigned', by: 'Maintenance Manager', time: c.submitted + ' 03:00 PM' }, { dot: '✅', title: 'Complaint approved', by: 'Maintenance Manager', time: c.submitted + ' 11:00 AM' }, { dot: '🔵', title: 'Complaint submitted', by: 'Resident – John Doe', time: c.submitted + ' 10:00 AM' }], 'Completed': [{ dot: '✅', title: 'Work completed and verified', by: c.provider || 'Technician', time: (c.deadline || '') + ' 05:00 PM' }, { dot: '🔧', title: 'Work in progress', by: c.provider || 'Technician', time: (c.deadline || '') + ' 09:00 AM' }, { dot: '👤', title: 'Service provider assigned', by: 'Maintenance Manager', time: c.submitted + ' 03:00 PM' }, { dot: '🔵', title: 'Complaint submitted', by: 'Resident – John Doe', time: c.submitted + ' 10:00 AM' }], 'Payment Pending': [{ dot: '💰', title: 'Bill submitted – payment pending', by: c.provider || 'Provider', time: (c.deadline || '') + ' 06:00 PM' }, { dot: '✅', title: 'Work completed', by: c.provider || 'Technician', time: (c.deadline || '') + ' 05:00 PM' }, { dot: '🔵', title: 'Complaint submitted', by: 'Resident – John Doe', time: c.submitted + ' 10:00 AM' }], 'Rejected': [{ dot: '❌', title: 'Complaint rejected by manager', by: 'Maintenance Manager', time: c.submitted + ' 11:00 AM' }, { dot: '🔵', title: 'Complaint submitted', by: 'Resident – John Doe', time: c.submitted + ' 10:00 AM' }] };
+      document.getElementById('metaProvider').textContent = isOwnerComplaint ? (c.submittedBy || 'Owner Submitted') : (c.provider || 'Not assigned');
+      // ✅ FIX: Use lifecycleIndexMap for accurate lifecycle step highlighting
+      const lcActiveIdx = typeof lifecycleIndexMap !== 'undefined'
+        ? (lifecycleIndexMap[c.status] !== undefined ? lifecycleIndexMap[c.status] : si)
+        : Math.min(si, lifecycleSteps.length - 1);
+      document.getElementById('lifecycleList').innerHTML = lifecycleSteps.map((s, i) => `<div class="lifecycle-item"><div class="lifecycle-radio ${i < lcActiveIdx ? 'active' : i === lcActiveIdx ? 'active' : ''}"></div><div><div class="lifecycle-text ${i <= lcActiveIdx ? 'active' : ''}">${s}${i === lcActiveIdx ? ' <span style="font-size:10px;color:#16A34A;font-weight:700;">(Current)</span>' : ''}</div>${i === 0 ? `<div class="lifecycle-date">${c.submitted}</div>` : ''}</div></div>`).join('');
+      const submittedByLabel = isOwnerComplaint ? `Owner – ${c.submittedBy || 'Resident'}` : 'Resident – John Doe';
+      // ✅ FIX: Full timeline with all stages including estimate steps
+      const timelines = {
+        'Pending': [
+          { dot: '🔵', title: 'Complaint submitted and awaiting review', by: submittedByLabel, time: c.submitted + ' 10:00 AM' }
+        ],
+        'Approved': [
+          { dot: '✅', title: 'Complaint approved by manager – provider assignment pending', by: 'Maintenance Manager', time: c.submitted + ' 02:00 PM' },
+          { dot: '🔵', title: 'Complaint submitted and awaiting review', by: submittedByLabel, time: c.submitted + ' 10:00 AM' }
+        ],
+        'In Progress': [
+          { dot: '🔧', title: 'Estimate approved – work in progress', by: c.provider || 'Technician', time: (c.deadline || c.submitted) + ' 09:00 AM' },
+          { dot: '📋', title: 'Service estimate submitted and approved', by: 'Maintenance Manager', time: c.submitted + ' 04:00 PM' },
+          { dot: '👤', title: 'Service provider assigned', by: 'Maintenance Manager', time: c.submitted + ' 03:00 PM' },
+          { dot: '✅', title: 'Complaint approved by manager', by: 'Maintenance Manager', time: c.submitted + ' 11:00 AM' },
+          { dot: '🔵', title: 'Complaint submitted', by: submittedByLabel, time: c.submitted + ' 10:00 AM' }
+        ],
+        'Completed': [
+          { dot: '🏁', title: 'Work completed and verified', by: c.provider || 'Technician', time: (c.deadline || c.submitted) + ' 05:00 PM' },
+          { dot: '🔧', title: 'Work in progress – technician on-site', by: c.provider || 'Technician', time: (c.deadline || c.submitted) + ' 09:00 AM' },
+          { dot: '📋', title: 'Service estimate approved', by: 'Maintenance Manager', time: c.submitted + ' 04:00 PM' },
+          { dot: '👤', title: 'Service provider assigned', by: 'Maintenance Manager', time: c.submitted + ' 03:00 PM' },
+          { dot: '✅', title: 'Complaint approved', by: 'Maintenance Manager', time: c.submitted + ' 11:00 AM' },
+          { dot: '🔵', title: 'Complaint submitted', by: submittedByLabel, time: c.submitted + ' 10:00 AM' }
+        ],
+        'Payment Pending': [
+          { dot: '💰', title: 'Bill submitted – payment pending', by: c.provider || 'Provider', time: (c.deadline || c.submitted) + ' 06:00 PM' },
+          { dot: '🏁', title: 'Work completed and verified', by: c.provider || 'Technician', time: (c.deadline || c.submitted) + ' 05:00 PM' },
+          { dot: '🔧', title: 'Work in progress', by: c.provider || 'Technician', time: (c.deadline || c.submitted) + ' 09:00 AM' },
+          { dot: '✅', title: 'Complaint approved and provider assigned', by: 'Maintenance Manager', time: c.submitted + ' 11:00 AM' },
+          { dot: '🔵', title: 'Complaint submitted', by: submittedByLabel, time: c.submitted + ' 10:00 AM' }
+        ],
+        'Rejected': [
+          { dot: '❌', title: 'Complaint rejected by manager', by: 'Maintenance Manager', time: c.submitted + ' 11:00 AM' },
+          { dot: '🔵', title: 'Complaint submitted', by: submittedByLabel, time: c.submitted + ' 10:00 AM' }
+        ]
+      };
       const tl = timelines[c.status] || timelines['Pending'];
       document.getElementById('timelineList').innerHTML = tl.map(t => `<div class="timeline-item"><div class="timeline-dot"></div><div style="flex:1;"><div class="timeline-title">${t.dot} ${t.title}</div><div class="timeline-sub">Updated by: ${t.by}</div></div><div class="timeline-time">${t.time}</div></div>`).join('');
+
+      // If owner complaint, show Approve/Reject buttons if still pending
+      if (isOwnerComplaint && c.status === 'Pending') {
+        const actionsEl = document.createElement('div');
+        actionsEl.style.cssText = 'margin-top:20px;display:flex;gap:12px;';
+        actionsEl.innerHTML = `
+          <button class="btn btn-success" onclick="doApproveFromDetail('${c.id}')">✓ Approve Complaint</button>
+          <button class="btn btn-danger" onclick="doRejectFromDetail('${c.id}')">✗ Reject Complaint</button>`;
+        document.querySelector('.card').appendChild(actionsEl);
+      }
     });
+
+    function doApproveFromDetail(id) {
+      bridgeApproveComplaint(id);
+
+      // ✅ FIX: Save approved owner complaint into ps_complaints so it shows in Approved tab
+      const bc = bridgeGetAll().find(x => String(x.id) === String(id));
+      if (bc) {
+        const allComplaints = getComplaints();
+        const alreadyExists = allComplaints.find(c => String(c.id) === String(id));
+        if (!alreadyExists) {
+          allComplaints.push({
+            id: String(bc.id),
+            issue: bc.title,
+            location: bc.location || 'Property',
+            priority: bc.urgency || 'Medium',
+            status: 'Approved',
+            subStatus: 'Provider Assigned',
+            submitted: bc.submittedOn || new Date().toISOString().split('T')[0],
+            deadline: bc.deadline || '—',
+            provider: '',
+            rejectionReason: '',
+            description: bc.caption || '',
+            _isOwnerComplaint: true,
+            submittedBy: bc.issuedBy
+          });
+          saveComplaints(allComplaints);
+        }
+      }
+
+      showToast(`✅ Complaint ${id} approved and forwarded to Service Providers.`);
+      addNotification('checkmark', '#DCFCE7', 'Owner Complaint Approved',
+        `Complaint ${id} approved and forwarded to service providers.`, 'all', false);
+      setTimeout(() => location.href = 'complaints.html', 1200);
+    }
+    function doRejectFromDetail(id) {
+      const reason = prompt('Enter rejection reason:');
+      if (!reason) return;
+      bridgeRejectComplaint(id, reason);
+      showToast(`Complaint ${id} rejected.`);
+      setTimeout(() => location.href = 'complaints.html', 1200);
+    }
   </script>
 </body>
 

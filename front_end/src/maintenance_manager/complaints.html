@@ -16,19 +16,18 @@
   </div>
   <button class="sidebar-close" title="Close menu">✕</button>
 </div>
-      <nav class="sidebar-nav">
-      <a class="nav-link" href="dashboard.html"><span class="nav-icon"><i class="fa-solid fa-house"></i></span> Dashboard</a>
-      <a class="nav-link" href="complaints.html"><span class="nav-icon"><i class="fa-solid fa-clipboard-list"></i></span> Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
-      <a class="nav-link" href="approved-complaints.html"><span class="nav-icon"><i class="fa-solid fa-circle-check"></i></span> Approved Complaints</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="service-estimate.html"><span class="nav-icon"><i class="fa-solid fa-file-lines"></i></span> Service Estimate</a>
-      <a class="nav-link" href="service-bills.html"><span class="nav-icon"><i class="fa-solid fa-coins"></i></span> Payment History</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="provider-performance.html"><span class="nav-icon"><i class="fa-solid fa-trophy"></i></span> Provider Performance</a>
-      <div class="nav-divider"></div>
-      <a class="nav-link" href="notification.html"><span class="nav-icon"><i class="fa-solid fa-bell"></i></span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
-      <a class="nav-link" href="profile.html"><span class="nav-icon"><i class="fa-solid fa-user"></i></span> Profile</a>
-    </nav>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+  </nav>
   <div class="sidebar-footer">
     <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
   </div>
@@ -81,6 +80,7 @@
   <div class="tabs-container">
     <div class="tabs">
       <button class="tab active" onclick="setTab('all',this)">All</button>
+      <button class="tab" onclick="setTab('owner',this)">Owner Complaints <span id="ownerPendingBadge" style="background:#EF4444;color:#fff;font-size:11px;padding:1px 6px;border-radius:999px;margin-left:4px;display:none;"></span></button>
       <button class="tab" onclick="setTab('pending',this)">Pending</button>
       <button class="tab" onclick="setTab('approved',this)">Approved</button>
       <button class="tab" onclick="setTab('inprogress',this)">In Progress</button>
@@ -125,9 +125,19 @@
   </div>
 </div>
 
+<script src="../js/complaint_bridge.js"></script>
 <script src="../js/maintenance_manager.js"></script>
 <script>
 let currentTab = 'all';
+
+/* ── Owner-badge updater ── */
+function updateOwnerBadge() {
+  const pending = bridgeGetAll().filter(c => c.status === 'pending').length;
+  const badge = document.getElementById('ownerPendingBadge');
+  if (!badge) return;
+  if (pending > 0) { badge.textContent = pending; badge.style.display = 'inline'; }
+  else { badge.style.display = 'none'; }
+}
 
 function setTab(tab, el) {
   currentTab = tab;
@@ -136,12 +146,160 @@ function setTab(tab, el) {
   renderTable();
 }
 
+/* ── OWNER COMPLAINTS TAB renderer ── */
+function renderOwnerComplaints(search) {
+  const bridgeData = bridgeGetAll().filter(c => {
+    if (!search) return true;
+    return c.id.toLowerCase().includes(search) || c.title.toLowerCase().includes(search);
+  });
+
+  const statusLabel = { pending: 'Pending Review', approved: 'Approved → Sent to Provider', rejected: 'Rejected' };
+  const statusColor = { pending: '#F59E0B', approved: '#16A34A', rejected: '#DC2626' };
+
+  document.getElementById('tableHead').innerHTML = `<tr>
+    <th>ID</th><th>Issue</th><th>Category</th><th>Location</th>
+    <th>Submitted By</th><th>Date</th><th>Status</th><th>Action</th>
+  </tr>`;
+
+  if (!bridgeData.length) {
+    document.getElementById('tableBody').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:28px;color:#9CA3AF;">No owner complaints submitted yet</td></tr>`;
+    return;
+  }
+
+  const rows = bridgeData.map(c => {
+    const st = c.status || 'pending';
+    const color = statusColor[st] || '#6B7280';
+    const label = statusLabel[st] || st;
+    const statusBadgeHtml = `<span style="background:${color}20;color:${color};border:1px solid ${color}40;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;">${label}</span>`;
+
+    let actionHtml = '';
+    if (st === 'pending') {
+      actionHtml = `
+        <button class="btn btn-success btn-sm" onclick="doApproveOwner('${c.id}')">✓ Approve</button>
+        <button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openOwnerRejectModal('${c.id}')">✗ Reject</button>`;
+    } else if (st === 'approved') {
+      actionHtml = `<span style="color:#16A34A;font-size:12px;font-weight:600;">✓ Forwarded to Provider</span>`;
+    } else if (st === 'rejected') {
+      actionHtml = `<span style="color:#DC2626;font-size:12px;">${c.rejectionReason || 'Rejected'}</span>`;
+    }
+
+    return `<tr>
+      <td style="font-weight:600;color:#1a0dab;">${c.id}</td>
+      <td>${c.title}</td>
+      <td><span class="badge badge-medium">${c.category}</span></td>
+      <td style="font-size:12px;color:#6B7280;">${c.location || '—'}</td>
+      <td style="font-size:12px;">${c.issuedBy}</td>
+      <td style="font-size:12px;color:#6B7280;">${c.submittedOn || '—'}</td>
+      <td>${statusBadgeHtml}</td>
+      <td>${actionHtml}</td>
+    </tr>`;
+  });
+  document.getElementById('tableBody').innerHTML = rows.join('');
+}
+
+/* ── Approve an owner complaint → push to service provider ── */
+function doApproveOwner(id) {
+  bridgeApproveComplaint(id);
+
+  // ✅ FIX: Also add to ps_complaints so Approved tab and complaint-details page can find it
+  const bc = bridgeGetAll().find(x => String(x.id) === String(id));
+  if (bc) {
+    const allComplaints = getComplaints();
+    const alreadyExists = allComplaints.find(c => String(c.id) === String(id));
+    if (!alreadyExists) {
+      allComplaints.push({
+        id: String(bc.id),
+        issue: bc.title,
+        location: bc.location || 'Property',
+        priority: bc.urgency || 'Medium',
+        status: 'Approved',
+        subStatus: 'Provider Assigned',
+        submitted: bc.submittedOn || new Date().toISOString().split('T')[0],
+        deadline: bc.deadline || '—',
+        provider: '',
+        rejectionReason: '',
+        description: bc.caption || '',
+        _isOwnerComplaint: true,
+        submittedBy: bc.issuedBy
+      });
+      saveComplaints(allComplaints);
+    }
+  }
+
+  showToast(`✅ Owner complaint ${id} approved and sent to Service Provider's available complaints.`);
+  updateOwnerBadge();
+  renderTable();
+
+  addNotification('checkmark', '#DCFCE7', 'Owner Complaint Approved',
+    `Complaint ${id} from owner approved and forwarded to service providers.`, 'all', false);
+}
+
+/* ── Reject an owner complaint (uses a custom modal) ── */
+let _ownerRejectId = '';
+function openOwnerRejectModal(id) {
+  _ownerRejectId = id;
+  const inp = document.getElementById('rejectReason');
+  if (inp) inp.value = '';
+  const titleEl = document.getElementById('rejectModalComplaintId');
+  if (titleEl) titleEl.textContent = id;
+  showModal('rejectModal');
+  /* Override submitReject for this context */
+  window._ownerRejectMode = true;
+}
+
+/* Patch submitReject to handle owner complaints too */
+const _origSubmitReject = window.submitReject;
+window.submitReject = function() {
+  if (window._ownerRejectMode) {
+    const r = (document.getElementById('rejectReason') || {}).value || '';
+    if (!r.trim()) { showToast('Please enter a rejection reason.'); return; }
+    bridgeRejectComplaint(_ownerRejectId, r.trim());
+    hideModal('rejectModal');
+    showToast(`Owner complaint ${_ownerRejectId} rejected.`);
+    window._ownerRejectMode = false;
+    updateOwnerBadge();
+    renderTable();
+    addNotification('cross', '#FEE2E2', 'Owner Complaint Rejected',
+      `Complaint ${_ownerRejectId} from owner was rejected. Reason sent back.`, 'all', false);
+  } else {
+    if (typeof _origSubmitReject === 'function') _origSubmitReject();
+  }
+};
+
+/* ── Main table renderer ── */
 function renderTable() {
-  complaints = getComplaints();
   const search   = document.getElementById('searchId').value.toLowerCase();
   const priority = document.getElementById('priorityFilter').value;
+
+  /* Owner tab uses bridge data */
+  if (currentTab === 'owner') {
+    renderOwnerComplaints(search);
+    return;
+  }
+
+  complaints = getComplaints();
+
+  // ✅ FIX: merge ALL bridge owner-complaints (pending/approved/rejected) into tabs
+  const bridgeAll = (typeof bridgeGetAll === 'function') ? bridgeGetAll() : [];
+  const bridgeStatusMap = { pending: 'Pending', approved: 'Approved', rejected: 'Rejected' };
+  const bridgeMapped = bridgeAll.map(bc => ({
+    id: String(bc.id),
+    issue: bc.title,
+    location: bc.location || 'Property',
+    priority: bc.urgency || 'Medium',
+    status: bridgeStatusMap[bc.status] || 'Pending',
+    subStatus: bc.status === 'approved' ? 'Forwarded to Provider' : '',
+    submitted: bc.submittedOn || '—',
+    deadline: bc.deadline || '—',
+    provider: bc.issuedBy || '',
+    rejectionReason: bc.rejectionReason || '',
+    _isOwnerComplaint: true,
+  }));
+  const existingIds = new Set(complaints.map(c => String(c.id)));
+  const merged = [...complaints, ...bridgeMapped.filter(bc => !existingIds.has(bc.id))];
+
   const statusMap = {all:'',pending:'Pending',approved:'Approved',inprogress:'In Progress',completed:'Completed',payment:'Payment Pending',rejected:'Rejected'};
-  let data = complaints.filter(c => {
+  let data = merged.filter(c => {
     if (search && !c.id.toLowerCase().includes(search) && !c.issue.toLowerCase().includes(search)) return false;
     if (priority && c.priority !== priority) return false;
     const want = statusMap[currentTab];
@@ -149,7 +307,7 @@ function renderTable() {
   });
 
   const heads = {
-    all:        ['ID','Issue','Location','Priority','Status','Provider','Submitted','Deadline','Action'],
+    all:        ['ID','Issue','Location','Priority','Status','Provider','Submitted','Deadline'],
     pending:    ['ID','Issue','Location','Priority','Submitted','Action'],
     approved:   ['ID','Issue','Location','Priority','Status','Submitted','Deadline','Action'],
     inprogress: ['ID','Issue','Location','Priority','Provider','Submitted','Deadline','Details'],
@@ -169,16 +327,8 @@ function renderTable() {
     const link = `<a class="complaint-link" href="complaint-details.html?id=${c.id}">${c.id}</a>`;
     const pb = priorityBadge(c.priority);
     const sb = statusBadge(c.status, c.subStatus);
-    if (currentTab==='all') {
-      let actionCell = '';
-      if (c.status === 'Pending') {
-        actionCell = `<button class="btn btn-success btn-sm" onclick="doApprove('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openRejectModal('${c.id}')">Reject</button>`;
-      } else {
-        actionCell = `<a class="complaint-link" href="complaint-details.html?id=${c.id}">View</a>`;
-      }
-      return `<tr><td>${link}</td><td>${c.issue}</td><td style="font-size:12px;color:#6B7280;">${c.location}</td><td>${pb}</td><td>${sb}</td><td>${c.provider||'<span style="color:#9CA3AF;">—</span>'}</td><td>${c.submitted}</td><td>${c.deadline||'—'}</td><td>${actionCell}</td></tr>`;
-    }
-    if (currentTab==='pending') return `<tr><td>${link}</td><td>${c.issue}</td><td style="font-size:12px;color:#6B7280;">${c.location}</td><td>${pb}</td><td>${c.submitted}</td><td><button class="btn btn-success btn-sm" onclick="doApprove('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openRejectModal('${c.id}')">Reject</button></td></tr>`;
+    if (currentTab==='all') return `<tr><td>${link}</td><td>${c.issue}</td><td style="font-size:12px;color:#6B7280;">${c.location}</td><td>${pb}</td><td>${sb}</td><td>${c.provider||'<span style="color:#9CA3AF;">—</span>'}</td><td>${c.submitted}</td><td>${c.deadline||'—'}</td></tr>`;
+    if (currentTab==='pending') { const ownerTag = c._isOwnerComplaint ? '<span style="background:#EFF6FF;color:#1D4ED8;font-size:11px;padding:1px 6px;border-radius:4px;margin-left:4px;">Owner</span>' : ''; const approveAction = c._isOwnerComplaint ? `<button class="btn btn-success btn-sm" onclick="doApproveOwner('${c.id}')">✓ Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openOwnerRejectModal('${c.id}')">✗ Reject</button>` : `<button class="btn btn-success btn-sm" onclick="doApprove('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openRejectModal('${c.id}')">Reject</button>`; return `<tr><td>${link}</td><td>${c.issue}${ownerTag}</td><td style="font-size:12px;color:#6B7280;">${c.location}</td><td>${pb}</td><td>${c.submitted}</td><td>${approveAction}</td></tr>`; }
     if (currentTab==='approved') {
       let act = '';
       if (c.subStatus==='Waiting Provider Response') act = `<span class="badge badge-waiting">Waiting Response</span>`;
@@ -203,6 +353,12 @@ function doApprove(id, btn) {
 
 document.addEventListener('DOMContentLoaded', () => {
   _rejectCallback = () => { complaints = getComplaints(); renderTable(); };
+  updateOwnerBadge();
+  // ✅ FIX: support #approved anchor from nav sidebar
+  if (location.hash === '#approved') {
+    const approvedBtn = [...document.querySelectorAll('.tab')].find(t => t.textContent.trim() === 'Approved');
+    if (approvedBtn) { currentTab = 'approved'; approvedBtn.classList.add('active'); document.querySelectorAll('.tab').forEach(t => { if (t !== approvedBtn) t.classList.remove('active'); }); }
+  }
   renderTable();
 });
 </script>
