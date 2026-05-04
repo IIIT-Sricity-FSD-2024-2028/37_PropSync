@@ -91,7 +91,7 @@ async function rejectComplaintById(id, reason) {
 }
 
 /* ============================================================
-   PROVIDERS  (static data – no backend endpoint yet)
+   PROVIDERS (Fetched from backend + local fallback)
    ============================================================ */
 const providers = [
   {
@@ -167,6 +167,32 @@ const providers = [
     trend: "",
   },
 ];
+
+async function fetchBackendProviders() {
+  try {
+    const res = await fetch(`${MM_API}/api/users?role=service_provider`, { headers: MM_HEADERS });
+    if (res.ok) {
+      const backendUsers = await res.json();
+      const mapped = backendUsers.map(u => ({
+        name: u.name,
+        specialty: u.specialty || "General",
+        rating: 5.0,
+        jobs: 0,
+        onTime: 100,
+        avgCost: 0,
+        trend: "up"
+      }));
+      mapped.forEach(sp => {
+        if (!providers.some(p => p.name === sp.name)) {
+          providers.push(sp);
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Error fetching backend providers:", err);
+  }
+}
+fetchBackendProviders();
 
 const providerReviews = {
   "Urban Lift Repairs": [

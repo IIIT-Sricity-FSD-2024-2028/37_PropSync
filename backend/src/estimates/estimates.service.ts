@@ -24,7 +24,7 @@ export class EstimatesService {
     return getEstimates();
   }
 
-  updateStatus(id: string, status: 'approved' | 'rejected'): ServiceEstimate {
+  updateStatus(id: string, status: 'approved' | 'rejected'): ServiceEstimate | null {
     const estimates = getEstimates();
     const estimateIndex = estimates.findIndex((e) => e.id === id);
     if (estimateIndex !== -1) {

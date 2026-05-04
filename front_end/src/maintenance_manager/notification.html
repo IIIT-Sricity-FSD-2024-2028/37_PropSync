@@ -386,6 +386,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     o.textContent = `${c.id} – ${c.issue} (${c.location})`;
     sel.appendChild(o);
   });
+
+  const pSel = document.getElementById('targetProvider');
+  if (pSel && typeof providers !== 'undefined') {
+    pSel.innerHTML = '<option value="">— All Service Providers —</option>' +
+      providers.map(p => `<option>${p.name}</option>`).join('');
+  }
+
   await renderNotifs();
 });
 

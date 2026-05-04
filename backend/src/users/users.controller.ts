@@ -102,7 +102,7 @@ export class UsersController {
 
   // ─── USERS (admin) ────────────────────────────────────────
   @Get('users')
-  @Roles(Role.ADMINISTRATOR, Role.SUPER_USER)
+  @Roles(Role.ADMINISTRATOR, Role.SUPER_USER, Role.MAINTENANCE_MANAGER)
   @ApiOperation({ summary: 'Get all users with optional role filter' })
   @ApiSecurity('role-header')
   @ApiHeader({

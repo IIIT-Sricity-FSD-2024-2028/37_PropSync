@@ -924,10 +924,10 @@
         </div>
         <div class="bottom-card">
           <h3>Top Provider</h3>
-          <div style="font-size: 14px; font-weight: 700">
+          <div style="font-size: 14px; font-weight: 700" id="dashTopProviderName">
             Urban Lift Repairs
           </div>
-          <div style="font-size: 12px; color: #6b7280; margin-top: 3px">
+          <div style="font-size: 12px; color: #6b7280; margin-top: 3px" id="dashTopProviderMeta">
             4.9 &#11088; &middot; 98% on-time &middot; 54 jobs
           </div>
           <a
@@ -1207,6 +1207,13 @@
         await renderKPIs();
         await renderDashboardComplaints();
         await renderDashNotifs();
+        if (typeof providers !== 'undefined' && providers.length > 0) {
+          const top = [...providers].sort((a, b) => b.rating - a.rating)[0];
+          const nameEl = document.getElementById('dashTopProviderName');
+          const metaEl = document.getElementById('dashTopProviderMeta');
+          if (nameEl && top) nameEl.textContent = top.name;
+          if (metaEl && top) metaEl.innerHTML = `${top.rating} &#11088; &middot; ${top.onTime}% on-time &middot; ${top.jobs} jobs`;
+        }
       });
     </script>
   </body>

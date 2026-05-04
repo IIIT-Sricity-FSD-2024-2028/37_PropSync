@@ -38,20 +38,18 @@ async function buildPage() {
   const completed      = tasks.filter(t => t.status === 'Completed').length;
   const pendingEst     = tasks.filter(t => !t.estimateSubmitted).length;
 
-  // Recent complaints — show accepted/assigned tasks on dashboard (not unaccepted available)
-  const recentComplaints = tasks.length > 0
-    ? tasks.slice(0, 3).map(t => ({
-        id: t.id,
-        issueType: t.issueType,
-        title: t.title,
-        description: t.description,
-        imageUrl: t.image || 'https://placehold.co/128x128/e5e7eb/6b7280?text=Image',
-        location: t.location,
-        deadline: t.deadline,
-        accepted: true,
-        status: t.status
-      }))
-    : complaints.filter(c => c.accepted).slice(0, 3);
+  // Recent complaints — show both unassigned (Approved) and assigned complaints
+  const recentComplaints = complaints.slice(0, 3).map(c => ({
+    id: c.id,
+    issueType: c.category || c.issueType,
+    title: c.title,
+    description: c.description,
+    imageUrl: c.image || 'https://placehold.co/128x128/e5e7eb/6b7280?text=Image',
+    location: c.location,
+    deadline: c.deadline || 'TBD',
+    accepted: c.status !== 'Approved',
+    status: c.status
+  }));
 
   // Tasks table — show latest 4 assigned tasks
   const tableTasks = tasks.slice(0, 4);
