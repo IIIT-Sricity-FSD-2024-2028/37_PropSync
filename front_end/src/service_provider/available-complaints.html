@@ -18,18 +18,19 @@ function urgencyClass(u) {
   return { High:'urgency-high', Medium:'urgency-medium', Low:'urgency-low' }[u] || 'urgency-low';
 }
 
-function getFiltered() {
+async function getFiltered() {
   const search   = (document.getElementById('search-input')?.value || '').toLowerCase();
   const location = document.getElementById('location-filter')?.value || 'All';
-  return getAllComplaints().filter(c => {
+  const all = await getAllComplaints();
+  return all.filter(c => {
     const mSearch   = c.id.toLowerCase().includes(search) || c.title.toLowerCase().includes(search);
     const mLocation = location === 'All' || c.location.startsWith(location);
     return mSearch && mLocation;
   });
 }
 
-function renderGrid() {
-  const filtered = getFiltered();
+async function renderGrid() {
+  const filtered = await getFiltered();
   const grid = document.getElementById('complaints-grid');
   if (!grid) return;
 
@@ -82,8 +83,8 @@ function renderGrid() {
   }
 }
 
-function openModal(id) {
-  const list = getAllComplaints();
+async function openModal(id) {
+  const list = await getAllComplaints();
   selectedComplaint = list.find(c => c.id === id);
   if (!selectedComplaint) return;
   const c = selectedComplaint;
@@ -123,24 +124,24 @@ function closeModal() {
   selectedComplaint = null;
 }
 
-function handleAccept(id) {
-  acceptComplaint(id); // persists to localStorage + adds to tasks + adds notification
+async function handleAccept(id) {
+  await acceptComplaint(id); // persists to localStorage + adds to tasks + adds notification
   document.getElementById('modal-actions').innerHTML = `
     <div class="modal-accepted">
       <p class="main">✓ Added to Your Assigned Tasks</p>
       <p class="sub">You can view this in <a href="assigned-tasks.html" style="color:#42a443;font-weight:700;">Assigned Tasks</a></p>
     </div>`;
-  renderGrid();
+  await renderGrid();
 }
 
-function handleReject(id) {
-  rejectComplaint(id);
+async function handleReject(id) {
+  await rejectComplaint(id);
   closeModal();
-  renderGrid();
+  await renderGrid();
 }
 
-function buildPage() {
-  initShell('complaints');
+async function buildPage() {
+  await initShell('complaints');
   const content = document.getElementById('page-content');
   content.innerHTML = `
     <div class="page-header">
@@ -246,7 +247,7 @@ function buildPage() {
 
   document.getElementById('search-input').addEventListener('input', renderGrid);
   document.getElementById('location-filter').addEventListener('change', renderGrid);
-  renderGrid();
+  await renderGrid();
 }
 
 document.addEventListener('DOMContentLoaded', buildPage);

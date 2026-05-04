@@ -22,15 +22,16 @@ function statusBadge(status) {
   return `<span class="badge ${statusClass(status)}">${status}</span>`;
 }
 
-function buildPage() {
-  initShell('dashboard');
+async function buildPage() {
+  await initShell('dashboard');
   const content = document.getElementById('page-content');
 
-  // Live data from localStorage
-  const tasks      = getTasksArray();
-  const complaints = getAllComplaints();
-  const profile    = getProfile();
-  const notifs     = getNotifications().slice(0, 3);
+  // Live data from backend
+  const tasks      = await getTasksArray();
+  const complaints = await getAllComplaints();
+  const profile    = await getProfile();
+  const notifsList = await getNotifications();
+  const notifs     = notifsList.slice(0, 3);
 
   const totalAssigned  = tasks.length;
   const inProgress     = tasks.filter(t => t.status === 'In Progress').length;
@@ -63,11 +64,9 @@ function buildPage() {
     completion:    { cls:'notif-icon-teal',   icon:'check-circle' },
   };
 
-  const feedbacks = [
-    { name:'Sarah Johnson', rating:5, comment:'Excellent work! Very professional and quick service.',   date:'Mar 4, 2026' },
-    { name:'Michael Chen',  rating:4, comment:'Good service, minor delay but quality work.',             date:'Mar 2, 2026' },
-    { name:'Emily Davis',   rating:5, comment:'Outstanding service! Highly recommended.',               date:'Feb 28, 2026' },
-  ];
+  const feedbacksList = await getRatings();
+  const feedbacks = feedbacksList.slice(0, 3);
+  const unreadCount = await getUnreadCount();
 
   content.innerHTML = `
     <div class="page-header">
@@ -128,7 +127,7 @@ function buildPage() {
                     </button>
                   </div>` : `
                   <div style="margin-top:8px;">
-                    <a href="assigned-tasks.html" class="btn-link" style="font-size:0.82rem;">View in Assigned Tasks →</a>
+                    <a href="task-details.html?task=${c.id}" class="btn-link" style="font-size:0.82rem;">View Details →</a>
                   </div>`}
                 </div>
               </div>
@@ -142,7 +141,7 @@ function buildPage() {
           <div class="notif-panel-header">
             <div class="notif-panel-title">
               <h2 style="font-size:1.05rem;font-weight:700;">Notifications</h2>
-              <span class="notif-count-badge">${getUnreadCount()}</span>
+              <span class="notif-count-badge">${unreadCount}</span>
             </div>
             <button class="btn-link" onclick="location.href='notifications.html'">View All <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
           </div>
@@ -150,12 +149,12 @@ function buildPage() {
             notifs.map(n => {
               const cfg = notifIconMap[n.type] || notifIconMap.assignment;
               return `
-              <div class="notif-item" onclick="location.href='notifications.html'" style="${!n.read?'background:rgba(66,164,67,0.04);border-left:3px solid #42a443;border-radius:8px;':''}">
+              <div class="notif-item" onclick="location.href='notifications.html'" style="${!n.isRead?'background:rgba(66,164,67,0.04);border-left:3px solid #42a443;border-radius:8px;':''}">
                 <div class="notif-icon-wrap ${cfg.cls}">${svgIcons[cfg.icon]}</div>
                 <div class="notif-info">
-                  <p class="notif-title">${n.title}${!n.read?'<span style="background:#42a443;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:999px;margin-left:6px;font-weight:700;">New</span>':''}</p>
+                  <p class="notif-title">${n.title}${!n.isRead?'<span style="background:#42a443;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:999px;margin-left:6px;font-weight:700;">New</span>':''}</p>
                   <p class="notif-msg">${n.message}</p>
-                  <p class="notif-time">${n.timestamp}</p>
+                  <p class="notif-time">${n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}</p>
                 </div>
               </div>`;
             }).join('')}
@@ -216,8 +215,8 @@ function buildPage() {
           <div class="feedback-item">
             <div class="feedback-header">
               <div class="feedback-user">
-                <div class="feedback-avatar">${f.name[0]}</div>
-                <div><div class="feedback-name">${f.name}</div><div class="feedback-date">${f.date}</div></div>
+                <div class="feedback-avatar">${f.ownerName ? f.ownerName[0] : 'U'}</div>
+                <div><div class="feedback-name">${f.ownerName}</div><div class="feedback-date">${f.date}</div></div>
               </div>
               ${renderStars(f.rating, 12)}
             </div>
@@ -228,14 +227,14 @@ function buildPage() {
   `;
 }
 
-// Dashboard inline accept/reject — persists to localStorage
-function dashAccept(id) {
-  acceptComplaint(id);
-  buildPage(); // re-render with updated state
+// Dashboard inline accept/reject — persists to backend
+async function dashAccept(id) {
+  await acceptComplaint(id);
+  await buildPage(); // re-render with updated state
 }
-function dashReject(id) {
-  rejectComplaint(id);
-  buildPage();
+async function dashReject(id) {
+  await rejectComplaint(id);
+  await buildPage();
 }
 
 document.addEventListener('DOMContentLoaded', buildPage);

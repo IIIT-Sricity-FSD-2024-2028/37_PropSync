@@ -35,12 +35,12 @@ function progressConnector(done) {
   return `<div class="progress-connector ${done ? 'done' : 'pending'}"></div>`;
 }
 
-function buildPage() {
-  initShell('tasks');
+async function buildPage() {
+  await initShell('tasks');
   const taskId = getParam('task');
   const content = document.getElementById('page-content');
 
-  const task = taskId ? getTask(taskId) : null;
+  const task = taskId ? await getTask(taskId) : null;
 
   if (!task) {
     content.innerHTML = `

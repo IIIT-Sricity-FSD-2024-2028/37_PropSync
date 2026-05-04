@@ -66,48 +66,6 @@ function isValidEmail(email) {
 }
 
 // ─────────────────────────────────────────────────────────────
-// USER STORE
-// Hardcoded fallback ensures login works even when fetch fails
-// (file:// protocol, network error, or slow async timing)
-// ─────────────────────────────────────────────────────────────
-const FALLBACK_USERS = [
-  { email: "johndoe@gmail.com", password: "123456", role: "Owner" },
-  { email: "johndoe@gmail.com", password: "123456", role: "Service Provider" },
-  {
-    email: "johndoe@gmail.com",
-    password: "123456",
-    role: "Maintenance Manager",
-  },
-  { email: "johndoe@gmail.com", password: "123456", role: "Administrator" },
-];
-
-let users = [...FALLBACK_USERS];
-
-// Kick off fetch immediately; login awaits this before searching
-const usersFetchPromise = (async () => {
-  const paths = ["../data/users.json", "./data/users.json", "data/users.json"];
-  for (const path of paths) {
-    try {
-      const res = await fetch(path);
-      if (!res.ok) continue;
-      const jsonUsers = await res.json();
-      if (!Array.isArray(jsonUsers) || jsonUsers.length === 0) continue;
-
-      let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
-      if (!Array.isArray(localUsers)) localUsers = [localUsers];
-      users = [...jsonUsers, ...localUsers];
-      return; // success — stop trying
-    } catch (_) {
-      // try next path
-    }
-  }
-  // All fetches failed — merge fallback + any local signups
-  let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
-  if (!Array.isArray(localUsers)) localUsers = [localUsers];
-  users = [...FALLBACK_USERS, ...localUsers];
-})();
-
-// ─────────────────────────────────────────────────────────────
 // LOGIN
 // ─────────────────────────────────────────────────────────────
 const loginBtn = document.querySelector(".btn");
@@ -136,20 +94,26 @@ async function searchUser() {
     return;
   }
 
-  // Always wait for the fetch to finish before searching
-  await usersFetchPromise;
+  try {
+    const response = await fetch("http://localhost:3000/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, role: selectedRoleLogin }),
+    });
+    const data = await response.json();
 
-  const user = users.find(
-    (u) =>
-      u.email.toLowerCase() === email.toLowerCase() &&
-      u.password === password &&
-      u.role.toLowerCase() === selectedRoleLogin.toLowerCase(),
-  );
+    if (!response.ok) {
+      throw new Error(data.message || "Invalid credentials");
+    }
 
-  if (user) {
-    errorBox.classList.remove("show");
     alert("Login Successful");
+    // store token (optional)
+    localStorage.setItem("user", JSON.stringify(data.user));
+    localStorage.setItem("role", data.role);
 
+    // Redirect
     if (selectedRoleLogin === "Owner")
       window.location.href = "./owner/dashboard.html";
     else if (selectedRoleLogin === "Service Provider")
@@ -157,9 +121,8 @@ async function searchUser() {
     else if (selectedRoleLogin === "Maintenance Manager")
       window.location.href = "./maintenance_manager/dashboard.html";
     else window.location.href = "./admin/index.html";
-  } else {
-    errorBox.textContent =
-      "Invalid credentials. Please check your email, password, and selected role.";
+  } catch (err) {
+    errorBox.textContent = err.message || "Something went wrong.";
     errorBox.classList.add("show");
   }
 }
@@ -167,7 +130,7 @@ async function searchUser() {
 // ─────────────────────────────────────────────────────────────
 // SIGNUP
 // ─────────────────────────────────────────────────────────────
-signUpBtn.addEventListener("click", function (e) {
+signUpBtn.addEventListener("click", async function (e) {
   e.preventDefault();
   const errorBox = document.querySelector("#signupError");
   errorBox.classList.remove("show");
@@ -208,9 +171,9 @@ signUpBtn.addEventListener("click", function (e) {
   if (selectedRoleSignUp === "Owner") {
     propertyUnit = inputs[2].value.trim();
     communityName = inputs[3].value.trim();
+
     if (!propertyUnit || !communityName) {
-      errorBox.textContent =
-        "Please enter your Property Unit and Community Name.";
+      errorBox.textContent = "Please enter Property Unit and Community Name.";
       errorBox.classList.add("show");
       return;
     }
@@ -219,43 +182,47 @@ signUpBtn.addEventListener("click", function (e) {
     selectedRoleSignUp === "Administrator"
   ) {
     communityName = inputs[2].value.trim();
+
     if (!communityName) {
-      errorBox.textContent = "Please enter your Community Name.";
+      errorBox.textContent = "Please enter Community Name.";
       errorBox.classList.add("show");
       return;
     }
   }
 
-  const exists = users.find(
-    (u) =>
-      u.email.toLowerCase() === email.toLowerCase() &&
-      u.role.toLowerCase() === selectedRoleSignUp.toLowerCase(),
-  );
+  try {
+    // CALL BACKEND
+    const response = await fetch("http://localhost:3000/auth/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        role: selectedRoleSignUp,
+        propertyUnit,
+        communityName,
+      }),
+    });
 
-  if (exists) {
-    errorBox.textContent = "A user already exists with this email and role.";
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Signup failed");
+    }
+
+    alert(data.message || "Account created successfully!");
+
+    // clear form
+    inputs.forEach((input) => (input.value = ""));
+
+    // go to login screen
+    document.querySelectorAll(".toggleBtn")[1].click();
+  } catch (err) {
+    errorBox.textContent = err.message || "Something went wrong.";
     errorBox.classList.add("show");
-    return;
   }
-
-  const newUser = {
-    id: Date.now(),
-    email,
-    password,
-    role: selectedRoleSignUp,
-    propertyUnit,
-    communityName,
-  };
-
-  let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
-  if (!Array.isArray(localUsers)) localUsers = [localUsers];
-  localUsers.push(newUser);
-  localStorage.setItem("newUsers", JSON.stringify(localUsers));
-  users.push(newUser);
-
-  alert("Account successfully created! Please log in.");
-  inputs.forEach((input) => (input.value = ""));
-  document.querySelectorAll(".toggleBtn")[1].click();
 });
 
 // ─────────────────────────────────────────────────────────────

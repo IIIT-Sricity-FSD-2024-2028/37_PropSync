@@ -1,254 +1,97 @@
-/* PropSync app.js – unified shared JS */
+/* PropSync maintenance_manager.js – unified shared JS (Backend-driven) */
 
 /* ============================================================
-   COMPLAINTS
+   BACKEND CONFIG
    ============================================================ */
-function getComplaints() {
-  const stored = sessionStorage.getItem("ps_complaints");
-  if (stored) return JSON.parse(stored);
-  const defaults = [
-    {
-      id: "C-2410",
-      issue: "Water Leakage",
-      location: "Building A, Apt 102",
-      priority: "High",
-      status: "Pending",
-      subStatus: "",
-      submitted: "2024-03-08",
-      deadline: "2024-03-12",
-      provider: "",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2409",
-      issue: "AC Not Cooling",
-      location: "Tower B, Apt 305",
-      priority: "Medium",
-      status: "Pending",
-      subStatus: "",
-      submitted: "2024-03-07",
-      deadline: "2024-03-14",
-      provider: "",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2408",
-      issue: "Electrical Issue",
-      location: "Tower B, Apt 304",
-      priority: "High",
-      status: "Approved",
-      subStatus: "Waiting Provider Response",
-      submitted: "2024-03-06",
-      deadline: "2024-03-13",
-      provider: "",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2407",
-      issue: "Plumbing Problem",
-      location: "Building C, Apt 201",
-      priority: "Medium",
-      status: "Approved",
-      subStatus: "Waiting Cost Approval",
-      submitted: "2024-03-05",
-      deadline: "2024-03-15",
-      provider: "QuickFix Plumbing",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2406",
-      issue: "Door Lock Repair",
-      location: "Building A, Apt 305",
-      priority: "Low",
-      status: "Approved",
-      subStatus: "Provider Assigned",
-      submitted: "2024-03-04",
-      deadline: "2024-03-16",
-      provider: "SecureFix Services",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2405",
-      issue: "Paint Work",
-      location: "Tower C, Apt 101",
-      priority: "Low",
-      status: "In Progress",
-      subStatus: "",
-      submitted: "2024-03-03",
-      deadline: "2024-03-17",
-      provider: "ProPaint Co.",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2404",
-      issue: "Window Repair",
-      location: "Building B, Apt 409",
-      priority: "Medium",
-      status: "In Progress",
-      subStatus: "",
-      submitted: "2024-03-02",
-      deadline: "2024-03-10",
-      provider: "GlassFix Solutions",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2403",
-      issue: "Lift Maintenance",
-      location: "Main Building",
-      priority: "High",
-      status: "Completed",
-      subStatus: "",
-      submitted: "2024-02-25",
-      deadline: "2024-03-05",
-      provider: "Urban Lift Repairs",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2402",
-      issue: "Ceiling Fan Not Working",
-      location: "Tower A, Apt 210",
-      priority: "Low",
-      status: "Completed",
-      subStatus: "",
-      submitted: "2024-02-22",
-      deadline: "2024-03-01",
-      provider: "UrbanFix Electrical",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2401",
-      issue: "AC Not Cooling",
-      location: "Building D, Apt 102",
-      priority: "Medium",
-      status: "Payment Pending",
-      subStatus: "",
-      submitted: "2024-02-20",
-      deadline: "2024-02-28",
-      provider: "CoolAir Services",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2400",
-      issue: "Water Leakage",
-      location: "Tower B, Apt 102",
-      priority: "High",
-      status: "Rejected",
-      subStatus: "",
-      submitted: "2024-02-18",
-      deadline: "",
-      provider: "",
-      rejectionReason: "Duplicate complaint",
-    },
-    {
-      id: "C-2399",
-      issue: "AC Not Cooling",
-      location: "Building A, Apt 410",
-      priority: "Medium",
-      status: "Payment Pending",
-      subStatus: "",
-      submitted: "2024-03-04",
-      deadline: "2024-03-20",
-      provider: "CoolAir Services",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2398",
-      issue: "Boiler Servicing",
-      location: "Basement Block B",
-      priority: "High",
-      status: "Payment Pending",
-      subStatus: "",
-      submitted: "2024-03-03",
-      deadline: "2024-03-18",
-      provider: "HeatPro Services",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2395",
-      issue: "Sink Blockage",
-      location: "Building C, Apt 303",
-      priority: "Low",
-      status: "Completed",
-      subStatus: "",
-      submitted: "2024-02-26",
-      deadline: "2024-03-01",
-      provider: "QuickFix Plumbing",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2390",
-      issue: "AC Repair",
-      location: "Tower A, Apt 101",
-      priority: "Medium",
-      status: "Completed",
-      subStatus: "",
-      submitted: "2024-02-14",
-      deadline: "2024-02-20",
-      provider: "CoolAir Services",
-      rejectionReason: "",
-    },
-    {
-      id: "C-2385",
-      issue: "Lift Maintenance",
-      location: "Main Building",
-      priority: "High",
-      status: "Completed",
-      subStatus: "",
-      submitted: "2024-02-10",
-      deadline: "2024-02-15",
-      provider: "Urban Lift Repairs",
-      rejectionReason: "",
-    },
-  ];
-  sessionStorage.setItem("ps_complaints", JSON.stringify(defaults));
-  return defaults;
-}
+const MM_API = "http://localhost:3000";
+const MM_HEADERS = {
+  "Content-Type": "application/json",
+  "role": "maintenance_manager",
+  "user-email": "manager@propsync.com",
+};
 
-let complaints = getComplaints();
+/* ============================================================
+   COMPLAINTS  (fetched from backend)
+   ============================================================ */
 
-function saveComplaints(data) {
-  complaints = data;
-  sessionStorage.setItem("ps_complaints", JSON.stringify(data));
-}
-
-function approveComplaintById(id) {
-  const data = getComplaints();
-  const c = data.find((x) => x.id === id);
-  if (c) {
-    c.status = "Approved";
-    c.subStatus = "Provider Assigned";
-    saveComplaints(data);
-    addNotification(
-      "checkmark",
-      "#DCFCE7",
-      "Complaint Approved",
-      `Complaint ${id} (${c.issue}) approved and moved to Approved Complaints`,
-      "all",
-      false,
-    );
+/**
+ * Fetch all complaints from backend.
+ * Normalizes backend field names to the ones used by the HTML templates.
+ */
+async function getComplaints() {
+  try {
+    const res = await fetch(`${MM_API}/complaints`, { headers: MM_HEADERS });
+    if (!res.ok) throw new Error("Failed");
+    const data = await res.json();
+    // Normalize backend → frontend field names
+    return data.map((c) => ({
+      id: c.id,
+      issue: c.title || c.category || "Untitled",
+      location: c.location || "",
+      priority: c.priority || "Medium",
+      status: c.status || "Pending",
+      subStatus: c.subStatus || "",
+      submitted: c.reportedDate || "",
+      deadline: c.deadline || "",
+      provider: c.assignedTo || "",
+      rejectionReason: c.rejectionReason || "",
+      // Keep raw fields too for detail views
+      title: c.title,
+      category: c.category,
+      description: c.description,
+      issuedBy: c.issuedBy,
+      image: c.image,
+      serviceProviderQueue: c.serviceProviderQueue || [],
+      reportedDate: c.reportedDate,
+      assignedTo: c.assignedTo,
+    }));
+  } catch (err) {
+    console.error("getComplaints error:", err);
+    return [];
   }
 }
 
-function rejectComplaintById(id, reason) {
-  const data = getComplaints();
-  const c = data.find((x) => x.id === id);
-  if (c) {
-    c.status = "Rejected";
-    c.rejectionReason = reason;
-    saveComplaints(data);
-    addNotification(
+async function approveComplaintById(id) {
+  try {
+    await fetch(`${MM_API}/complaints/${id}/approved`, {
+      method: "PATCH",
+      headers: MM_HEADERS,
+    });
+    await addNotification(
+      "checkmark",
+      "#DCFCE7",
+      "Complaint Approved",
+      `Complaint ${id} approved and moved to Approved Complaints`,
+      "all",
+      false
+    );
+  } catch (err) {
+    console.error("approveComplaintById error:", err);
+  }
+}
+
+async function rejectComplaintById(id, reason) {
+  try {
+    await fetch(`${MM_API}/complaints/${id}/rejected`, {
+      method: "PATCH",
+      headers: MM_HEADERS,
+      body: JSON.stringify({ reason }),
+    });
+    await addNotification(
       "cross",
       "#FEE2E2",
       "Complaint Rejected",
       `Complaint ${id} rejected. Rejection reason sent to resident.`,
       "all",
-      false,
+      false
     );
+  } catch (err) {
+    console.error("rejectComplaintById error:", err);
   }
 }
 
 /* ============================================================
-   PROVIDERS
+   PROVIDERS  (static data – no backend endpoint yet)
    ============================================================ */
 const providers = [
   {
@@ -327,288 +170,103 @@ const providers = [
 
 const providerReviews = {
   "Urban Lift Repairs": [
-    {
-      author: "Rajesh Kumar",
-      date: "2024-03-01",
-      rating: 5,
-      text: "Excellent service! The team was on time and very professional. Lift is running perfectly now.",
-    },
-    {
-      author: "Priya Sharma",
-      date: "2024-02-15",
-      rating: 5,
-      text: "Outstanding work. Completed the maintenance ahead of schedule with zero disruption.",
-    },
-    {
-      author: "Amit Patel",
-      date: "2024-02-05",
-      rating: 5,
-      text: "Best elevator maintenance company we have worked with. Highly recommend.",
-    },
+    { author: "Rajesh Kumar", date: "2024-03-01", rating: 5, text: "Excellent service! The team was on time and very professional. Lift is running perfectly now." },
+    { author: "Priya Sharma", date: "2024-02-15", rating: 5, text: "Outstanding work. Completed the maintenance ahead of schedule with zero disruption." },
+    { author: "Amit Patel", date: "2024-02-05", rating: 5, text: "Best elevator maintenance company we have worked with. Highly recommend." },
   ],
   "CoolAir Services": [
-    {
-      author: "Sunita Reddy",
-      date: "2024-03-03",
-      rating: 5,
-      text: "Very responsive. Fixed the AC issue within 2 hours of being assigned.",
-    },
-    {
-      author: "Mohan Das",
-      date: "2024-02-20",
-      rating: 5,
-      text: "Professional team, quick diagnosis. AC running better than ever.",
-    },
-    {
-      author: "Kavitha Nair",
-      date: "2024-02-12",
-      rating: 4,
-      text: "Good service. Slightly delayed but quality of work was top-notch.",
-    },
+    { author: "Sunita Reddy", date: "2024-03-03", rating: 5, text: "Very responsive. Fixed the AC issue within 2 hours of being assigned." },
+    { author: "Mohan Das", date: "2024-02-20", rating: 5, text: "Professional team, quick diagnosis. AC running better than ever." },
+    { author: "Kavitha Nair", date: "2024-02-12", rating: 4, text: "Good service. Slightly delayed but quality of work was top-notch." },
   ],
   "QuickFix Plumbing": [
-    {
-      author: "Ravi Shankar",
-      date: "2024-03-02",
-      rating: 5,
-      text: "Fixed the blockage quickly and cleaned up after. Very satisfied.",
-    },
-    {
-      author: "Deepa Menon",
-      date: "2024-02-25",
-      rating: 4,
-      text: "Reliable plumber. Showed up on time and resolved the issue completely.",
-    },
-    {
-      author: "Suresh Babu",
-      date: "2024-02-18",
-      rating: 5,
-      text: "Excellent work! The issue was more complex than expected but handled well.",
-    },
+    { author: "Ravi Shankar", date: "2024-03-02", rating: 5, text: "Fixed the blockage quickly and cleaned up after. Very satisfied." },
+    { author: "Deepa Menon", date: "2024-02-25", rating: 4, text: "Reliable plumber. Showed up on time and resolved the issue completely." },
+    { author: "Suresh Babu", date: "2024-02-18", rating: 5, text: "Excellent work! The issue was more complex than expected but handled well." },
   ],
   "GlassFix Solutions": [
-    {
-      author: "Ananya Singh",
-      date: "2024-02-28",
-      rating: 5,
-      text: "Window replacement done cleanly and efficiently. Very happy with the outcome.",
-    },
-    {
-      author: "Vikram Rao",
-      date: "2024-02-10",
-      rating: 4,
-      text: "Good work, neat finish. Would recommend for glass and window work.",
-    },
+    { author: "Ananya Singh", date: "2024-02-28", rating: 5, text: "Window replacement done cleanly and efficiently. Very happy with the outcome." },
+    { author: "Vikram Rao", date: "2024-02-10", rating: 4, text: "Good work, neat finish. Would recommend for glass and window work." },
   ],
   "UrbanFix Electrical": [
-    {
-      author: "Lakshmi Iyer",
-      date: "2024-03-05",
-      rating: 4,
-      text: "Resolved the wiring issue safely. Knowledgeable team.",
-    },
-    {
-      author: "Kiran Kumar",
-      date: "2024-02-22",
-      rating: 3,
-      text: "Work was done but took longer than expected. Communication could be better.",
-    },
-    {
-      author: "Meera Pillai",
-      date: "2024-02-14",
-      rating: 5,
-      text: "Great electrical team. Fixed the MCB issue and explained everything clearly.",
-    },
+    { author: "Lakshmi Iyer", date: "2024-03-05", rating: 4, text: "Resolved the wiring issue safely. Knowledgeable team." },
+    { author: "Kiran Kumar", date: "2024-02-22", rating: 3, text: "Work was done but took longer than expected. Communication could be better." },
+    { author: "Meera Pillai", date: "2024-02-14", rating: 5, text: "Great electrical team. Fixed the MCB issue and explained everything clearly." },
   ],
   "SecureFix Services": [
-    {
-      author: "Rohit Varma",
-      date: "2024-03-01",
-      rating: 4,
-      text: "Good security lock installation. Professional and quick.",
-    },
-    {
-      author: "Pooja Krishnan",
-      date: "2024-02-18",
-      rating: 5,
-      text: "Excellent! Door lock replaced swiftly and securely.",
-    },
+    { author: "Rohit Varma", date: "2024-03-01", rating: 4, text: "Good security lock installation. Professional and quick." },
+    { author: "Pooja Krishnan", date: "2024-02-18", rating: 5, text: "Excellent! Door lock replaced swiftly and securely." },
   ],
   "HeatPro Services": [
-    {
-      author: "Ganesh Murthy",
-      date: "2024-02-28",
-      rating: 3,
-      text: "Work completed but needed a follow-up visit. Quality should improve.",
-    },
-    {
-      author: "Shanti Devi",
-      date: "2024-02-10",
-      rating: 4,
-      text: "Decent service for boiler work. On time and reasonably priced.",
-    },
+    { author: "Ganesh Murthy", date: "2024-02-28", rating: 3, text: "Work completed but needed a follow-up visit. Quality should improve." },
+    { author: "Shanti Devi", date: "2024-02-10", rating: 4, text: "Decent service for boiler work. On time and reasonably priced." },
   ],
   "ProPaint Co.": [
-    {
-      author: "Arun Joseph",
-      date: "2024-02-25",
-      rating: 4,
-      text: "Clean paint job with good quality materials. Took slightly longer than estimated.",
-    },
-    {
-      author: "Uma Rani",
-      date: "2024-02-12",
-      rating: 4,
-      text: "Happy with the painting work. Good attention to detail.",
-    },
+    { author: "Arun Joseph", date: "2024-02-25", rating: 4, text: "Clean paint job with good quality materials. Took slightly longer than estimated." },
+    { author: "Uma Rani", date: "2024-02-12", rating: 4, text: "Happy with the painting work. Good attention to detail." },
   ],
 };
 
 /* ============================================================
-   NOTIFICATIONS  (localStorage for persistence across pages)
-   userCreated: true  → sent by the manager from the notifications form
-   userCreated: false → auto-generated by system actions
+   NOTIFICATIONS  (fetched from backend)
    ============================================================ */
-function getNotifications() {
-  const stored = localStorage.getItem("ps_notifications");
-  if (stored) return JSON.parse(stored);
-  const defaults = [
-    {
-      id: 1,
-      icon: "drop",
-      color: "#DCFCE7",
-      title: "New complaint submitted",
-      desc: "Resident from Building A reported water leakage (C-2410)",
-      time: "5 min ago",
-      unread: true,
-      recipient: "all",
+async function getNotifications() {
+  try {
+    const res = await fetch(`${MM_API}/notifications`, { headers: MM_HEADERS });
+    if (!res.ok) throw new Error("Failed");
+    const data = await res.json();
+    // Normalize backend fields to what the MM templates expect
+    return data.map((n) => ({
+      id: n.id,
+      icon: n.type === "complaint" ? "clipboard" : n.type === "system" ? "bell" : "checkmark",
+      color: n.isRead ? "#F0FDF4" : "#DCFCE7",
+      title: n.title,
+      desc: n.message,
+      time: n.createdAt ? new Date(n.createdAt).toLocaleString() : "Just now",
+      unread: !n.isRead,
+      recipient: n.forRole === "all" ? "all" : n.forRole,
       userCreated: false,
-    },
-    {
-      id: 2,
-      icon: "chart",
-      color: "#FEF3C7",
-      title: "Service estimate received",
-      desc: "CoolAir Services submitted estimate for AC repair (C-2401)",
-      time: "30 min ago",
-      unread: true,
-      recipient: "provider",
-      userCreated: false,
-    },
-    {
-      id: 3,
-      icon: "checkmark",
-      color: "#DCFCE7",
-      title: "Work completed",
-      desc: "Electrical repair completed in Tower B, Apt 304 (C-2395)",
-      time: "2 hrs ago",
-      unread: false,
-      recipient: "all",
-      userCreated: false,
-    },
-    {
-      id: 4,
-      icon: "warn",
-      color: "#FEF3C7",
-      title: "Overdue maintenance request",
-      desc: "Complaint C-2404 is overdue by 2 days",
-      time: "3 hrs ago",
-      unread: false,
-      recipient: "all",
-      userCreated: false,
-    },
-    {
-      id: 5,
-      icon: "wrench",
-      color: "#F0FDF4",
-      title: "Provider assigned",
-      desc: "QuickFix Plumbing assigned to C-2407",
-      time: "Yesterday",
-      unread: false,
-      recipient: "provider",
-      userCreated: false,
-    },
-    {
-      id: 6,
-      icon: "cross",
-      color: "#FEE2E2",
-      title: "Provider declined assignment",
-      desc: "HeatPro Services declined assignment for C-2408",
-      time: "Yesterday",
-      unread: false,
-      recipient: "provider",
-      userCreated: false,
-    },
-    {
-      id: 7,
-      icon: "money",
-      color: "#F0FDF4",
-      title: "Payment processed",
-      desc: "Payment of ₹4500 processed for C-2385",
-      time: "2 days ago",
-      unread: false,
-      recipient: "all",
-      userCreated: false,
-    },
-    {
-      id: 8,
-      icon: "clipboard",
-      color: "#F0FDF4",
-      title: "Complaint awaiting approval",
-      desc: "Complaint C-2410 needs your review",
-      time: "2 days ago",
-      unread: false,
-      recipient: "owner",
-      userCreated: false,
-    },
-  ];
-  localStorage.setItem("ps_notifications", JSON.stringify(defaults));
-  return defaults;
+      // Raw fields
+      isRead: n.isRead,
+      createdAt: n.createdAt,
+      forRole: n.forRole,
+      forUser: n.forUser,
+    }));
+  } catch (err) {
+    console.error("getNotifications error:", err);
+    return [];
+  }
 }
 
-function saveNotifications(notifs) {
-  localStorage.setItem("ps_notifications", JSON.stringify(notifs));
-}
-
-/**
- * addNotification – adds a notification to the store.
- * @param {string} icon
- * @param {string} color
- * @param {string} title
- * @param {string} desc
- * @param {string} recipient  – 'all' | 'owner' | 'resident' | 'provider'
- * @param {boolean} userCreated – true when manager manually sends from the form
- */
-function addNotification(icon, color, title, desc, recipient, userCreated) {
-  const notifs = getNotifications();
-  const time = new Date().toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  notifs.unshift({
-    id: Date.now(),
-    icon,
-    color,
-    title,
-    desc,
-    time: "Just now at " + time,
-    unread: true,
-    recipient: recipient || "all",
-    userCreated: userCreated === true,
-  });
-  saveNotifications(notifs);
-  updateNotifDot();
+async function addNotification(icon, color, title, desc, recipient, userCreated) {
+  try {
+    // Map the old icon/recipient system to backend notification format
+    const typeMap = { checkmark: "complaint", cross: "complaint", bell: "system", clipboard: "complaint", warn: "system", money: "system", wrench: "complaint", drop: "complaint", chart: "system" };
+    await fetch(`${MM_API}/notifications`, {
+      method: "POST",
+      headers: MM_HEADERS,
+      body: JSON.stringify({
+        title,
+        message: desc,
+        type: typeMap[icon] || "system",
+        forRole: recipient === "provider" ? "service_provider" : recipient === "owner" ? "owner" : "all",
+      }),
+    });
+    updateNotifDot();
+  } catch (err) {
+    console.error("addNotification error:", err);
+  }
 }
 
 /* CREATE NOTIFICATION (from notifications page) */
-function createCustomNotification(title, desc, recipient, icon, color) {
-  addNotification(
+async function createCustomNotification(title, desc, recipient, icon, color) {
+  await addNotification(
     icon || "bell",
     color || "#DCFCE7",
     title,
     desc,
     recipient,
-    true,
+    true
   );
   showToast(`✅ Notification sent to ${recipientLabel(recipient)}.`);
 }
@@ -623,9 +281,9 @@ function recipientLabel(r) {
   return map[r] || r;
 }
 
-function getUnreadCount() {
-  // Only count received (non-userCreated) unread notifications for the dot
-  return getNotifications().filter((n) => n.unread && !n.userCreated).length;
+async function getUnreadCount() {
+  const notifs = await getNotifications();
+  return notifs.filter((n) => n.unread).length;
 }
 
 /* ============================================================
@@ -663,6 +321,7 @@ function statusBadge(s, sub) {
     Completed: "badge-completed",
     "Payment Pending": "badge-payment",
     Rejected: "badge-rejected",
+    Assigned: "badge-approved",
   };
   let label = s;
   if (s === "Approved" && sub) label = sub;
@@ -708,22 +367,20 @@ function openRejectModal(id, callback) {
   showModal("rejectModal");
 }
 
-function submitReject() {
+async function submitReject() {
   const r = (document.getElementById("rejectReason") || {}).value || "";
   if (!r.trim()) {
     showToast("Please enter a rejection reason.");
     return;
   }
-  rejectComplaintById(_rejectTarget, r.trim());
+  await rejectComplaintById(_rejectTarget, r.trim());
   hideModal("rejectModal");
   showToast(`Complaint ${_rejectTarget} rejected. Reason sent to resident.`);
   if (_rejectCallback) _rejectCallback(_rejectTarget, r.trim());
   else if (typeof renderTable === "function") {
-    complaints = getComplaints();
-    renderTable();
+    await renderTable();
   } else if (typeof renderDashboardComplaints === "function") {
-    complaints = getComplaints();
-    renderDashboardComplaints();
+    await renderDashboardComplaints();
   }
 }
 
@@ -807,30 +464,47 @@ function checkAlertsEmpty() {
 /* ============================================================
    NOTIFICATION HELPERS
    ============================================================ */
-function markNotifRead(id) {
-  const notifs = getNotifications();
-  const n = notifs.find((x) => x.id === id);
-  if (n && n.unread) {
-    n.unread = false;
-    saveNotifications(notifs);
+async function markNotifRead(id) {
+  try {
+    await fetch(`${MM_API}/notifications/${id}/read`, {
+      method: "PATCH",
+      headers: MM_HEADERS,
+    });
     updateNotifDot();
+  } catch (err) {
+    console.error("markNotifRead error:", err);
   }
-  if (typeof renderNotifs === "function") renderNotifs();
+  if (typeof renderNotifs === "function") await renderNotifs();
 }
 
-function markAllNotifsRead() {
-  const notifs = getNotifications();
-  notifs.forEach((n) => (n.unread = false));
-  saveNotifications(notifs);
-  updateNotifDot();
-  if (typeof renderNotifs === "function") renderNotifs();
+async function markAllNotifsRead() {
+  try {
+    await fetch(`${MM_API}/notifications/read-all`, {
+      method: "PATCH",
+      headers: MM_HEADERS,
+    });
+    updateNotifDot();
+  } catch (err) {
+    console.error("markAllNotifsRead error:", err);
+  }
+  if (typeof renderNotifs === "function") await renderNotifs();
   showToast("All notifications marked as read.");
 }
 
-function clearAllNotifs() {
-  saveNotifications([]);
-  updateNotifDot();
-  if (typeof renderNotifs === "function") renderNotifs();
+async function clearAllNotifs() {
+  try {
+    const notifs = await getNotifications();
+    for (const n of notifs) {
+      await fetch(`${MM_API}/notifications/${n.id}`, {
+        method: "DELETE",
+        headers: MM_HEADERS,
+      });
+    }
+    updateNotifDot();
+  } catch (err) {
+    console.error("clearAllNotifs error:", err);
+  }
+  if (typeof renderNotifs === "function") await renderNotifs();
   showToast("All notifications cleared.");
 }
 
@@ -847,22 +521,27 @@ function doLogout() {
 }
 
 /* ============================================================
-   NOTIF DOT UPDATE
+   NOTIF DOT UPDATE  (now async)
    ============================================================ */
-function updateNotifDot() {
-  const count = getUnreadCount();
-  document.querySelectorAll(".topbar-notif-dot").forEach((dot) => {
-    dot.style.display = count > 0 ? "block" : "none";
-  });
-  document.querySelectorAll(".notif-badge-count").forEach((el) => {
-    el.textContent = count;
-    el.style.display = count > 0 ? "inline" : "none";
-  });
-  document.querySelectorAll(".notif-complaints-count").forEach((el) => {
-    const pCount = getComplaints().filter((c) => c.status === "Pending").length;
-    el.textContent = pCount;
-    el.style.display = pCount > 0 ? "inline" : "none";
-  });
+async function updateNotifDot() {
+  try {
+    const count = await getUnreadCount();
+    document.querySelectorAll(".topbar-notif-dot").forEach((dot) => {
+      dot.style.display = count > 0 ? "block" : "none";
+    });
+    document.querySelectorAll(".notif-badge-count").forEach((el) => {
+      el.textContent = count;
+      el.style.display = count > 0 ? "inline" : "none";
+    });
+    const complaints = await getComplaints();
+    const pCount = complaints.filter((c) => c.status === "Pending").length;
+    document.querySelectorAll(".notif-complaints-count").forEach((el) => {
+      el.textContent = pCount;
+      el.style.display = pCount > 0 ? "inline" : "none";
+    });
+  } catch (err) {
+    console.error("updateNotifDot error:", err);
+  }
 }
 
 /* ============================================================

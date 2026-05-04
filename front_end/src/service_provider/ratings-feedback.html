@@ -19,94 +19,23 @@
    Ratings & Feedback Page
    ========================================================= */
 
-      const overviewStats = {
-        averageRating: 4.6,
-        totalReviews: 47,
-        completedComplaints: 52,
-        satisfactionRate: 92,
-      };
-
-      const ratingDistribution = [
-        { stars: 5, count: 32, percentage: 68 },
-        { stars: 4, count: 10, percentage: 21 },
-        { stars: 3, count: 3, percentage: 6 },
-        { stars: 2, count: 1, percentage: 2 },
-        { stars: 1, count: 1, percentage: 2 },
+      // Stats and distribution computed dynamically from backend data
+      let overviewStats = { averageRating: 0, totalReviews: 0, completedComplaints: 0, satisfactionRate: 0 };
+      let ratingDistribution = [
+        { stars: 5, count: 0, percentage: 0 },
+        { stars: 4, count: 0, percentage: 0 },
+        { stars: 3, count: 0, percentage: 0 },
+        { stars: 2, count: 0, percentage: 0 },
+        { stars: 1, count: 0, percentage: 0 },
       ];
 
-      const feedbackList = [
-        {
-          id: "1",
-          complaintId: "C-2398",
-          serviceType: "Plumbing",
-          rating: 5,
-          comment:
-            "Excellent service! The technician was very professional and fixed the toilet issue quickly. The work area was left clean and tidy. Highly recommend!",
-          date: "Mar 6, 2026",
-          location: "Building A, Apt 401",
-          ownerName: "Sarah Johnson",
-        },
-        {
-          id: "2",
-          complaintId: "C-2395",
-          serviceType: "Plumbing",
-          rating: 5,
-          comment:
-            "Fast and efficient repair work. The plumber arrived on time and completed the job within the estimated timeframe. Very satisfied with the quality of work.",
-          date: "Mar 5, 2026",
-          location: "Building C, Apt 205",
-          ownerName: "Michael Chen",
-        },
-        {
-          id: "3",
-          complaintId: "C-2388",
-          serviceType: "Plumbing",
-          rating: 4,
-          comment:
-            "Good service overall. The repair was done well, though it took slightly longer than expected. The technician was friendly and explained everything clearly.",
-          date: "Mar 3, 2026",
-          location: "Building B, Apt 512",
-          ownerName: "Emily Rodriguez",
-        },
-        {
-          id: "4",
-          complaintId: "C-2380",
-          serviceType: "Plumbing",
-          rating: 5,
-          comment:
-            "Outstanding work! Very knowledgeable technician who not only fixed the issue but also provided helpful maintenance tips. Will definitely request this service provider again.",
-          date: "Feb 28, 2026",
-          location: "Building D, Apt 103",
-          ownerName: "David Thompson",
-        },
-        {
-          id: "5",
-          complaintId: "C-2375",
-          serviceType: "Plumbing",
-          rating: 4,
-          comment:
-            "Professional and courteous service. The leak was fixed properly and hasn't reoccurred. Appreciated the clear communication throughout the process.",
-          date: "Feb 26, 2026",
-          location: "Building A, Apt 308",
-          ownerName: "Lisa Anderson",
-        },
-        {
-          id: "6",
-          complaintId: "C-2368",
-          serviceType: "Plumbing",
-          rating: 3,
-          comment:
-            "Service was adequate. The problem was resolved but I expected better attention to detail. The technician seemed rushed.",
-          date: "Feb 24, 2026",
-          location: "Building E, Apt 607",
-          ownerName: "Robert Martinez",
-        },
-      ];
+      // feedbackList removed, using getRatings() from backend
 
       let ratingFilter = "All";
       let serviceFilter = "All";
 
-      function getFiltered() {
+      async function getFiltered() {
+        const feedbackList = await getRatings();
         return feedbackList.filter((f) => {
           const matchRating =
             ratingFilter === "All" || f.rating === parseInt(ratingFilter);
@@ -116,8 +45,8 @@
         });
       }
 
-      function renderFeedback() {
-        const filtered = getFiltered();
+      async function renderFeedback() {
+        const filtered = await getFiltered();
         const container = document.getElementById("feedback-list");
         const countEl = document.getElementById("feedback-count");
         if (countEl) countEl.textContent = filtered.length;
@@ -164,9 +93,33 @@
           .join("");
       }
 
-      function buildPage() {
-        initShell("ratings");
+      async function buildPage() {
+        await initShell("ratings");
         const content = document.getElementById("page-content");
+
+        // Fetch all ratings upfront and compute stats
+        const allRatings = await getRatings();
+        const total = allRatings.length;
+        const avg = total > 0
+          ? (allRatings.reduce((s, r) => s + r.rating, 0) / total)
+          : 0;
+        const satisfied = allRatings.filter(r => r.rating >= 4).length;
+
+        overviewStats.averageRating = Math.round(avg * 10) / 10;
+        overviewStats.totalReviews = total;
+        overviewStats.completedComplaints = total; // each rating corresponds to a completed service
+        overviewStats.satisfactionRate = total > 0 ? Math.round((satisfied / total) * 100) : 0;
+
+        // Compute distribution
+        [5, 4, 3, 2, 1].forEach((stars, i) => {
+          const count = allRatings.filter(r => r.rating === stars).length;
+          ratingDistribution[i] = {
+            stars,
+            count,
+            percentage: total > 0 ? Math.round((count / total) * 100) : 0
+          };
+        });
+
         content.innerHTML = `
     <div class="page-header">
       <h1>Ratings & Feedback</h1>
@@ -276,24 +229,24 @@
     </div>
 
     <!-- Feedback List -->
-    <h2 style="margin-bottom:16px;">Recent Feedback (<span id="feedback-count">${feedbackList.length}</span>)</h2>
+    <h2 style="margin-bottom:16px;">Recent Feedback (<span id="feedback-count">0</span>)</h2>
     <div id="feedback-list"></div>
   `;
 
         document
           .getElementById("rating-filter")
-          .addEventListener("change", function () {
+          .addEventListener("change", async function () {
             ratingFilter = this.value;
-            renderFeedback();
+            await renderFeedback();
           });
         document
           .getElementById("service-filter")
-          .addEventListener("change", function () {
+          .addEventListener("change", async function () {
             serviceFilter = this.value;
-            renderFeedback();
+            await renderFeedback();
           });
 
-        renderFeedback();
+        await renderFeedback();
       }
 
       document.addEventListener("DOMContentLoaded", buildPage);

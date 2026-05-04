@@ -21,8 +21,8 @@ function isOverdue(deadline) {
   return d < today;
 }
 
-function getFilteredTasks() {
-  const tasks = getTasksArray();
+async function getFilteredTasks() {
+  const tasks = await getTasksArray();
   const search = (document.getElementById('search-input')?.value || '').toLowerCase();
   const statusF = document.getElementById('status-filter')?.value || 'All';
   const priorityF = document.getElementById('priority-filter')?.value || 'All';
@@ -34,8 +34,8 @@ function getFilteredTasks() {
   });
 }
 
-function renderTable() {
-  const filtered = getFilteredTasks();
+async function renderTable() {
+  const filtered = await getFilteredTasks();
   const tbody = document.getElementById('tasks-tbody');
   const emptyState = document.getElementById('empty-state');
   const tableCard = document.getElementById('table-card');
@@ -75,8 +75,8 @@ function renderTable() {
   }).join('');
 }
 
-function buildPage() {
-  initShell('tasks');
+async function buildPage() {
+  await initShell('tasks');
   const content = document.getElementById('page-content');
   content.innerHTML = `
     <div class="page-header">
@@ -152,7 +152,7 @@ function buildPage() {
   document.getElementById('search-input').addEventListener('input', renderTable);
   document.getElementById('status-filter').addEventListener('change', renderTable);
   document.getElementById('priority-filter').addEventListener('change', renderTable);
-  renderTable();
+  await renderTable();
 }
 
 document.addEventListener('DOMContentLoaded', buildPage);

@@ -12,11 +12,11 @@
 <script src="../js/complaint_bridge.js"></script>
 <script src="../js/taskData.js"></script>
 <script>
-function buildPage() {
-  initShell('tasks');
+async function buildPage() {
+  await initShell('tasks');
   const taskId = getParam('task');
   const content = document.getElementById('page-content');
-  const task = taskId ? getTask(taskId) : null;
+  const task = taskId ? await getTask(taskId) : null;
 
   if (!task) {
     content.innerHTML = `
@@ -140,8 +140,8 @@ function buildPage() {
     document.getElementById('photo-upload').dispatchEvent(new Event('change'));
   });
 
-  // Submit — persist to localStorage
-  document.getElementById('submit-btn').addEventListener('click', () => {
+  // Submit — persist to backend
+  document.getElementById('submit-btn').addEventListener('click', async () => {
     const notes  = document.getElementById('notes-input').value.trim();
     const status = document.getElementById('status-select').value;
     document.getElementById('notes-err').style.display = notes ? 'none' : 'block';
@@ -152,14 +152,15 @@ function buildPage() {
     if (status === 'Waiting for Materials') { progressUpdate.inProgress = true; }
     if (status === 'Completed')             { progressUpdate.inProgress = true; progressUpdate.completed = true; }
 
-    updateTask(taskId, { status, progress: progressUpdate });
+    await updateTask(taskId, { status, progress: progressUpdate });
 
     // Add notification
-    addNotification({
+    await addNotification({
       type: status === 'Completed' ? 'completion' : 'assignment',
       title: status === 'Completed' ? 'Task Completed' : 'Status Updated',
       message: `Complaint ${taskId} status updated to "${status}".`,
-      complaintId: taskId
+      forRole: "all",
+      forUser: "all"
     });
 
     // Show success toast then navigate

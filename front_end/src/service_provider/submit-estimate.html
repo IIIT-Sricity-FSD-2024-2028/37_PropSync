@@ -20,11 +20,11 @@ function showToast(msg, color) {
   setTimeout(() => t.remove(), 1500);
 }
 
-function buildPage() {
-  initShell('tasks');
+async function buildPage() {
+  await initShell('tasks');
   const taskId = getParam('task');
   const content = document.getElementById('page-content');
-  const task = taskId ? getTask(taskId) : null;
+  const task = taskId ? await getTask(taskId) : null;
 
   if (!task) {
     content.innerHTML = `
@@ -167,7 +167,7 @@ function buildPage() {
       document.getElementById('upload-label-text').textContent = e.dataTransfer.files[0].name;
   });
 
-  document.getElementById('submit-btn').addEventListener('click', () => {
+  document.getElementById('submit-btn').addEventListener('click', async () => {
     const cost = document.getElementById('cost-input').value.trim();
     const time = document.getElementById('time-input').value.trim();
     const desc = document.getElementById('desc-input').value.trim();
@@ -177,8 +177,8 @@ function buildPage() {
     document.getElementById('desc-err').style.display = desc ? 'none' : 'block';
     if (!cost || !time || !desc) return;
 
-    submitEstimate(taskId, {
-      cost, completionTime: time, workDescription: desc,
+    await submitEstimate(taskId, {
+      cost, time, details: desc,
       uploadedFile: file.files[0] ? file.files[0].name : 'No file uploaded'
     });
 
