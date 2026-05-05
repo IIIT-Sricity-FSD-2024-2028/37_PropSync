@@ -6,7 +6,8 @@
     <title>PropSync - Alerts</title>
     <link rel="icon" type="image/png" href="../../public/favicon.png" />
     <link rel="stylesheet" href="../css/owner.css" />
-  </head>
+    <script src="../js/route_guard.js"></script>
+</head>
   <body>
     <div id="overlay"></div>
 
@@ -196,6 +197,14 @@
         <label for="desc">Description</label>
         <textarea id="desc" required></textarea>
 
+        <label>Complaint Location</label>
+        <div
+          id="profile_location_display"
+          style="padding:12px 14px;border:1px solid #d1d5db;border-radius:8px;background:#f9fafb;color:#374151;font-weight:600;"
+        >
+          Taken from owner profile
+        </div>
+
         <label for="form_image">Upload Photo</label>
         <input type="file" id="form_image" accept="image/*" />
 
@@ -203,10 +212,21 @@
         <select name="category" id="complaint_cat">
           <option value="Plumbing">Plumbing</option>
           <option value="Electrical">Electrical</option>
-          <option value="Cleanliness & Waste Disposal">
-            Cleanliness & Waste Disposal
-          </option>
-          <option value="Others">Others</option>
+          <option value="HVAC">HVAC</option>
+          <option value="Carpentry">Carpentry</option>
+          <option value="Painting">Painting</option>
+          <option value="Sanitation">Sanitation</option>
+          <option value="Security">Security</option>
+          <option value="Elevator">Elevator</option>
+          <option value="General">General</option>
+          <option value="Maintenance">Maintenance</option>
+        </select>
+
+        <label for="complaint_priority">Priority</label>
+        <select name="priority" id="complaint_priority" required>
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
         </select>
         <button type="submit">Submit Complaint</button>
       </form>
@@ -216,3 +236,5 @@
 <script src="../js/owner.js"></script>
   </body>
 </html>
+
+
