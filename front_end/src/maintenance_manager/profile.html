@@ -4,135 +4,34 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
   <title>PropSync – Profile</title>
-  <link rel="stylesheet" href="../css/maintenance_manager.css"/>
+ <link rel="stylesheet" href="../css/maintenance_manager.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-  <style>
-    .nav-icon { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; flex-shrink:0; }
-    .nav-icon svg { width:20px; height:20px; }
-    .nav-link { display:flex; align-items:center; gap:10px; }
-    .topbar-icon-btn svg { display:block; }
-    .nav-link.active .nav-icon svg, .nav-link:hover .nav-icon svg { stroke:#16A34A; }
-    .nav-link.active, .nav-link:hover { color:#16A34A; background:#F0FDF4; border-radius:8px; }
-
-    /* Owner-style profile */
-    .pro_header { margin-bottom:24px; }
-    .pro_header h1 { font-size:26px; font-weight:700; color:#111827; margin:0 0 6px; }
-    .pro_header p  { color:#6B7280; font-size:14px; margin:0; }
-    .pro_card { background:#fff; border:1px solid #E5E7EB; border-radius:16px; padding:28px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,.05); }
-    .pro_card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:28px; }
-    .pro_card-top h2 { font-size:17px; font-weight:700; color:#111827; margin:0; }
-    .edit-btn { background:#1a6b1a; color:#fff; border:none; border-radius:8px; padding:10px 22px; font-size:14px; font-weight:600; cursor:pointer; transition:background .15s; }
-    .edit-btn:hover { background:#38923a; }
-    .profile-layout { display:flex; align-items:flex-start; gap:40px; flex-wrap:wrap; }
-    .pro_left { flex-shrink:0; }
-    .pro_avatar { width:130px; height:130px; border-radius:50%; background:#1a6b1a; color:#fff; display:flex; align-items:center; justify-content:center; font-size:40px; font-weight:700; flex-shrink:0; }
-    .pro_right { flex:1; display:flex; flex-direction:column; gap:20px; }
-    .pro_items { display:grid; grid-template-columns:1fr 1fr; gap:20px 40px; }
-    @media(max-width:600px){ .pro_items { grid-template-columns:1fr; } }
-    .pro_item span { display:block; font-size:13px; color:#6B7280; font-weight:400; margin-bottom:4px; }
-    .pro_item p { font-size:15px; font-weight:600; color:#111827; margin:0; }
-    .setting_container { background:#fff; border:1px solid #E5E7EB; border-radius:16px; padding:28px; margin-bottom:24px; box-shadow:0 1px 4px rgba(0,0,0,.05); }
-    .setting_container .title { font-size:17px; font-weight:700; color:#111827; margin:0 0 18px; }
-    .setting-card { display:flex; align-items:center; justify-content:space-between; padding:16px; border:1px solid #E5E7EB; border-radius:12px; margin-bottom:12px; }
-    .setting-card:last-child { margin-bottom:0; }
-    .setting-card .left { display:flex; align-items:center; gap:14px; }
-    .setting-card .icon.green { width:40px; height:40px; border-radius:8px; background:#DCFCE7; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
-    .setting-card h3 { font-size:14.5px; font-weight:600; color:#111827; margin:0 0 2px; }
-    .setting-card p { font-size:12.5px; color:#6B7280; margin:0; }
-    .setting-card .edit { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; transition:background .15s; }
-    .setting-card .edit:hover { background:#F0FDF4; border-color:#16A34A; }
-
-    /* Modals */
-    .mm-modal-overlay { display:none; position:fixed; inset:0; z-index:1000; background:rgba(0,0,0,0.5); align-items:center; justify-content:center; }
-    .mm-modal-box { background:#fff; border-radius:16px; padding:32px; width:90%; max-width:480px; box-shadow:0 20px 60px rgba(0,0,0,0.2); }
-    .mm-modal-box h2 { margin:0 0 6px; font-size:20px; color:#1a1a2e; }
-    .mm-modal-subtitle { margin:0 0 22px; color:#6b7280; font-size:14px; }
-    .mm-err-box { display:none; background:#fee2e2; color:#dc2626; border-radius:8px; padding:10px 14px; margin-bottom:14px; font-size:13px; }
-    .mm-fg { margin-bottom:14px; }
-    .mm-fg label { display:block; font-size:13px; font-weight:600; color:#374151; margin-bottom:6px; }
-    .mm-fg .req { color:#dc2626; }
-    .mm-fg input { width:100%; box-sizing:border-box; padding:10px 14px; border:1.5px solid #d1d5db; border-radius:8px; font-size:14px; outline:none; transition:border-color .15s; }
-    .mm-fg input:focus { border-color:#42a443; }
-    .mm-field-err { color:#dc2626; font-size:12px; margin:4px 0 0; display:none; }
-    .mm-modal-actions { display:flex; gap:12px; margin-top:20px; }
-    .mm-btn-cancel { flex:1; padding:11px; border:1.5px solid #d1d5db; border-radius:8px; background:#fff; color:#374151; font-size:14px; font-weight:600; cursor:pointer; }
-    .mm-btn-submit { flex:1; padding:11px; border:none; border-radius:8px; background:#1a6b1a; color:#fff; font-size:14px; font-weight:600; cursor:pointer; }
-  
-    /* ── Nav links: exactly like owner ── */
-    .nav-link { font-size: 14px !important; font-weight: 500 !important; color: #374151 !important; padding: 10px 14px !important; display: flex !important; align-items: center !important; gap: 12px !important; text-decoration: none !important; border-radius: 0 !important; }
-    .nav-link svg { width: 24px !important; height: 24px !important; flex-shrink: 0 !important; }
-    .nav-link.active, .nav-link:hover { color: #16A34A !important; background: #F0FDF4 !important; }
-    .nav-link:hover svg, .nav-link.active svg { stroke: #16A34A !important; }
-    .nav-icon { display: none !important; }
-    .sidebar-footer { display: none !important; }
-    /* body font matching owner */
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; font-size: 14px !important; }
-</style>
-
-  <style>
-    /* ── Font & Typography normalization to match Owner styles ── */
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; color: #111827; line-height: 1.5; }
-    h1 { font-size: 28px; font-weight: 700; color: #111827; margin: 0 0 4px; }
-    h2 { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
-    h3 { font-size: 16px; font-weight: 700; color: #111827; margin: 0; }
-    p { margin: 0; }
-    .welcome-banner h1 { font-size: 26px; font-weight: 800; color: #111827; }
-    .welcome-banner p { font-size: 14px; color: #6B7280; margin-top: 4px; }
-    .page-wrapper { padding: 20px 24px; }
-    /* Sidebar font match */
-    .nav-link { font-size: 14px; font-weight: 500; color: #374151; padding: 8px 12px; text-decoration: none; border-radius: 8px; }
-    .nav-link.active, .nav-link:hover { color: #16A34A; background: #F0FDF4; }
-    /* Card title */
-    .card-title { font-size: 16px; font-weight: 700; color: #111827; }
-    /* Topbar name */
-    .topbar-right span { font-size: 14px; font-weight: 600; color: #374151; }
-  </style>
+  <script src="../js/route_guard.js"></script>
 </head>
 <body class="has-sidebar">
 <div class="sidebar-overlay"></div>
-
 <aside class="sidebar">
-  <div class="sidebar-logo">
-    <div class="sidebar-logo-left">
-      <img src="../../public/image.png" alt="Logo" class="sidebar-logo-img">
-    </div>
-    <button class="sidebar-close" title="Close menu">✕</button>
+ <div class="sidebar-logo">
+  <div class="sidebar-logo-left">
+<img src="../../public/image.png" alt="Logo" class="sidebar-logo-img">
   </div>
-    <nav class="sidebar-nav">
-    <a class="nav-link" href="dashboard.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-      Dashboard
-    </a>
-    <a class="nav-link" href="complaints.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-      Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span>
-    </a>
-    <a class="nav-link" href="service-estimate.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-      Service Estimate
-    </a>
-    <a class="nav-link" href="service-bills.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-      Payment History
-    </a>
-    <a class="nav-link" href="provider-performance.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-      Provider Performance
-    </a>
-    <a class="nav-link" href="notification.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
-      Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span>
-    </a>
-    <a class="nav-link active" href="profile.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profile
-    </a>
-    <a class="nav-link" href="../login_signup.html">
-      <p style="margin:0;font-size:18px;font-weight:700;">&rarr;</p>
-      Logout
-    </a>
+  <button class="sidebar-close" title="Close menu">✕</button>
+</div>
+  <nav class="sidebar-nav">
+    <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+    <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span></a>
+    <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
   </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
+  </div>
 </aside>
 
 <div class="page-wrapper">
@@ -142,291 +41,364 @@
       <div class="topbar-logo"><img src="../../public/image.png" alt="PropSync" style="height:34px;width:auto;object-fit:contain;"></div>
     </div>
     <div class="topbar-right">
-      <a class="icon" href="notification.html" style="display:flex;align-items:center;text-decoration:none;color:inherit;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell w-5 h-5 flex-shrink-0"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>
-      </a>
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications">
+        <i class="fa-regular fa-bell" style="font-size:20px;color:#1a0dab;"></i>
+        <div class="topbar-notif-dot"></div>
+      </div>
       <div onclick="location.href='profile.html'" title="Profile" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 45 45" fill="none"><path d="M10.9688 32.0625C12.5625 30.8438 14.3438 29.8828 16.3125 29.1797C18.2813 28.4766 20.3438 28.125 22.5 28.125C24.6563 28.125 26.7188 28.4766 28.6875 29.1797C30.6563 29.8828 32.4375 30.8438 34.0313 32.0625C35.125 30.7813 35.9766 29.3281 36.5859 27.7031C37.1953 26.0781 37.5 24.3438 37.5 22.5C37.5 18.3438 36.0391 14.8047 33.1172 11.8828C30.1953 8.96094 26.6563 7.5 22.5 7.5C18.3438 7.5 14.8047 8.96094 11.8828 11.8828C8.96094 14.8047 7.5 18.3438 7.5 22.5C7.5 24.3438 7.80469 26.0781 8.41406 27.7031C9.02344 29.3281 9.875 30.7813 10.9688 32.0625ZM22.5 24.375C20.6563 24.375 19.1016 23.7422 17.8359 22.4766C16.5703 21.2109 15.9375 19.6563 15.9375 17.8125C15.9375 15.9688 16.5703 14.4141 17.8359 13.1484C19.1016 11.8828 20.6563 11.25 22.5 11.25C24.3438 11.25 25.8984 11.8828 27.1641 13.1484C28.4297 14.4141 29.0625 15.9688 29.0625 17.8125C29.0625 19.6563 28.4297 21.2109 27.1641 22.4766C25.8984 23.7422 24.3438 24.375 22.5 24.375ZM22.5 41.25C19.9063 41.25 17.4688 40.7578 15.1875 39.7734C12.9063 38.7891 10.9219 37.4531 9.23438 35.7656C7.54688 34.0781 6.21094 32.0938 5.22656 29.8125C4.24219 27.5313 3.75 25.0938 3.75 22.5C3.75 19.9063 4.24219 17.4688 5.22656 15.1875C6.21094 12.9063 7.54688 10.9219 9.23438 9.23438C10.9219 7.54688 12.9063 6.21094 15.1875 5.22656C17.4688 4.24219 19.9063 3.75 22.5 3.75C25.0938 3.75 27.5313 4.24219 29.8125 5.22656C32.0938 6.21094 34.0781 7.54688 35.7656 9.23438C37.4531 10.9219 38.7891 12.9063 39.7734 15.1875C40.7578 17.4688 41.25 19.9063 41.25 22.5C41.25 25.0938 40.7578 27.5313 39.7734 29.8125C38.7891 32.0938 37.4531 34.0781 35.7656 35.7656C34.0781 37.4531 32.0938 38.7891 29.8125 39.7734C27.5313 40.7578 25.0938 41.25 22.5 41.25Z" fill="#2D1067"/></svg>
-        <span style="font-weight:600;font-size:14px;color:#374151;" id="topbarName">Maintenance Manager</span>
-      </div>
-    </div>
-  </div>
-
-  <div style="padding:0 4px;">
-    <div class="pro_header">
-      <h1>My Profile</h1>
-      <p>Manage your account information and service details.</p>
-    </div>
-
-    <div class="pro_card">
-      <div class="pro_card-top">
-        <h2>Profile Information</h2>
-        <button class="edit-btn" id="editProfileBtn">Edit Profile</button>
-      </div>
-      <div class="profile-layout">
-        <div class="pro_left">
-          <div class="pro_avatar" id="profileAvatar">MM</div>
+        <div style="width:38px;height:38px;border-radius:50%;border:2px solid #1a0dab;background:transparent;display:flex;align-items:center;justify-content:center;color:#1a0dab;font-size:17px;flex-shrink:0;">
+          <i class="fa-solid fa-user"></i>
         </div>
-        <div class="pro_right">
-          <div class="pro_items">
-            <div class="pro_item"><span>Full Name</span><p id="dispName">Maintenance Manager</p></div>
-            <div class="pro_item"><span>Email Address</span><p id="dispEmail">maintenance.manager@email.com</p></div>
-            <div class="pro_item"><span>Phone Number</span><p id="dispPhone">+91 98765 43210</p></div>
-            <div class="pro_item"><span>Property Unit</span><p id="dispUnit">A-402</p></div>
-            <div class="pro_item"><span>Community Name</span><p id="dispCommunity">Greenwood Heights</p></div>
-            <div class="pro_item"><span>Role</span><p>Maintenance Manager</p></div>
-          </div>
-        </div>
+        <span style="font-weight:600;font-size:14px;color:#1a0dab;">Maintenance Manager</span>
       </div>
     </div>
 
-    <div class="setting_container">
-      <h2 class="title">Account Settings</h2>
-      <div class="setting-card">
-        <div class="left">
-          <div class="icon green">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <div>
-            <h3>Change Password</h3>
-            <p>Update your password to keep your account secure</p>
-          </div>
-        </div>
-        <button class="edit" id="openPwBtn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>
-        </button>
-      </div>
-      <div class="setting-card">
-        <div class="left">
-          <div class="icon green">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          </div>
-          <div>
-            <h3>Change Email</h3>
-            <p>Manage your email address</p>
-          </div>
-        </div>
-        <button class="edit" id="openEmailBtn">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></svg>
-        </button>
+  </div>
+
+  <a class="back-link" href="dashboard.html">← Back to Dashboard</a>
+
+  <div class="profile-banner" style="margin-bottom:20px;">
+    <div class="profile-avatar" id="bannerAvatar">👤</div>
+    <div>
+      <h2 style="font-size:22px;font-weight:800;color:rgba(255,255,255,0.9);" id="bannerName">Maintenance Manager</h2>
+      <p style="opacity:0.75;font-size:13px;margin-top:3px;" id="bannerRole">Maintenance Manager · Greenwood Heights</p>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);" id="bannerUnit">Manager #5</span>
+        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);">✅ Active</span>
+        <span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);">📅 Member since 2022</span>
       </div>
     </div>
   </div>
-</div>
 
+  <div class="card">
+    <div style="margin-bottom:16px;">
+      <div class="card-title">Personal Information</div>
+      <div class="card-subtitle">Manage your account details and preferences.</div>
+    </div>
+    <div class="info-row" style="background:#EFF6FF;"><div class="info-icon" style="background:#3B82F6;color:white;">👤</div><div><div class="info-label">Full Name</div><div class="info-value" id="dispName">Maintenance Manager</div></div></div>
+    <div class="info-row" style="background:#F5F3FF;"><div class="info-icon" style="background:#7C3AED;color:white;">✉️</div><div><div class="info-label">Email Address</div><div class="info-value" id="dispEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="aec3cfc7c0dacbc0cfc0cdcb80c3cfc0cfc9cbdceecbc3cfc7c280cdc1c3">[email&#160;protected]</a></div></div></div>
+    <div class="info-row" style="background:#FFF7ED;"><div class="info-icon" style="background:#EA580C;color:white;">📞</div><div><div class="info-label">Phone Number</div><div class="info-value" id="dispPhone">+91 98765 43210</div></div></div>
+    <div class="info-row" style="background:#FFF1F2;"><div class="info-icon" style="background:#DC2626;color:white;">ID</div><div><div class="info-label">Manager ID</div><div class="info-value" id="dispUnit">Manager #5</div></div></div>
+    <div class="info-row" style="background:#F0FDF4;"><div class="info-icon" style="background:#16A34A;color:white;">📍</div><div><div class="info-label">Community</div><div class="info-value" id="dispCommunity">Greenwood Heights</div></div></div>
+    <button class="btn btn-primary btn-full" style="margin-top:16px;" id="editBtn" onclick="toggleEdit()">✏️ Edit Profile</button>
+  </div>
 
-</div>
+  <div class="card" id="editForm" style="margin-top:20px;display:none;">
+    <div class="card-title" style="margin-bottom:16px;">✏️ Edit Profile</div>
+    <div id="mmFormError" style="display:none;background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;"></div>
+    <div class="form-group">
+      <label>Full Name <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpName" value="Maintenance Manager"/>
+      <p id="err-name" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Email Address <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpEmail" type="email" value="maintenance.manager@email.com"/>
+      <p id="err-email" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Phone Number <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpPhone" type="tel" value="+91 98765 43210"/>
+      <p id="err-phone" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Manager ID <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpUnit" value="A-402"/>
+      <p id="err-unit" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div class="form-group">
+      <label>Community <span style="color:#dc2626;">*</span></label>
+      <input class="form-control" id="inpCommunity" value="Greenwood Heights"/>
+      <p id="err-community" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+    </div>
+    <div style="border-top:1px solid #E5E7EB;padding-top:16px;margin-top:8px;">
+      <div class="card-title" style="margin-bottom:4px;font-size:13px;">🔐 Change Password</div>
+      <p style="font-size:12px;color:#6B7280;margin:0 0 12px;">Leave all password fields blank to keep your current password.</p>
+      <div class="form-group">
+        <label>Current Password</label>
+        <input class="form-control" id="inpCurrentPw" type="password" placeholder="Enter current password"/>
+        <p id="err-current-pw" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+      </div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input class="form-control" id="inpNewPw" type="password" placeholder="At least 6 characters"/>
+        <p id="err-new-pw" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+      </div>
+      <div class="form-group">
+        <label>Confirm New Password</label>
+        <input class="form-control" id="inpConfirmPw" type="password" placeholder="Re-enter new password"/>
+        <p id="err-confirm-pw" style="color:#dc2626;font-size:12px;margin:3px 0 0;display:none;"></p>
+      </div>
+    </div>
+    <div style="display:flex;gap:12px;margin-top:8px;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="cancelEdit()">Cancel</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="saveProfile()">Save Changes</button>
+    </div>
+  </div>
 
-<!-- Edit Profile Modal -->
-<div class="mm-modal-overlay" id="mmEditProfileModal">
-  <div class="mm-modal-box">
-    <h2>Edit Profile</h2>
-    <p class="mm-modal-subtitle">Update your personal information below.</p>
-    <div class="mm-err-box" id="epErrBox"></div>
-    <div class="mm-fg"><label>Full Name <span class="req">*</span></label><input type="text" id="ep-name" placeholder="Maintenance Manager"/><p class="mm-field-err" id="ep-name-err"></p></div>
-    <div class="mm-fg"><label>Phone Number <span class="req">*</span></label><input type="tel" id="ep-phone" placeholder="+91 98765 43210"/><p class="mm-field-err" id="ep-phone-err"></p></div>
-    <div class="mm-fg"><label>Property Unit <span class="req">*</span></label><input type="text" id="ep-unit" placeholder="A-402"/><p class="mm-field-err" id="ep-unit-err"></p></div>
-    <div class="mm-fg"><label>Community Name <span class="req">*</span></label><input type="text" id="ep-community" placeholder="Greenwood Heights"/><p class="mm-field-err" id="ep-community-err"></p></div>
-    <div class="mm-modal-actions">
-      <button class="mm-btn-cancel" id="epCancelBtn">Cancel</button>
-      <button class="mm-btn-submit" id="epSaveBtn">Save Changes</button>
+  <div class="card" style="margin-top:20px;">
+    <div class="card-title" style="margin-bottom:14px;">📊 Activity Summary</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+      <div style="background:#F9FAFB;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#16A34A;">38</div><div style="font-size:11.5px;color:#6B7280;margin-top:3px;">Total Complaints</div></div>
+      <div style="background:#F9FAFB;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#16A34A;">22</div><div style="font-size:11.5px;color:#6B7280;margin-top:3px;">Resolved</div></div>
+      <div style="background:#F9FAFB;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#D97706;">8</div><div style="font-size:11.5px;color:#6B7280;margin-top:3px;">Providers Managed</div></div>
+      <div style="background:#F9FAFB;border-radius:8px;padding:14px;text-align:center;"><div style="font-size:22px;font-weight:800;color:#0891B2;">94%</div><div style="font-size:11.5px;color:#6B7280;margin-top:3px;">On-time Rate</div></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="card-title" style="margin-bottom:14px;">⚡ Quick Actions</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <a href="complaints.html" class="btn btn-outline">📋 View Complaints</a>
+      <a href="notification.html" class="btn btn-outline">🔔 Notifications</a>
+      <a href="provider-performance.html" class="btn btn-outline">🏆 Providers</a>
     </div>
   </div>
 </div>
 
-<!-- Change Password Modal -->
-<div class="mm-modal-overlay" id="mmChangePasswordModal">
-  <div class="mm-modal-box">
-    <h2>Change Password</h2>
-    <p class="mm-modal-subtitle">Enter your current password and choose a new one.</p>
-    <div class="mm-err-box" id="cpErrBox"></div>
-    <div class="mm-fg"><label>Current Password <span class="req">*</span></label><input type="password" id="cp-current" placeholder="Enter current password"/></div>
-    <div class="mm-fg"><label>New Password <span class="req">*</span></label><input type="password" id="cp-new" placeholder="At least 6 characters"/><p class="mm-field-err" id="cp-new-err"></p></div>
-    <div class="mm-fg"><label>Confirm New Password <span class="req">*</span></label><input type="password" id="cp-confirm" placeholder="Re-enter new password"/><p class="mm-field-err" id="cp-confirm-err"></p></div>
-    <div class="mm-modal-actions">
-      <button class="mm-btn-cancel" id="cpCancelBtn">Cancel</button>
-      <button class="mm-btn-submit" id="cpSubmitBtn">Update Password</button>
+<!-- Logout Modal -->
+<div class="modal-overlay" id="logoutModal">
+  <div class="logout-modal">
+    <div class="logout-icon">👋</div><h3>Log Out?</h3>
+    <p>Are you sure you want to log out of PropSync?</p>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-ghost" style="flex:1;" onclick="hideModal('logoutModal')">Cancel</button>
+      <button class="btn btn-danger" style="flex:1;" onclick="doLogout()">Yes, Log Out</button>
     </div>
   </div>
 </div>
 
-<!-- Change Email Modal -->
-<div class="mm-modal-overlay" id="mmChangeEmailModal">
-  <div class="mm-modal-box">
-    <h2>Change Email</h2>
-    <p class="mm-modal-subtitle">Enter your new email address below.</p>
-    <div class="mm-err-box" id="ceErrBox"></div>
-    <div class="mm-fg"><label>Current Email</label><input type="email" id="ce-current" readonly style="background:#f9fafb;color:#6b7280;border-color:#e5e7eb;"/></div>
-    <div class="mm-fg"><label>New Email Address <span class="req">*</span></label><input type="email" id="ce-new" placeholder="newemail@example.com"/><p class="mm-field-err" id="ce-new-err"></p></div>
-    <div class="mm-fg"><label>Confirm New Email <span class="req">*</span></label><input type="email" id="ce-confirm" placeholder="Confirm new email"/><p class="mm-field-err" id="ce-confirm-err"></p></div>
-    <div class="mm-modal-actions">
-      <button class="mm-btn-cancel" id="ceCancelBtn">Cancel</button>
-      <button class="mm-btn-submit" id="ceSubmitBtn">Update Email</button>
-    </div>
-  </div>
-</div>
-
-<div id="mmToast" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,0.2);"></div>
-
-<script src="../js/complaint_bridge.js"></script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script src="../js/complaint_bridge.js"></script>
 <script src="../js/maintenance_manager.js"></script>
 <script>
-async function getMmProfile() {
-  try {
-    const res = await fetch(`${MM_API}/api/profile`, { headers: MM_HEADERS });
-    if (res.ok) {
-      const data = await res.json();
-      if (!data.message) {
-        return {
-          name: data.name || 'Maintenance Manager',
-          email: data.email || 'maintenance.manager@email.com',
-          phone: data.phone || '+91 98765 43210',
-          unit: data.propertyUnit || 'A-402',
-          community: data.communityName || 'Greenwood Heights',
-          password: data.password || 'password123'
-        };
-      }
-    }
-  } catch (err) { console.error(err); }
-  return { name:'Maintenance Manager', email:'maintenance.manager@email.com', phone:'+91 98765 43210', unit:'A-402', community:'Greenwood Heights', password:'password123' };
+// ── Persist profile in localStorage ──
+const MM_PROFILE_KEY = 'mmProfile';
+function getCurrentManagerUser() {
+  try { return JSON.parse(localStorage.getItem('currentUser')) || {}; } catch { return {}; }
 }
-async function setMmProfile(data) { 
-  try {
-    await fetch(`${MM_API}/api/profile`, {
-      method: 'PATCH',
-      headers: MM_HEADERS,
-      body: JSON.stringify({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        propertyUnit: data.unit,
-        communityName: data.community,
-        password: data.password
-      })
-    });
-  } catch(err) { console.error(err); }
+function getMmProfileKey() {
+  const user = getCurrentManagerUser();
+  return user.email ? `${MM_PROFILE_KEY}:${user.email}` : MM_PROFILE_KEY;
 }
+function buildMmProfileFromCurrentUser() {
+  const user = getCurrentManagerUser();
+  return {
+    name: user.name || 'Vijay Singh',
+    email: user.email || 'vijay.manager@propsync.com',
+    phone: user.phone || '+91-9876543220',
+    unit: user.employeeId ? `Manager #${user.id}` : `Manager #${user.id || 5}`,
+    community: user.communityName || 'Green Valley Society',
+    password: user.password || 'password123'
+  };
+}
+function getMmProfile() {
+  const key = getMmProfileKey();
+  const saved = localStorage.getItem(key);
+  if (saved) return JSON.parse(saved);
+  const profile = buildMmProfileFromCurrentUser();
+  localStorage.setItem(key, JSON.stringify(profile));
+  return profile;
+}
+function setMmProfile(data) { localStorage.setItem(getMmProfileKey(), JSON.stringify(data)); }
 
-async function refreshDisplay() {
-  const p = await getMmProfile();
+// ── Init display from stored profile ──
+document.addEventListener('DOMContentLoaded', function() {
+  const p = getMmProfile();
   document.getElementById('dispName').textContent      = p.name;
   document.getElementById('dispEmail').textContent     = p.email;
   document.getElementById('dispPhone').textContent     = p.phone;
   document.getElementById('dispUnit').textContent      = p.unit;
   document.getElementById('dispCommunity').textContent = p.community;
-  document.getElementById('profileAvatar').textContent = p.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
-  const tn = document.getElementById('topbarName');
-  if (tn) tn.textContent = p.name.split(' ')[0];
-}
+  document.getElementById('bannerName').textContent    = p.name;
+  document.getElementById('bannerRole').textContent    = p.name + ' · ' + p.community;
+  document.getElementById('bannerUnit').textContent    = p.unit;
+  const topbarName = document.querySelector('.topbar-right span[style*="font-weight:600"]');
+  if (topbarName) topbarName.textContent = p.name;
+});
 
-function openMmModal(id) { document.getElementById(id).style.display='flex'; }
-function closeMmModal(id) {
+// ── Helpers ──
+function setFieldErr(id, msg) {
   const el = document.getElementById(id);
-  el.style.display='none';
-  el.querySelectorAll('.mm-field-err').forEach(e=>{e.textContent='';e.style.display='none';});
-  el.querySelectorAll('input:not([readonly])').forEach(i=>{i.value='';i.style.borderColor='';});
-  const eb = el.querySelector('.mm-err-box');
-  if(eb){eb.style.display='none';eb.textContent='';}
+  if (!el) return;
+  el.textContent = msg;
+  el.style.display = msg ? 'block' : 'none';
 }
-function setFErr(id,msg){ const el=document.getElementById(id); if(!el)return; el.textContent=msg; el.style.display=msg?'block':'none'; }
-function showMmToast(msg,dur=3500){ const t=document.getElementById('mmToast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>{t.style.display='none';},dur); }
+function clearAllErrors() {
+  ['err-name','err-email','err-phone','err-unit','err-community',
+   'err-current-pw','err-new-pw','err-confirm-pw'].forEach(id => setFieldErr(id, ''));
+  const fb = document.getElementById('mmFormError');
+  if (fb) { fb.style.display='none'; fb.textContent=''; }
+}
+function highlightField(inputId, hasError) {
+  const el = document.getElementById(inputId);
+  if (el) el.style.borderColor = hasError ? '#dc2626' : '';
+}
 
-// Close on backdrop
-['mmEditProfileModal','mmChangePasswordModal','mmChangeEmailModal'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',function(e){if(e.target===this)closeMmModal(id);});
+// ── Attach real-time validation listeners after DOM ready ──
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('inpName').addEventListener('input', function() {
+    const v = this.value.trim();
+    if (!v) { setFieldErr('err-name','Full name is required.'); highlightField('inpName',true); }
+    else if (!/^[a-zA-Z\s'\-]+$/.test(v)) { setFieldErr('err-name','Name should only contain letters.'); highlightField('inpName',true); }
+    else { setFieldErr('err-name',''); highlightField('inpName',false); }
+  });
+
+  document.getElementById('inpEmail').addEventListener('input', function() {
+    const v = this.value.trim();
+    if (!v) { setFieldErr('err-email','Email is required.'); highlightField('inpEmail',true); }
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) { setFieldErr('err-email','Please enter a valid email address.'); highlightField('inpEmail',true); }
+    else { setFieldErr('err-email',''); highlightField('inpEmail',false); }
+  });
+
+  document.getElementById('inpPhone').addEventListener('input', function() {
+    const v = this.value.trim();
+    if (!v) { setFieldErr('err-phone','Phone number is required.'); highlightField('inpPhone',true); }
+    else if (!/^[\+]?[\d\s\-\(\)]{7,15}$/.test(v)) { setFieldErr('err-phone','Enter a valid phone number (7–15 digits).'); highlightField('inpPhone',true); }
+    else { setFieldErr('err-phone',''); highlightField('inpPhone',false); }
+  });
+
+  document.getElementById('inpUnit').addEventListener('input', function() {
+    if (!this.value.trim()) { setFieldErr('err-unit','Manager ID is required.'); highlightField('inpUnit',true); }
+    else { setFieldErr('err-unit',''); highlightField('inpUnit',false); }
+  });
+
+  document.getElementById('inpCommunity').addEventListener('input', function() {
+    if (!this.value.trim()) { setFieldErr('err-community','Community name is required.'); highlightField('inpCommunity',true); }
+    else { setFieldErr('err-community',''); highlightField('inpCommunity',false); }
+  });
+
+  document.getElementById('inpNewPw').addEventListener('input', function() {
+    const v = this.value;
+    if (v && v.length < 6) { setFieldErr('err-new-pw','Password must be at least 6 characters.'); highlightField('inpNewPw',true); }
+    else { setFieldErr('err-new-pw',''); highlightField('inpNewPw',false); }
+    // re-check confirm
+    const c = document.getElementById('inpConfirmPw').value;
+    if (c && c !== v) { setFieldErr('err-confirm-pw','Passwords do not match.'); highlightField('inpConfirmPw',true); }
+    else if (c) { setFieldErr('err-confirm-pw',''); highlightField('inpConfirmPw',false); }
+  });
+
+  document.getElementById('inpConfirmPw').addEventListener('input', function() {
+    const newPw = document.getElementById('inpNewPw').value;
+    if (this.value && this.value !== newPw) { setFieldErr('err-confirm-pw','Passwords do not match.'); highlightField('inpConfirmPw',true); }
+    else { setFieldErr('err-confirm-pw',''); highlightField('inpConfirmPw',false); }
+  });
 });
 
-document.addEventListener('DOMContentLoaded', function(){
-  refreshDisplay();
+function toggleEdit() {
+  const p = getMmProfile();
+  document.getElementById('inpName').value      = p.name;
+  document.getElementById('inpEmail').value     = p.email;
+  document.getElementById('inpPhone').value     = p.phone;
+  document.getElementById('inpUnit').value      = p.unit;
+  document.getElementById('inpCommunity').value = p.community;
+  document.getElementById('inpCurrentPw').value = '';
+  document.getElementById('inpNewPw').value     = '';
+  document.getElementById('inpConfirmPw').value = '';
+  clearAllErrors();
 
-  // Edit Profile
-  document.getElementById('editProfileBtn').addEventListener('click', async function(){
-    const p=await getMmProfile();
-    document.getElementById('ep-name').value=p.name;
-    document.getElementById('ep-phone').value=p.phone;
-    document.getElementById('ep-unit').value=p.unit;
-    document.getElementById('ep-community').value=p.community;
-    openMmModal('mmEditProfileModal');
-  });
-  document.getElementById('epCancelBtn').addEventListener('click',()=>closeMmModal('mmEditProfileModal'));
-  document.getElementById('ep-name').addEventListener('input',function(){
-    const v=this.value.trim();
-    if(!v){setFErr('ep-name-err','Full name is required.');this.style.borderColor='#dc2626';}
-    else if(!/^[a-zA-Z\s'\-]+$/.test(v)){setFErr('ep-name-err','Name should only contain letters.');this.style.borderColor='#dc2626';}
-    else{setFErr('ep-name-err','');this.style.borderColor='#42a443';}
-  });
-  document.getElementById('epSaveBtn').addEventListener('click', async function(){
-    const name=document.getElementById('ep-name').value.trim();
-    const phone=document.getElementById('ep-phone').value.trim();
-    const unit=document.getElementById('ep-unit').value.trim();
-    const community=document.getElementById('ep-community').value.trim();
-    let valid=true;
-    if(!name){setFErr('ep-name-err','Full name is required.');document.getElementById('ep-name').style.borderColor='#dc2626';valid=false;}
-    else if(!/^[a-zA-Z\s'\-]+$/.test(name)){setFErr('ep-name-err','Name should only contain letters.');document.getElementById('ep-name').style.borderColor='#dc2626';valid=false;}
-    if(!phone){setFErr('ep-phone-err','Phone number is required.');document.getElementById('ep-phone').style.borderColor='#dc2626';valid=false;}
-    else if(!/^[\+]?[\d\s\-\(\)]{7,15}$/.test(phone)){setFErr('ep-phone-err','Enter a valid phone number.');document.getElementById('ep-phone').style.borderColor='#dc2626';valid=false;}
-    if(!unit){setFErr('ep-unit-err','Property unit is required.');document.getElementById('ep-unit').style.borderColor='#dc2626';valid=false;}
-    if(!community){setFErr('ep-community-err','Community name is required.');document.getElementById('ep-community').style.borderColor='#dc2626';valid=false;}
-    if(!valid)return;
-    const p=await getMmProfile(); p.name=name;p.phone=phone;p.unit=unit;p.community=community;
-    await setMmProfile(p); await refreshDisplay(); closeMmModal('mmEditProfileModal'); showMmToast('✅ Profile updated successfully!');
-  });
+  document.getElementById('editForm').style.display = 'block';
+  document.getElementById('editBtn').style.display  = 'none';
+  document.getElementById('editForm').scrollIntoView({behavior:'smooth'});
+}
 
-  // Change Password
-  document.getElementById('openPwBtn').addEventListener('click',()=>openMmModal('mmChangePasswordModal'));
-  document.getElementById('cpCancelBtn').addEventListener('click',()=>closeMmModal('mmChangePasswordModal'));
-  document.getElementById('cp-new').addEventListener('input',function(){
-    if(this.value&&this.value.length<6)setFErr('cp-new-err','Password must be at least 6 characters.');
-    else setFErr('cp-new-err','');
-    const c=document.getElementById('cp-confirm').value;
-    if(c)setFErr('cp-confirm-err',c!==this.value?'Passwords do not match.':'');
-  });
-  document.getElementById('cp-confirm').addEventListener('input',function(){
-    setFErr('cp-confirm-err',this.value!==document.getElementById('cp-new').value?'Passwords do not match.':'');
-  });
-  document.getElementById('cpSubmitBtn').addEventListener('click', async function(){
-    const current=document.getElementById('cp-current').value;
-    const newPw=document.getElementById('cp-new').value;
-    const confirm=document.getElementById('cp-confirm').value;
-    const eb=document.getElementById('cpErrBox'); eb.style.display='none';
-    if(!current||!newPw||!confirm){eb.textContent='⚠️ Please fill in all fields.';eb.style.display='block';return;}
-    const p=await getMmProfile();
-    if(current!==p.password){eb.textContent='❌ Current password is incorrect.';eb.style.display='block';return;}
-    if(newPw.length<6){eb.textContent='❌ New password must be at least 6 characters.';eb.style.display='block';return;}
-    if(newPw===current){eb.textContent='❌ New password must differ from your current password.';eb.style.display='block';return;}
-    if(newPw!==confirm){eb.textContent='❌ Passwords do not match.';eb.style.display='block';return;}
-    p.password=newPw; await setMmProfile(p); closeMmModal('mmChangePasswordModal'); showMmToast('✅ Password updated successfully!');
-  });
+function cancelEdit() {
+  clearAllErrors();
+  document.getElementById('editForm').style.display = 'none';
+  document.getElementById('editBtn').style.display  = 'block';
+}
 
-  // Change Email
-  document.getElementById('openEmailBtn').addEventListener('click', async function(){
-    const p = await getMmProfile();
-    document.getElementById('ce-current').value=p.email;
-    openMmModal('mmChangeEmailModal');
-  });
-  document.getElementById('ceCancelBtn').addEventListener('click',()=>closeMmModal('mmChangeEmailModal'));
-  document.getElementById('ce-new').addEventListener('input',function(){
-    const v=this.value.trim();
-    if(v&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v))setFErr('ce-new-err','Please enter a valid email address.');
-    else setFErr('ce-new-err','');
-    const c=document.getElementById('ce-confirm').value;
-    if(c)setFErr('ce-confirm-err',c!==v?'Email addresses do not match.':'');
-  });
-  document.getElementById('ce-confirm').addEventListener('input',function(){
-    setFErr('ce-confirm-err',this.value!==document.getElementById('ce-new').value.trim()?'Email addresses do not match.':'');
-  });
-  document.getElementById('ceSubmitBtn').addEventListener('click', async function(){
-    const newEmail=document.getElementById('ce-new').value.trim();
-    const confirm=document.getElementById('ce-confirm').value.trim();
-    const eb=document.getElementById('ceErrBox'); eb.style.display='none';
-    if(!newEmail||!confirm){eb.textContent='⚠️ Please fill in all fields.';eb.style.display='block';return;}
-    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)){eb.textContent='❌ Please enter a valid email address.';eb.style.display='block';return;}
-    if(newEmail!==confirm){eb.textContent='❌ Email addresses do not match.';eb.style.display='block';return;}
-    const p=await getMmProfile();
-    if(newEmail===p.email){eb.textContent='❌ New email must differ from your current email.';eb.style.display='block';return;}
-    p.email=newEmail; await setMmProfile(p); await refreshDisplay(); closeMmModal('mmChangeEmailModal'); showMmToast('✅ Email updated successfully!');
-  });
-});
-</script>
-</body>
+function saveProfile() {
+  clearAllErrors();
+  const name      = document.getElementById('inpName').value.trim();
+  const email     = document.getElementById('inpEmail').value.trim();
+  const phone     = document.getElementById('inpPhone').value.trim();
+  const unit      = document.getElementById('inpUnit').value.trim();
+  const community = document.getElementById('inpCommunity').value.trim();
+  const currentPw = document.getElementById('inpCurrentPw').value;
+  const newPw     = document.getElementById('inpNewPw').value;
+  const confirmPw = document.getElementById('inpConfirmPw').value;
+
+  let valid = true;
+
+  // ── Profile field validation ──
+  if (!name) {
+    setFieldErr('err-name','Full name is required.'); highlightField('inpName',true); valid = false;
+  } else if (!/^[a-zA-Z\s'\-]+$/.test(name)) {
+    setFieldErr('err-name','Name should only contain letters.'); highlightField('inpName',true); valid = false;
+  }
+
+  if (!email) {
+    setFieldErr('err-email','Email is required.'); highlightField('inpEmail',true); valid = false;
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    setFieldErr('err-email','Please enter a valid email address.'); highlightField('inpEmail',true); valid = false;
+  }
+
+  if (!phone) {
+    setFieldErr('err-phone','Phone number is required.'); highlightField('inpPhone',true); valid = false;
+  } else if (!/^[\+]?[\d\s\-\(\)]{7,15}$/.test(phone)) {
+    setFieldErr('err-phone','Enter a valid phone number (7–15 digits).'); highlightField('inpPhone',true); valid = false;
+  }
+
+  if (!unit) {
+    setFieldErr('err-unit','Manager ID is required.'); highlightField('inpUnit',true); valid = false;
+  }
+
+  if (!community) {
+    setFieldErr('err-community','Community name is required.'); highlightField('inpCommunity',true); valid = false;
+  }
+
+  // ── Password section — only validate if any pw field is filled ──
+  const pwAttempted = currentPw || newPw || confirmPw;
+  if (pwAttempted) {
+    const p = getMmProfile();
+    if (!currentPw) {
+      setFieldErr('err-current-pw','Please enter your current password.'); highlightField('inpCurrentPw',true); valid = false;
+    } else if (currentPw !== p.password) {
+      setFieldErr('err-current-pw','Current password is incorrect.'); highlightField('inpCurrentPw',true); valid = false;
+    }
+
+    if (!newPw) {
+      setFieldErr('err-new-pw','Please enter a new password.'); highlightField('inpNewPw',true); valid = false;
+    } else if (newPw.length < 6) {
+      setFieldErr('err-new-pw','Password must be at least 6 characters.'); highlightField('inpNewPw',true); valid = false;
+    } else if (newPw === currentPw) {
+      setFieldErr('err-new-pw','New password must differ from your current password.'); highlightField('inpNewPw',true); valid = false;
+    }
+
+    if (!confirmPw) {
+      setFieldErr('err-confirm-pw','Please confirm your new password.'); highlightField('inpConfirmPw',true); valid = false;
+    } else if (confirmPw !== newPw) {
+      setFieldErr('err-confirm-pw','Passwords do not match.'); highlightField('inpConfirmPw',true); valid = false;
+    }
+  }
+
+  if (!valid) return;
+
+  // ── Persist ──
+  const saved = getMmProfile();
+  saved.name      = name;
+  saved.email     = email;
+  saved.phone     = phone;
+  saved.unit      = unit;
+  saved.community = community;
+  if (pwAttempted) saved.password = newPw;
+  setMmProfile(saved);
+
+  // ── Refresh display ──
+  document.getElementById('dispName').textContent      = name;
+  document.getElementById('dispEmail').textContent     = email;
+  document.getElementById('dispPhone').textContent     = phone;
+  document.getElementById('dispUnit').textContent      = unit;
+  document.getElementById('dispCommunity').textContent = community;
+  document.getElementById('bannerName').textContent    = name;
+  document.getElementById('bannerRole').textContent    = name + ' · ' + community;
+  document.getElementById('bannerUnit').textContent    = unit;
+  const topbarName = document.querySelector('.topbar-right span[style*="font-weight:600"]');
+  if (topbarName) topbarName.textContent = name;
+
+  cancelEdit();
+  showToast(pwAttempted ? '✅ Profile and password updated successfully!' : '✅ Profile updated successfully!');
+}
+</script></body>
 </html>
+
