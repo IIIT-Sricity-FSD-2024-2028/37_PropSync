@@ -11,7 +11,6 @@ import { CreateUserDto, LoginDto, UpdateUserDto } from './users.dto';
 export type UserRole =
   | 'owner'
   | 'maintenance_manager'
-  | 'service_provider'
   | 'administrator'
   | 'super_user';
 
