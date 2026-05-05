@@ -7,47 +7,7 @@
   <title>PropSync – Assign Service Provider</title>
   <link rel="stylesheet" href="../css/maintenance_manager.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-
-  <style>
-    /* SVG nav icon alignment - matching owner sidebar style */
-    .nav-icon { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; flex-shrink:0; }
-    .nav-icon svg { width:20px; height:20px; }
-    .nav-link { display:flex; align-items:center; gap:10px; }
-    .topbar-icon-btn svg { display:block; }
-    /* Active nav-link highlight */
-    .nav-link.active .nav-icon svg, .nav-link:hover .nav-icon svg { stroke:#16A34A; }
-    .nav-link.active, .nav-link:hover { color:#16A34A; background:#F0FDF4; border-radius:8px; }
-  
-    /* ── Nav links: exactly like owner ── */
-    .nav-link { font-size: 14px !important; font-weight: 500 !important; color: #374151 !important; padding: 10px 14px !important; display: flex !important; align-items: center !important; gap: 12px !important; text-decoration: none !important; border-radius: 0 !important; }
-    .nav-link svg { width: 24px !important; height: 24px !important; flex-shrink: 0 !important; }
-    .nav-link.active, .nav-link:hover { color: #16A34A !important; background: #F0FDF4 !important; }
-    .nav-link:hover svg, .nav-link.active svg { stroke: #16A34A !important; }
-    .nav-icon { display: none !important; }
-    .sidebar-footer { display: none !important; }
-    /* body font matching owner */
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important; font-size: 14px !important; }
-</style>
-
-  <style>
-    /* ── Font & Typography normalization to match Owner styles ── */
-    *, *::before, *::after { box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; font-size: 14px; color: #111827; line-height: 1.5; }
-    h1 { font-size: 28px; font-weight: 700; color: #111827; margin: 0 0 4px; }
-    h2 { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
-    h3 { font-size: 16px; font-weight: 700; color: #111827; margin: 0; }
-    p { margin: 0; }
-    .welcome-banner h1 { font-size: 26px; font-weight: 800; color: #111827; }
-    .welcome-banner p { font-size: 14px; color: #6B7280; margin-top: 4px; }
-    .page-wrapper { padding: 20px 24px; }
-    /* Sidebar font match */
-    .nav-link { font-size: 14px; font-weight: 500; color: #374151; padding: 8px 12px; text-decoration: none; border-radius: 8px; }
-    .nav-link.active, .nav-link:hover { color: #16A34A; background: #F0FDF4; }
-    /* Card title */
-    .card-title { font-size: 16px; font-weight: 700; color: #111827; }
-    /* Topbar name */
-    .topbar-right span { font-size: 14px; font-weight: 600; color: #374151; }
-  </style>
+  <script src="../js/route_guard.js"></script>
 </head>
 
 <body class="has-sidebar">
@@ -59,40 +19,23 @@
       </div>
       <button class="sidebar-close" title="Close menu">✕</button>
     </div>
-      <nav class="sidebar-nav">
-    <a class="nav-link" href="dashboard.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-      Dashboard
-    </a>
-    <a class="nav-link active" href="complaints.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>
-      Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span>
-    </a>
-    <a class="nav-link" href="service-estimate.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-      Service Estimate
-    </a>
-    <a class="nav-link" href="service-bills.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-      Payment History
-    </a>
-    <a class="nav-link" href="provider-performance.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-      Provider Performance
-    </a>
-    <a class="nav-link" href="notification.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>
-      Alerts &amp; Notifications <span class="nav-badge notif-badge-count" style="display:none;"></span>
-    </a>
-    <a class="nav-link" href="profile.html">
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      Profile
-    </a>
-    <a class="nav-link" href="../login_signup.html">
-      <p style="margin:0;font-size:18px;font-weight:700;">&rarr;</p>
-      Logout
-    </a>
-  </nav>
+    <nav class="sidebar-nav">
+      <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
+      <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span
+          class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+      <div class="nav-divider"></div>
+      <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
+      <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
+      <div class="nav-divider"></div>
+      <a class="nav-link" href="provider-performance.html"><span class="nav-icon">🏆</span> Provider Performance</a>
+      <div class="nav-divider"></div>
+      <a class="nav-link" href="notification.html"><span class="nav-icon">🔔</span> Alerts &amp; Notifications <span
+          class="nav-badge notif-badge-count" style="display:none;"></span></a>
+      <a class="nav-link" href="profile.html"><span class="nav-icon">👤</span> Profile</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="sidebar-logout" onclick="confirmLogout()">→ &nbsp;Logout</button>
+    </div>
   </aside>
 
   <div class="page-wrapper">
@@ -102,19 +45,22 @@
         <div class="topbar-logo"><img src="../../public/image.png" alt="PropSync" style="height:34px;width:auto;object-fit:contain;"></div>
       </div>
     <div class="topbar-right">
-      <a class="icon" href="notification.html" style="display:flex;align-items:center;text-decoration:none;color:inherit;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bell w-5 h-5 flex-shrink-0"><path d="M10.268 21a2 2 0 0 0 3.464 0"></path><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path></svg>
-      </a>
+      <div class="topbar-icon-btn" onclick="location.href='notification.html'" title="Notifications">
+        <i class="fa-regular fa-bell" style="font-size:20px;color:#1a0dab;"></i>
+        <div class="topbar-notif-dot"></div>
+      </div>
       <div onclick="location.href='profile.html'" title="Profile" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 45 45" fill="none"><path d="M10.9688 32.0625C12.5625 30.8438 14.3438 29.8828 16.3125 29.1797C18.2813 28.4766 20.3438 28.125 22.5 28.125C24.6563 28.125 26.7188 28.4766 28.6875 29.1797C30.6563 29.8828 32.4375 30.8438 34.0313 32.0625C35.125 30.7813 35.9766 29.3281 36.5859 27.7031C37.1953 26.0781 37.5 24.3438 37.5 22.5C37.5 18.3438 36.0391 14.8047 33.1172 11.8828C30.1953 8.96094 26.6563 7.5 22.5 7.5C18.3438 7.5 14.8047 8.96094 11.8828 11.8828C8.96094 14.8047 7.5 18.3438 7.5 22.5C7.5 24.3438 7.80469 26.0781 8.41406 27.7031C9.02344 29.3281 9.875 30.7813 10.9688 32.0625ZM22.5 24.375C20.6563 24.375 19.1016 23.7422 17.8359 22.4766C16.5703 21.2109 15.9375 19.6563 15.9375 17.8125C15.9375 15.9688 16.5703 14.4141 17.8359 13.1484C19.1016 11.8828 20.6563 11.25 22.5 11.25C24.3438 11.25 25.8984 11.8828 27.1641 13.1484C28.4297 14.4141 29.0625 15.9688 29.0625 17.8125C29.0625 19.6563 28.4297 21.2109 27.1641 22.4766C25.8984 23.7422 24.3438 24.375 22.5 24.375ZM22.5 41.25C19.9063 41.25 17.4688 40.7578 15.1875 39.7734C12.9063 38.7891 10.9219 37.4531 9.23438 35.7656C7.54688 34.0781 6.21094 32.0938 5.22656 29.8125C4.24219 27.5313 3.75 25.0938 3.75 22.5C3.75 19.9063 4.24219 17.4688 5.22656 15.1875C6.21094 12.9063 7.54688 10.9219 9.23438 9.23438C10.9219 7.54688 12.9063 6.21094 15.1875 5.22656C17.4688 4.24219 19.9063 3.75 22.5 3.75C25.0938 3.75 27.5313 4.24219 29.8125 5.22656C32.0938 6.21094 34.0781 7.54688 35.7656 9.23438C37.4531 10.9219 38.7891 12.9063 39.7734 15.1875C40.7578 17.4688 41.25 19.9063 41.25 22.5C41.25 25.0938 40.7578 27.5313 39.7734 29.8125C38.7891 32.0938 37.4531 34.0781 35.7656 35.7656C34.0781 37.4531 32.0938 38.7891 29.8125 39.7734C27.5313 40.7578 25.0938 41.25 22.5 41.25Z" fill="#2D1067"/></svg>
-        <span style="font-weight:600;font-size:14px;color:#374151;">Maintenance Manager</span>
+        <div style="width:38px;height:38px;border-radius:50%;border:2px solid #1a0dab;background:transparent;display:flex;align-items:center;justify-content:center;color:#1a0dab;font-size:17px;flex-shrink:0;">
+          <i class="fa-solid fa-user"></i>
+        </div>
+        <span style="font-weight:600;font-size:14px;color:#1a0dab;">Maintenance Manager</span>
       </div>
     </div>
 
     </div>
 
-    <a class="back-link" href="approved-complaints.html">← Back to Approved Complaints</a>
-    <h2 style="font-size:20px;font-weight:700;margin-bottom:20px;">Assign Service Provider</h2>
+    <a class="back-link" href="complaints.html#approved">← Back to Approved Complaints</a>
+    <h2 style="font-size:20px;font-weight:700;margin-bottom:20px;">🔧 Assign Service Provider</h2>
 
     <div class="card" style="margin-bottom:20px;">
       <div
@@ -141,27 +87,27 @@
     </div>
 
     <div class="card" style="margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Set Due Date</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">📅 Set Due Date</div>
       <input type="date" class="form-control" style="max-width:240px;" id="dueDate" />
     </div>
 
     <div class="card" style="margin-bottom:20px;">
-      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">Notes for Provider (Optional)</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:10px;">📝 Notes for Provider (Optional)</div>
       <textarea class="form-control" id="providerNotes"
         placeholder="Special instructions or notes for the assigned provider..."></textarea>
     </div>
 
     <div class="card" style="margin-bottom:20px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <div style="font-size:13px;font-weight:700;">Recommended Service Providers</div>
-        <div style="font-size:12px;color:#6B7280;">Ranked by rating &amp; performance</div>
+        <div style="font-size:13px;font-weight:700;" id="providerListHeading">🏆 Service Providers</div>
+        <div style="font-size:12px;color:#6B7280;" id="providerListSubheading">Loading queue...</div>
       </div>
       <div id="providerList"></div>
     </div>
 
     <div style="display:flex;gap:12px;">
-      <button class="btn btn-ghost" onclick="location.href='approved-complaints.html'">Cancel</button>
-      <button class="btn btn-primary" style="flex:1;" onclick="assignProvider()">Confirm Assignment</button>
+      <button class="btn btn-ghost" onclick="location.href='complaints.html#approved'">Cancel</button>
+      <button class="btn btn-primary" style="flex:1;" onclick="assignProvider()">✅ Confirm Assignment</button>
     </div>
   </div>
 
@@ -173,7 +119,7 @@
       <p style="font-size:13px;color:#6B7280;margin-bottom:6px;" id="successMsg">Provider assigned successfully.</p>
       <p style="font-size:12px;color:#16A34A;font-weight:600;">Notification sent to provider and resident.</p>
       <div style="margin-top:20px;display:flex;gap:10px;">
-        <button class="btn btn-outline" style="flex:1;" onclick="location.href='approved-complaints.html'">Approved
+        <button class="btn btn-outline" style="flex:1;" onclick="location.href='complaints.html#approved'">Approved
           List</button>
         <button class="btn btn-primary" style="flex:1;" onclick="location.href='complaints.html'">All
           Complaints</button>
@@ -181,76 +127,198 @@
     </div>
   </div>
 
-  
+  <!-- Logout Modal -->
+  <div class="modal-overlay" id="logoutModal">
+    <div class="logout-modal">
+      <div class="logout-icon">👋</div>
+      <h3>Log Out?</h3>
+      <p>Are you sure?</p>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-ghost" style="flex:1" onclick="hideModal('logoutModal')">Cancel</button>
+        <button class="btn btn-danger" style="flex:1" onclick="doLogout()">Yes, Log Out</button>
+      </div>
+    </div>
   </div>
 
   <script src="../js/complaint_bridge.js"></script>
-<script src="../js/maintenance_manager.js"></script>
+  <script src="../js/maintenance_manager.js"></script>
   <script>
-    let selectedProvider = null;
+    const API = 'http://localhost:3000';
+    const MM_HEADERS = { 'role': 'maintenance_manager', 'Content-Type': 'application/json' };
+
+    let allProviders = [];       // All service_provider users from /users
+    let queueProviderIds = [];   // Provider IDs who expressed interest (from /complaints/:id/queue)
+    let displayedProviders = []; // Providers actually shown in the queue
+    let selectedProviderId = null;
+    let complaintId = null;
+    let isQueueMode = false;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      const complaints = await getComplaints();
       const params = new URLSearchParams(location.search);
-      const id = params.get('id') || 'C-2406';
-      const c = complaints.find(x => x.id === id) || complaints.find(x => x.status === 'Approved') || complaints[0];
+      complaintId = params.get('id');
 
-      document.getElementById('assignId').textContent = c.id;
-      document.getElementById('assignIssue').textContent = c.issue;
-      document.getElementById('assignLocation').textContent = c.location;
-      document.getElementById('assignPriority').innerHTML = priorityBadge(c.priority);
+      if (!complaintId) {
+        alert("No complaint ID provided.");
+        return;
+      }
+
+      // 1. Fetch complaint details for the header card
+      try {
+        const res = await fetch(`${API}/complaints/${complaintId}`, { headers: MM_HEADERS });
+        if (res.ok) {
+          const c = await res.json();
+          document.getElementById('assignId').textContent = `C-${c.id}`;
+          document.getElementById('assignIssue').textContent = c.title;
+          document.getElementById('assignLocation').textContent = c.location || '—';
+          const pMap = { 'high': 'High', 'medium': 'Medium', 'low': 'Low' };
+          const pClass = c.priority === 'high' ? 'priority-high' : c.priority === 'medium' ? 'priority-medium' : 'priority-low';
+          document.getElementById('assignPriority').innerHTML =
+            `<span class="priority-badge ${pClass}">${pMap[c.priority] || c.priority}</span>`;
+        }
+      } catch (e) {
+        console.error("Failed to load complaint", e);
+      }
+
       document.getElementById('dueDate').min = new Date().toISOString().split('T')[0];
 
-      const medals = ['🥇', '🥈', '🥉', '#4', '#5', '#6', '#7', '#8'];
-      const medalBg = ['#FEF3C7', '#F3F4F6', '#FEF3C7', '#F0FDF4', '#F0FDF4', '#F0FDF4', '#F0FDF4', '#F0FDF4'];
-      const medalColor = ['#D97706', '#6B7280', '#B45309', '#16A34A', '#16A34A', '#16A34A', '#16A34A', '#16A34A'];
+      // 2. Fetch all service providers
+      try {
+        const res = await fetch(`${API}/users?role=service_provider`, { headers: MM_HEADERS });
+        if (res.ok) allProviders = await res.json();
+      } catch (e) {
+        console.error("Failed to load providers", e);
+      }
 
-      document.getElementById('providerList').innerHTML = providers.map((p, i) => {
-        const barC = p.onTime >= 90 ? '#16A34A' : p.onTime >= 80 ? '#D97706' : '#DC2626';
-        return `
-    <div class="provider-rec-card" id="pcard-${i}" onclick="selectProvider(${i})">
-      <div style="width:36px;height:36px;border-radius:10px;background:${medalBg[i]};color:${medalColor[i]};display:flex;align-items:center;justify-content:center;font-size:${i < 3 ? '18' : '13'}px;font-weight:800;flex-shrink:0;">${medals[i]}</div>
-      <div style="flex:1;">
-        <div class="provider-rec-name">${p.name} <span class="specialty-tag">${p.specialty}</span>${p.trend === 'up' ? '<span style="font-size:10px;color:#16A34A;margin-left:5px;">↗ Trending</span>' : ''}</div>
-        <div class="provider-rec-meta">⭐ ${p.rating} &nbsp;•&nbsp; ${p.jobs} jobs &nbsp;•&nbsp; ${p.onTime}% on-time &nbsp;•&nbsp; Avg: ₹${p.avgCost.toLocaleString()}</div>
-        <div style="margin-top:5px;height:4px;background:#E5E7EB;border-radius:2px;overflow:hidden;">
-          <div style="width:${p.onTime}%;height:100%;background:${barC};border-radius:2px;"></div>
-        </div>
-      </div>
-      <div id="check-${i}" style="font-size:20px;opacity:0;transition:opacity .2s;">✅</div>
-    </div>`;
-      }).join('');
+      // 3. Fetch the interest queue for this complaint
+      try {
+        const res = await fetch(`${API}/complaints/${complaintId}/queue`, { headers: MM_HEADERS });
+        if (res.ok) {
+          const data = await res.json();
+          queueProviderIds = data.queue || [];
+        }
+      } catch (e) {
+        console.error("Failed to load provider queue", e);
+      }
+
+      if (queueProviderIds.length > 0) {
+        isQueueMode = true;
+        displayedProviders = allProviders.filter(p => queueProviderIds.includes(p.id));
+        // Preserve queue order
+        displayedProviders.sort((a, b) =>
+          queueProviderIds.indexOf(a.id) - queueProviderIds.indexOf(b.id)
+        );
+      } else {
+        isQueueMode = false;
+        displayedProviders = [];
+      }
+
+      renderProviders();
     });
 
-    function selectProvider(i) {
-      selectedProvider = i;
-      document.querySelectorAll('.provider-rec-card').forEach((el, j) => {
-        el.classList.toggle('selected', j === i);
-        document.getElementById('check-' + j).style.opacity = j === i ? '1' : '0';
+    function renderProviders() {
+      const listEl = document.getElementById('providerList');
+      const headingEl = document.getElementById('providerListHeading');
+      const subheadingEl = document.getElementById('providerListSubheading');
+
+      if (isQueueMode) {
+        headingEl.textContent = '🙋 Providers Who Expressed Interest';
+        subheadingEl.textContent =
+          `${displayedProviders.length} provider${displayedProviders.length !== 1 ? 's' : ''} in queue — select one to assign`;
+      } else {
+        headingEl.textContent = '🙋 Provider Queue';
+        subheadingEl.innerHTML =
+          '<span style="color:#D97706;">No providers have expressed interest yet.</span>';
+      }
+
+      if (displayedProviders.length === 0) {
+        listEl.innerHTML = `
+          <div style="padding:24px;text-align:center;color:#6B7280;font-size:13px;">
+            <div style="font-size:32px;margin-bottom:8px;">🙋</div>
+            <div style="font-weight:700;color:#374151;margin-bottom:6px;">Waiting for provider interest</div>
+            This complaint is visible to service providers in Available Complaints. Once a provider clicks Accept, they will appear here for manager selection.
+            <div style="margin-top:14px;">
+              <button class="btn btn-outline btn-sm" onclick="location.href='complaints.html#approved'">Back to Approved Complaints</button>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const medals = ['🥇', '🥈', '🥉', '#4', '#5', '#6', '#7', '#8'];
+      const medalBg = ['#EEF2FF', '#F0FDF4', '#FFF7ED', '#F0FDF4', '#F0FDF4', '#F0FDF4', '#F0FDF4', '#F0FDF4'];
+      const medalColor = ['#4F46E5', '#16A34A', '#EA580C', '#16A34A', '#16A34A', '#16A34A', '#16A34A', '#16A34A'];
+
+      listEl.innerHTML = displayedProviders.map((p, i) => {
+        const onTime = 80 + (i % 20);
+        const barC = onTime >= 90 ? '#16A34A' : onTime >= 80 ? '#D97706' : '#DC2626';
+        const rating = (4 + (i * 0.1 % 1)).toFixed(1);
+        const queueBadge = isQueueMode
+          ? `<span style="display:inline-block;background:#EEF2FF;color:#4F46E5;font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:6px;">Queue #${i + 1}</span>`
+          : '';
+
+        return `
+    <div class="provider-rec-card" id="pcard-${p.id}" onclick="selectProvider(${p.id})" style="cursor:pointer;">
+      <div style="width:36px;height:36px;border-radius:10px;background:${medalBg[i] || '#F0FDF4'};color:${medalColor[i] || '#16A34A'};display:flex;align-items:center;justify-content:center;font-size:${i < 3 ? '18' : '13'}px;font-weight:800;flex-shrink:0;">${medals[i] || '#'}</div>
+      <div style="flex:1;">
+        <div class="provider-rec-name">${p.name}${queueBadge} <span class="specialty-tag">${p.category || 'General'}</span></div>
+        <div class="provider-rec-meta">⭐ ${rating} &nbsp;•&nbsp; ${onTime}% on-time &nbsp;•&nbsp; ID: ${p.id}</div>
+        <div style="margin-top:5px;height:4px;background:#E5E7EB;border-radius:2px;overflow:hidden;">
+          <div style="width:${onTime}%;height:100%;background:${barC};border-radius:2px;"></div>
+        </div>
+      </div>
+      <div id="check-${p.id}" style="font-size:20px;opacity:0;transition:opacity .2s;">✅</div>
+    </div>`;
+      }).join('');
+    }
+
+    function selectProvider(id) {
+      selectedProviderId = id;
+      displayedProviders.forEach(p => {
+        const el = document.getElementById('pcard-' + p.id);
+        const check = document.getElementById('check-' + p.id);
+        if (el) el.classList.toggle('selected', p.id === id);
+        if (check) check.style.opacity = p.id === id ? '1' : '0';
       });
     }
 
     async function assignProvider() {
-      if (selectedProvider === null) { showToast('⚠️ Please select a provider.'); return; }
+      if (!selectedProviderId) { alert('⚠️ Please select a provider.'); return; }
       const due = document.getElementById('dueDate').value;
-      if (!due) { showToast('⚠️ Please set a due date.'); return; }
-      const p = providers[selectedProvider];
-      const assignedId = document.getElementById('assignId').textContent;
+      if (!due) { alert('⚠️ Please set a due date.'); return; }
 
-      // Update complaint status via backend
       try {
-        await fetch(`${MM_API}/complaints/${assignedId}/assigned`, {
-          method: 'PATCH',
-          headers: MM_HEADERS,
-          body: JSON.stringify({ assignedTo: p.name, deadline: due }),
+        const res = await fetch(`${API}/complaints/${complaintId}/assign/${selectedProviderId}`, {
+          method: 'PATCH', headers: MM_HEADERS
         });
-      } catch(e) { console.error('assign error:', e); }
 
-      await addNotification('wrench', '#DCFCE7', 'Provider Assigned', `${p.name} assigned to ${assignedId}. Due: ${due}`, 'provider');
-      document.getElementById('successMsg').textContent = `${p.name} has been assigned. Due: ${due}`;
-      showModal('successModal');
+        if (res.ok) {
+          // Also update the deadline via status patch
+          try {
+            await fetch(`${API}/complaints/${complaintId}/status`, {
+              method: 'PATCH',
+              headers: MM_HEADERS,
+              body: JSON.stringify({ status: 'assigned', deadline: due })
+            });
+          } catch (_) {}
+
+          const p = displayedProviders.find(x => x.id === selectedProviderId);
+          document.getElementById('successMsg').textContent =
+            `${p ? p.name : 'Provider'} has been assigned. Due: ${due}`;
+          document.getElementById('successModal').style.display = 'flex';
+        } else {
+          const e = await res.json();
+          alert('Error: ' + (e.message || 'Could not assign provider'));
+        }
+      } catch (e) {
+        alert('Network error while assigning provider.');
+      }
+    }
+
+    function hideModal(id) {
+      document.getElementById(id).style.display = 'none';
     }
   </script>
 </body>
 
 </html>
+
+
