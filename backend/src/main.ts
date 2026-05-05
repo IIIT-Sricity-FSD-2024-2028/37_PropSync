@@ -1,40 +1,26 @@
 import { NestFactory } from '@nestjs/core';
+import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { ValidationPipe } from '@nestjs/common';
-
-// ✅ Swagger imports
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { validationPipe } from './common/pipes/validation.pipe';
+import { appConfig, corsConfig } from './config/app.config';
+import { swaggerConfig } from './config/swagger.config';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // ✅ Global validation
-  app.useGlobalPipes(new ValidationPipe());
+  app.enableCors(corsConfig);
+  app.useGlobalPipes(validationPipe);
 
-  // ✅ Enable CORS for frontend
-  app.enableCors();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
 
-  // ✅ Swagger setup
-  const config = new DocumentBuilder()
-    .setTitle('Property Management API')
-    .setDescription('Backend APIs for Review-4')
-    .setVersion('1.0')
-    .addTag('API')
-
-    // 🔥 IMPORTANT: add role header
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'role',
-        in: 'header',
-      },
-      'role-header',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document); // 👈 THIS creates /api-docs
-
-  await app.listen(3000);
+  await app.listen(appConfig.port);
+  console.log(`PropSync API running at http://localhost:${appConfig.port}`);
+  console.log(`Swagger docs at http://localhost:${appConfig.port}/api/docs`);
 }
+
 bootstrap();
