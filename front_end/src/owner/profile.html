@@ -7,7 +7,8 @@
     <link rel="icon" type="image/png" href="../../public/favicon.png" />
     <link rel="stylesheet" href="../css/owner.css" />
     <link rel="stylesheet" href="../css/form.css" />
-  </head>
+    <script src="../js/route_guard.js"></script>
+</head>
   <body>
     <div id="overlay"></div>
 
@@ -428,17 +429,36 @@
 // ── Profile state stored in localStorage ──
 const OWNER_PROFILE_KEY = 'ownerProfile';
 
-function getOwnerProfile() {
-  return JSON.parse(localStorage.getItem(OWNER_PROFILE_KEY)) || {
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    community: 'Creekside Community',
-    unit: 'Unit A-304',
-    password: 'password123'
+function getCurrentOwnerUser() {
+  try { return JSON.parse(localStorage.getItem('currentUser')) || {}; } catch { return {}; }
+}
+
+function getOwnerProfileKey() {
+  const user = getCurrentOwnerUser();
+  return user.email ? `${OWNER_PROFILE_KEY}:${user.email}` : OWNER_PROFILE_KEY;
+}
+
+function buildOwnerProfileFromCurrentUser() {
+  const user = getCurrentOwnerUser();
+  return {
+    name: user.name || 'Raj Kumar',
+    email: user.email || 'raj.owner@propsync.com',
+    community: user.communityName || 'Green Valley Society',
+    unit: user.propertyUnit || 'A-101',
+    password: user.password || 'password123'
   };
 }
+
+function getOwnerProfile() {
+  const key = getOwnerProfileKey();
+  const saved = localStorage.getItem(key);
+  if (saved) return JSON.parse(saved);
+  const profile = buildOwnerProfileFromCurrentUser();
+  localStorage.setItem(key, JSON.stringify(profile));
+  return profile;
+}
 function setOwnerProfile(data) {
-  localStorage.setItem(OWNER_PROFILE_KEY, JSON.stringify(data));
+  localStorage.setItem(getOwnerProfileKey(), JSON.stringify(data));
 }
 
 function refreshProfileDisplay() {
@@ -657,3 +677,5 @@ document.addEventListener('DOMContentLoaded', refreshProfileDisplay);
 </script>
   </body>
 </html>
+
+
