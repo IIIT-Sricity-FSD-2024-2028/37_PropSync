@@ -465,6 +465,81 @@
         margin-bottom: 18px;
       }
 
+      .rating-form {
+        display: grid;
+        gap: 14px;
+      }
+      .rating-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .rating-option input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .rating-option span {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        min-height: 36px;
+        padding: 8px 12px;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-2);
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.18s, border-color 0.18s, color 0.18s;
+      }
+      .rating-option input:checked + span {
+        background: #fffbeb;
+        border-color: rgba(217, 119, 6, 0.45);
+        color: #92400e;
+      }
+      .rating-feedback {
+        width: 100%;
+        min-height: 92px;
+        resize: vertical;
+        border: 1.5px solid var(--border);
+        border-radius: 8px;
+        padding: 11px 12px;
+        font: inherit;
+        font-size: 13px;
+        color: var(--text);
+        outline: none;
+      }
+      .rating-feedback:focus {
+        border-color: #34a853;
+        box-shadow: 0 0 0 4px rgba(52, 168, 83, 0.12);
+      }
+      .rating-submit {
+        justify-self: start;
+        border: 0;
+        border-radius: 8px;
+        background: #34a853;
+        color: #fff;
+        padding: 10px 16px;
+        font-size: 13px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+      .rating-submit:disabled {
+        cursor: not-allowed;
+        opacity: 0.65;
+      }
+      .rating-state {
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: var(--green-lt);
+        color: #166534;
+        border: 1px solid rgba(22, 163, 74, 0.2);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.5;
+      }
+
       ::-webkit-scrollbar {
         width: 5px;
       }
@@ -496,7 +571,8 @@
         }
       }
     </style>
-  </head>
+    <script src="../js/route_guard.js"></script>
+</head>
   <body>
     <div id="overlay"></div>
 
@@ -739,6 +815,11 @@
           </div>
 
           <div class="info-row">
+            <div class="info-lbl">Location</div>
+            <div class="info-val" id="detail-location">—</div>
+          </div>
+
+          <div class="info-row">
             <div class="info-lbl">Work Status</div>
             <div
               class="info-val"
@@ -837,6 +918,55 @@
         <p class="desc-text">Loading…</p>
       </div>
 
+      <!-- Owner Rating -->
+      <div class="card card-full" id="owner-rating-card" hidden>
+        <div class="card-title">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+          </svg>
+          Rate Service Provider
+        </div>
+        <div class="rating-state" id="owner-rating-state" hidden></div>
+        <form class="rating-form" id="owner-rating-form">
+          <div class="rating-options" role="radiogroup" aria-label="Rating score">
+            <label class="rating-option">
+              <input type="radio" name="owner-rating-score" value="5" checked />
+              <span>5 stars</span>
+            </label>
+            <label class="rating-option">
+              <input type="radio" name="owner-rating-score" value="4" />
+              <span>4 stars</span>
+            </label>
+            <label class="rating-option">
+              <input type="radio" name="owner-rating-score" value="3" />
+              <span>3 stars</span>
+            </label>
+            <label class="rating-option">
+              <input type="radio" name="owner-rating-score" value="2" />
+              <span>2 stars</span>
+            </label>
+            <label class="rating-option">
+              <input type="radio" name="owner-rating-score" value="1" />
+              <span>1 star</span>
+            </label>
+          </div>
+          <textarea
+            class="rating-feedback"
+            id="owner-rating-feedback"
+            maxlength="500"
+            placeholder="Share feedback for the completed service"
+          ></textarea>
+          <button class="rating-submit" id="owner-rating-submit" type="submit">
+            Submit Rating
+          </button>
+        </form>
+      </div>
+
       <!-- ── PHOTO ── -->
       <div class="card card-full">
         <div class="card-title">
@@ -866,3 +996,5 @@
 <script src="../js/owner.js"></script>
   </body>
 </html>
+
+
