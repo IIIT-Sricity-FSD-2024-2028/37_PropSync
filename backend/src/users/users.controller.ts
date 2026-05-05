@@ -207,3 +207,19 @@ export class UsersController {
     return this.usersService.update(user.id, dto);
   }
 }
+
+@ApiTags('Auth')
+@Controller('auth')
+export class AuthController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Post('login')
+  login(@Body() dto: LoginDto) {
+    return this.usersService.login(dto);
+  }
+
+  @Post('signup')
+  signup(@Body() dto: CreateUserDto) {
+    return this.usersService.create(dto);
+  }
+}

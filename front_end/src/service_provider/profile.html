@@ -1,126 +1,213 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Profile — PropSync</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/styles.css">
-</head>
-<body>
-<script src="../js/complaint_bridge.js"></script>
-<script src="../js/taskData.js"></script>
-<script>
-let isEditing = false;
-let editData  = {};
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile — PropSync</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/route_guard.js"></script>
+  </head>
+  <body>
+    <script src="../js/complaint_bridge.js"></script>
+    <script src="../js/taskData.js"></script>
+    <script>
+      let isEditing = false;
+      let editData = {};
 
-const statIcons = {
-  star:  `<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:#F59E0B;stroke:#F59E0B;stroke-width:1;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
-  check: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-  clip:  `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>`,
-  trend: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
-};
-const statBg = { yellow:'rgba(245,158,11,0.1)', green2:'rgba(66,164,67,0.2)', teal:'rgba(104,213,176,0.3)' };
+      const statIcons = {
+        star: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;fill:#F59E0B;stroke:#F59E0B;stroke-width:1;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+        check: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+        clip: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>`,
+        trend: `<svg viewBox="0 0 24 24" style="width:22px;height:22px;stroke:#42a443;stroke-width:2;fill:none;"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`,
+      };
+      const statBg = {
+        yellow: "rgba(245,158,11,0.1)",
+        green2: "rgba(66,164,67,0.2)",
+        teal: "rgba(104,213,176,0.3)",
+      };
 
-async function fieldRow(label, key, type, placeholder, iconSvg) {
-  const profile = await getProfile();
-  const val = isEditing ? (editData[key] ?? profile[key]) : profile[key];
-  return `
+      function fieldRow(label, key, type, placeholder, iconSvg) {
+        const profile = getProfile();
+        const val = isEditing ? (editData[key] ?? profile[key]) : profile[key];
+        return `
     <div class="profile-field">
       <div class="profile-field-label">${iconSvg} ${label}</div>
-      ${isEditing
-        ? `<input type="${type}" id="field-${key}" class="form-input" value="${val}" placeholder="${placeholder}">`
-        : `<p class="profile-field-value">${val || '—'}</p>`}
+      ${
+        isEditing
+          ? `<input type="${type}" id="field-${key}" class="form-input" value="${val}" placeholder="${placeholder}">`
+          : `<p class="profile-field-value">${val || "—"}</p>`
+      }
     </div>`;
-}
+      }
 
-async function renderProfileCard() {
-  const profile = await getProfile();
-  const card = document.getElementById('profile-card');
-  if (!card) return;
+      function renderProfileCard() {
+        const profile = getProfile();
+        const card = document.getElementById("profile-card");
+        if (!card) return;
 
-  // Build card shell (cannot await inside template literals)
-  const editBtns = !isEditing
-    ? '<button class="btn btn-accent btn-sm" id="edit-btn"><svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Edit Profile</button>'
-    : '<div style="display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-accent btn-sm" id="save-btn"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Save Changes</button><button class="btn btn-ghost btn-sm" id="cancel-btn"><svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Cancel</button></div>';
-  const camBtn = isEditing ? '<button class="profile-camera-btn" title="Change photo"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>' : '';
+        card.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+      <h2>Profile Information</h2>
+      ${
+        !isEditing
+          ? `
+        <button class="btn btn-accent btn-sm" id="edit-btn">
+          <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit Profile
+        </button>`
+          : `
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-accent btn-sm" id="save-btn">
+            <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save Changes
+          </button>
+          <button class="btn btn-ghost btn-sm" id="cancel-btn">
+            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            Cancel
+          </button>
+        </div>`
+      }
+    </div>
 
-  card.innerHTML = '<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;"><h2>Profile Information</h2>' + editBtns + '</div>'
-    + '<div class="profile-details-grid">'
-    + '<div class="profile-photo-area"><div class="profile-photo-wrap"><div class="profile-avatar-large">' + (profile.initials || profile.name[0].toUpperCase()) + '</div>' + camBtn + '</div>'
-    + '<p class="profile-sp-id">Service Provider ID: ' + profile.spId + '</p></div>'
-    + '<div id="profile-fields-slot"></div></div>';
+    <div class="profile-details-grid">
+      <div class="profile-photo-area">
+        <div class="profile-photo-wrap">
+          <div class="profile-avatar-large">${profile.initials || profile.name[0].toUpperCase()}</div>
+          ${
+            isEditing
+              ? `<button class="profile-camera-btn" title="Change photo">
+            <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </button>`
+              : ""
+          }
+        </div>
+        <p class="profile-sp-id">Service Provider ID: ${profile.spId}</p>
+      </div>
+      <div>
+        ${fieldRow("Full Name", "name", "text", "Full Name", `<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`)}
+        ${fieldRow("Email Address", "email", "email", "Email", `<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`)}
+        ${fieldRow("Phone Number", "phone", "tel", "Phone", `<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.37 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l1.27-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>`)}
+        ${fieldRow("Service Category", "category", "text", "Category", `<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>`)}
+        ${fieldRow("Years of Experience", "experience", "text", "Years", `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>`)}
+        ${fieldRow("Service Locations", "locations", "text", "Locations (comma separated)", `<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>`)}
+      </div>
+    </div>
+  `;
 
-  // Now await the field rows and inject them
-  const svgName = '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>';
-  const svgEmail = '<svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>';
-  const svgPhone = '<svg viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.65 3.37 2 2 0 0 1 3.62 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l1.27-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>';
-  const svgCat = '<svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>';
-  const svgExp = '<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-  const svgLoc = '<svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
+        if (!isEditing) {
+          document.getElementById("edit-btn").addEventListener("click", () => {
+            editData = { ...getProfile() };
+            isEditing = true;
+            renderProfileCard();
+          });
+        } else {
+          document.getElementById("save-btn").addEventListener("click", () => {
+            // ── Gather values ──
+            const nameVal = (
+              document.getElementById("field-name")?.value || ""
+            ).trim();
+            const emailVal = (
+              document.getElementById("field-email")?.value || ""
+            ).trim();
+            const phoneVal = (
+              document.getElementById("field-phone")?.value || ""
+            ).trim();
 
-  const rows = await Promise.all([
-    fieldRow('Full Name',           'name',       'text',  'Full Name',                  svgName),
-    fieldRow('Email Address',       'email',      'email', 'Email',                      svgEmail),
-    fieldRow('Phone Number',        'phone',      'tel',   'Phone',                      svgPhone),
-    fieldRow('Service Category',    'category',   'text',  'Category',                   svgCat),
-    fieldRow('Years of Experience', 'experience', 'text',  'Years',                      svgExp),
-    fieldRow('Service Locations',   'locations',  'text',  'Locations (comma separated)', svgLoc),
-  ]);
-  const slot = document.getElementById('profile-fields-slot');
-  if (slot) slot.innerHTML = rows.join('');
+            // ── Validate ──
+            let errors = [];
+            if (!nameVal) {
+              errors.push("Full name is required.");
+            } else if (!/^[a-zA-Z\s'\-]+$/.test(nameVal)) {
+              errors.push("Name should only contain letters.");
+            }
+            if (!emailVal) {
+              errors.push("Email address is required.");
+            } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+              errors.push("Please enter a valid email address.");
+            }
+            if (phoneVal && !/^[\+]?[\d\s\-\(\)]{7,15}$/.test(phoneVal)) {
+              errors.push("Please enter a valid phone number (7–15 digits).");
+            }
 
-  if (!isEditing) {
-    document.getElementById('edit-btn').addEventListener('click', async () => {
-      editData = { ...await getProfile() };
-      isEditing = true;
-      await renderProfileCard();
-    });
-  } else {
-    document.getElementById('save-btn').addEventListener('click', async () => {
-      const nameVal  = (document.getElementById('field-name')?.value  || '').trim();
-      const emailVal = (document.getElementById('field-email')?.value || '').trim();
-      const phoneVal = (document.getElementById('field-phone')?.value || '').trim();
-      let errors = [];
-      if (!nameVal) errors.push('Full name is required.');
-      else if (!/^[a-zA-Z\s'\-]+$/.test(nameVal)) errors.push('Name should only contain letters.');
-      if (!emailVal) errors.push('Email address is required.');
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) errors.push('Please enter a valid email address.');
-      if (phoneVal && !/^[\+]?[\d\s\-\(\)]{7,15}$/.test(phoneVal)) errors.push('Please enter a valid phone number (7-15 digits).');
-      if (errors.length > 0) { spShowToast('!! ' + errors[0]); return; }
-      ['name','email','phone','category','experience','locations'].forEach(k => {
-        const el = document.getElementById('field-' + k);
-        if (el) editData[k] = el.value.trim();
-      });
-      isEditing = false;
-      await renderProfileCard();
-      spShowToast('Profile updated successfully!');
-    });
-    document.getElementById('cancel-btn').addEventListener('click', async () => {
-      editData = {};
-      isEditing = false;
-      await renderProfileCard();
-    });
-  }
-}
+            if (errors.length > 0) {
+              spShowToast("⚠️ " + errors[0]);
+              return;
+            }
 
-async function buildPage() {
-  await initShell('profile');
-  const profile = await getProfile();
-  const tasks = await getTasksArray();
-  const completed = tasks.filter(t => t.status === 'Completed').length;
-  const active    = tasks.filter(t => t.status !== 'Completed').length;
+            const current = getProfile();
+            [
+              "name",
+              "email",
+              "phone",
+              "category",
+              "experience",
+              "locations",
+            ].forEach((k) => {
+              const el = document.getElementById(`field-${k}`);
+              if (el) editData[k] = el.value.trim();
+            });
+            saveProfile({ ...current, ...editData });
+            isEditing = false;
+            const hdr = document.querySelector(".profile-btn-name");
+            if (hdr) hdr.textContent = getProfile().initials;
+            renderProfileCard();
+            spShowToast("✅ Profile updated successfully!");
+          });
+          document
+            .getElementById("cancel-btn")
+            .addEventListener("click", () => {
+              editData = {};
+              isEditing = false;
+              renderProfileCard();
+            });
+        }
+      }
 
-  const performanceStats = [
-    { icon:'star',  label:'Average Rating',  value:'4.8', subtext:'out of 5.0',        colorCls:'yellow' },
-    { icon:'check', label:'Completed Tasks', value: completed.toString(), subtext:'total completions', colorCls:'green2' },
-    { icon:'clip',  label:'Active Tasks',    value: active.toString(),    subtext:'in progress',       colorCls:'teal' },
-    { icon:'trend', label:'Success Rate',    value:'98%', subtext:'completion rate',    colorCls:'green2' },
-  ];
+      function buildPage() {
+        initShell("profile");
+        const profile = getProfile();
+        const tasks = getTasksArray();
+        const completed = tasks.filter((t) => t.status === "Completed").length;
+        const active = tasks.filter((t) => t.status !== "Completed").length;
 
-  const content = document.getElementById('page-content');
-  content.innerHTML = `
+        const performanceStats = [
+          {
+            icon: "star",
+            label: "Average Rating",
+            value: "4.8",
+            subtext: "out of 5.0",
+            colorCls: "yellow",
+          },
+          {
+            icon: "check",
+            label: "Completed Tasks",
+            value: completed.toString(),
+            subtext: "total completions",
+            colorCls: "green2",
+          },
+          {
+            icon: "clip",
+            label: "Active Tasks",
+            value: active.toString(),
+            subtext: "in progress",
+            colorCls: "teal",
+          },
+          {
+            icon: "trend",
+            label: "Success Rate",
+            value: "98%",
+            subtext: "completion rate",
+            colorCls: "green2",
+          },
+        ];
+
+        const content = document.getElementById("page-content");
+        content.innerHTML = `
     <div class="page-header">
       <h1>My Profile</h1>
       <p>Manage your account information and service details.</p>
@@ -131,7 +218,9 @@ async function buildPage() {
     <div class="mb-6">
       <h2 style="margin-bottom:16px;">Performance Summary</h2>
       <div class="stat-cards-grid">
-        ${performanceStats.map(s => `
+        ${performanceStats
+          .map(
+            (s) => `
           <div class="card">
             <div class="card-body">
               <div style="padding:10px;border-radius:8px;background:${statBg[s.colorCls]};display:inline-flex;margin-bottom:14px;">${statIcons[s.icon]}</div>
@@ -139,7 +228,9 @@ async function buildPage() {
               <div style="font-size:0.9rem;font-weight:600;margin-bottom:2px;">${s.label}</div>
               <div style="font-size:0.78rem;color:var(--muted-foreground);">${s.subtext}</div>
             </div>
-          </div>`).join('')}
+          </div>`,
+          )
+          .join("")}
       </div>
     </div>
 
@@ -169,228 +260,487 @@ async function buildPage() {
     </div>
   `;
 
-  await renderProfileCard();
-}
+        renderProfileCard();
+      }
 
-document.addEventListener('DOMContentLoaded', buildPage);
-</script>
+      document.addEventListener("DOMContentLoaded", buildPage);
+    </script>
 
-<!-- ===== SP MODALS ===== -->
-<style>
-.sp-modal-overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}
-.sp-modal-box{background:#fff;border-radius:16px;padding:32px;width:90%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.2);}
-.sp-modal-box h2{margin:0 0 6px;font-size:20px;color:#1a1a2e;}
-.sp-modal-box .sp-modal-subtitle{margin:0 0 22px;color:#6b7280;font-size:14px;}
-.sp-modal-err{display:none;background:#fee2e2;color:#dc2626;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:13px;}
-.sp-fg{margin-bottom:14px;}
-.sp-fg label{display:block;font-size:13px;font-weight:600;color:#374151;margin-bottom:6px;}
-.sp-fg .sp-req{color:#dc2626;}
-.sp-fg input{width:100%;box-sizing:border-box;padding:10px 14px;border:1.5px solid #d1d5db;border-radius:8px;font-size:14px;outline:none;transition:border-color .15s;}
-.sp-fg input:focus{border-color:#42a443;}
-.sp-fg .sp-field-err{color:#dc2626;font-size:12px;margin:4px 0 0;display:none;}
-.sp-modal-actions{display:flex;gap:12px;margin-top:20px;}
-.sp-btn-cancel{flex:1;padding:11px;border:1.5px solid #d1d5db;border-radius:8px;background:#fff;color:#374151;font-size:14px;font-weight:600;cursor:pointer;}
-.sp-btn-submit{flex:1;padding:11px;border:none;border-radius:8px;background:#42a443;color:#fff;font-size:14px;font-weight:600;cursor:pointer;}
-</style>
+    <!-- ===== SP MODALS ===== -->
+    <style>
+      .sp-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.5);
+        align-items: center;
+        justify-content: center;
+      }
+      .sp-modal-box {
+        background: #fff;
+        border-radius: 16px;
+        padding: 32px;
+        width: 90%;
+        max-width: 440px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      }
+      .sp-modal-box h2 {
+        margin: 0 0 6px;
+        font-size: 20px;
+        color: #1a1a2e;
+      }
+      .sp-modal-box .sp-modal-subtitle {
+        margin: 0 0 22px;
+        color: #6b7280;
+        font-size: 14px;
+      }
+      .sp-modal-err {
+        display: none;
+        background: #fee2e2;
+        color: #dc2626;
+        border-radius: 8px;
+        padding: 10px 14px;
+        margin-bottom: 14px;
+        font-size: 13px;
+      }
+      .sp-fg {
+        margin-bottom: 14px;
+      }
+      .sp-fg label {
+        display: block;
+        font-size: 13px;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 6px;
+      }
+      .sp-fg .sp-req {
+        color: #dc2626;
+      }
+      .sp-fg input {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 10px 14px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .sp-fg input:focus {
+        border-color: #42a443;
+      }
+      .sp-fg .sp-field-err {
+        color: #dc2626;
+        font-size: 12px;
+        margin: 4px 0 0;
+        display: none;
+      }
+      .sp-modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+      }
+      .sp-btn-cancel {
+        flex: 1;
+        padding: 11px;
+        border: 1.5px solid #d1d5db;
+        border-radius: 8px;
+        background: #fff;
+        color: #374151;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+      .sp-btn-submit {
+        flex: 1;
+        padding: 11px;
+        border: none;
+        border-radius: 8px;
+        background: #42a443;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+    </style>
 
-<!-- Change Password Modal -->
-<div class="sp-modal-overlay" id="spChangePasswordModal">
-  <div class="sp-modal-box">
-    <h2>Change Password</h2>
-    <p class="sp-modal-subtitle">Enter your current password and choose a new one.</p>
-    <div class="sp-modal-err" id="spCpErr"></div>
-    <div class="sp-fg">
-      <label>Current Password <span class="sp-req">*</span></label>
-      <input type="password" id="sp-cp-current" placeholder="Enter current password"/>
-      <p class="sp-field-err" id="sp-cp-current-err"></p>
+    <!-- Change Password Modal -->
+    <div class="sp-modal-overlay" id="spChangePasswordModal">
+      <div class="sp-modal-box">
+        <h2>Change Password</h2>
+        <p class="sp-modal-subtitle">
+          Enter your current password and choose a new one.
+        </p>
+        <div class="sp-modal-err" id="spCpErr"></div>
+        <div class="sp-fg">
+          <label>Current Password <span class="sp-req">*</span></label>
+          <input
+            type="password"
+            id="sp-cp-current"
+            placeholder="Enter current password"
+          />
+          <p class="sp-field-err" id="sp-cp-current-err"></p>
+        </div>
+        <div class="sp-fg">
+          <label>New Password <span class="sp-req">*</span></label>
+          <input
+            type="password"
+            id="sp-cp-new"
+            placeholder="At least 6 characters"
+          />
+          <p class="sp-field-err" id="sp-cp-new-err"></p>
+        </div>
+        <div class="sp-fg" style="margin-bottom: 0">
+          <label>Confirm New Password <span class="sp-req">*</span></label>
+          <input
+            type="password"
+            id="sp-cp-confirm"
+            placeholder="Re-enter new password"
+          />
+          <p class="sp-field-err" id="sp-cp-confirm-err"></p>
+        </div>
+        <div class="sp-modal-actions">
+          <button
+            class="sp-btn-cancel"
+            onclick="spCloseModal('spChangePasswordModal')"
+          >
+            Cancel
+          </button>
+          <button class="sp-btn-submit" onclick="spSubmitChangePassword()">
+            Update Password
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="sp-fg">
-      <label>New Password <span class="sp-req">*</span></label>
-      <input type="password" id="sp-cp-new" placeholder="At least 6 characters"/>
-      <p class="sp-field-err" id="sp-cp-new-err"></p>
+
+    <!-- Update Contact Modal -->
+    <div class="sp-modal-overlay" id="spContactModal">
+      <div class="sp-modal-box">
+        <h2>Update Contact Information</h2>
+        <p class="sp-modal-subtitle">
+          Update your email and phone number below.
+        </p>
+        <div class="sp-modal-err" id="spContactErr"></div>
+        <div class="sp-fg">
+          <label>Email Address <span class="sp-req">*</span></label>
+          <input
+            type="email"
+            id="sp-ct-email"
+            placeholder="email@example.com"
+          />
+          <p class="sp-field-err" id="sp-ct-email-err"></p>
+        </div>
+        <div class="sp-fg">
+          <label>Confirm Email <span class="sp-req">*</span></label>
+          <input
+            type="email"
+            id="sp-ct-email-confirm"
+            placeholder="Re-enter email"
+          />
+          <p class="sp-field-err" id="sp-ct-email-confirm-err"></p>
+        </div>
+        <div class="sp-fg" style="margin-bottom: 0">
+          <label>Phone Number</label>
+          <input type="tel" id="sp-ct-phone" placeholder="+91 98765 43210" />
+          <p class="sp-field-err" id="sp-ct-phone-err"></p>
+        </div>
+        <div class="sp-modal-actions">
+          <button
+            class="sp-btn-cancel"
+            onclick="spCloseModal('spContactModal')"
+          >
+            Cancel
+          </button>
+          <button class="sp-btn-submit" onclick="spSubmitContact()">
+            Save Changes
+          </button>
+        </div>
+      </div>
     </div>
-    <div class="sp-fg" style="margin-bottom:0;">
-      <label>Confirm New Password <span class="sp-req">*</span></label>
-      <input type="password" id="sp-cp-confirm" placeholder="Re-enter new password"/>
-      <p class="sp-field-err" id="sp-cp-confirm-err"></p>
-    </div>
-    <div class="sp-modal-actions">
-      <button class="sp-btn-cancel" onclick="spCloseModal('spChangePasswordModal')">Cancel</button>
-      <button class="sp-btn-submit" onclick="spSubmitChangePassword()">Update Password</button>
-    </div>
-  </div>
-</div>
 
-<!-- Update Contact Modal -->
-<div class="sp-modal-overlay" id="spContactModal">
-  <div class="sp-modal-box">
-    <h2>Update Contact Information</h2>
-    <p class="sp-modal-subtitle">Update your email and phone number below.</p>
-    <div class="sp-modal-err" id="spContactErr"></div>
-    <div class="sp-fg">
-      <label>Email Address <span class="sp-req">*</span></label>
-      <input type="email" id="sp-ct-email" placeholder="email@example.com"/>
-      <p class="sp-field-err" id="sp-ct-email-err"></p>
-    </div>
-    <div class="sp-fg">
-      <label>Confirm Email <span class="sp-req">*</span></label>
-      <input type="email" id="sp-ct-email-confirm" placeholder="Re-enter email"/>
-      <p class="sp-field-err" id="sp-ct-email-confirm-err"></p>
-    </div>
-    <div class="sp-fg" style="margin-bottom:0;">
-      <label>Phone Number</label>
-      <input type="tel" id="sp-ct-phone" placeholder="+91 98765 43210"/>
-      <p class="sp-field-err" id="sp-ct-phone-err"></p>
-    </div>
-    <div class="sp-modal-actions">
-      <button class="sp-btn-cancel" onclick="spCloseModal('spContactModal')">Cancel</button>
-      <button class="sp-btn-submit" onclick="spSubmitContact()">Save Changes</button>
-    </div>
-  </div>
-</div>
+    <!-- SP Toast -->
+    <div
+      id="spToast"
+      style="
+        display: none;
+        position: fixed;
+        bottom: 28px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1a1a2e;
+        color: #fff;
+        padding: 12px 24px;
+        border-radius: 10px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 2000;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        white-space: nowrap;
+      "
+    ></div>
 
-<!-- SP Toast -->
-<div id="spToast" style="display:none;position:fixed;bottom:28px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:2000;box-shadow:0 8px 24px rgba(0,0,0,0.2);white-space:nowrap;"></div>
+    <script>
+      // ── SP profile password stored in localStorage ──
+      const SP_AUTH_KEY = "spAuth";
+      function getSpAuth() {
+        return (
+          JSON.parse(localStorage.getItem(SP_AUTH_KEY)) || {
+            password: "password123",
+          }
+        );
+      }
+      function setSpAuth(data) {
+        localStorage.setItem(SP_AUTH_KEY, JSON.stringify(data));
+      }
 
-<script>
-// ── SP profile password stored in localStorage ──
-const SP_AUTH_KEY = 'spAuth';
-function getSpAuth() {
-  return JSON.parse(localStorage.getItem(SP_AUTH_KEY)) || { password: 'password123' };
-}
-function setSpAuth(data) { localStorage.setItem(SP_AUTH_KEY, JSON.stringify(data)); }
+      // ── Modal helpers ──
+      function spOpenModal(id) {
+        const el = document.getElementById(id);
+        el.style.display = "flex";
+      }
+      function spCloseModal(id) {
+        const el = document.getElementById(id);
+        el.style.display = "none";
+        el.querySelectorAll(".sp-field-err").forEach((e) => {
+          e.textContent = "";
+          e.style.display = "none";
+        });
+        el.querySelectorAll("input").forEach((i) => {
+          i.value = "";
+          i.style.borderColor = "";
+        });
+        const eb = el.querySelector(".sp-modal-err");
+        if (eb) {
+          eb.style.display = "none";
+          eb.textContent = "";
+        }
+      }
 
-// ── Modal helpers ──
-function spOpenModal(id) {
-  const el = document.getElementById(id);
-  el.style.display = 'flex';
-}
-function spCloseModal(id) {
-  const el = document.getElementById(id);
-  el.style.display = 'none';
-  el.querySelectorAll('.sp-field-err').forEach(e => { e.textContent=''; e.style.display='none'; });
-  el.querySelectorAll('input').forEach(i => { i.value=''; i.style.borderColor=''; });
-  const eb = el.querySelector('.sp-modal-err');
-  if (eb) { eb.style.display='none'; eb.textContent=''; }
-}
+      // Close on backdrop click
+      ["spChangePasswordModal", "spContactModal"].forEach((id) => {
+        document.getElementById(id).addEventListener("click", function (e) {
+          if (e.target === this) spCloseModal(id);
+        });
+      });
 
-// Close on backdrop click
-['spChangePasswordModal','spContactModal'].forEach(id => {
-  document.getElementById(id).addEventListener('click', function(e) {
-    if (e.target === this) spCloseModal(id);
-  });
-});
+      function spSetFieldErr(id, msg) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.textContent = msg;
+        el.style.display = msg ? "block" : "none";
+        // highlight parent input
+        const inp = el.previousElementSibling;
+        if (inp && inp.tagName === "INPUT")
+          inp.style.borderColor = msg ? "#dc2626" : "";
+      }
 
-function spSetFieldErr(id, msg) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.textContent = msg;
-  el.style.display = msg ? 'block' : 'none';
-  // highlight parent input
-  const inp = el.previousElementSibling;
-  if (inp && inp.tagName === 'INPUT') inp.style.borderColor = msg ? '#dc2626' : '';
-}
+      // ── Change Password ──
+      document
+        .getElementById("sp-cp-new")
+        .addEventListener("input", function () {
+          spSetFieldErr(
+            "sp-cp-new-err",
+            this.value && this.value.length < 6
+              ? "Password must be at least 6 characters."
+              : "",
+          );
+          const c = document.getElementById("sp-cp-confirm").value;
+          if (c)
+            spSetFieldErr(
+              "sp-cp-confirm-err",
+              c !== this.value ? "Passwords do not match." : "",
+            );
+        });
+      document
+        .getElementById("sp-cp-confirm")
+        .addEventListener("input", function () {
+          spSetFieldErr(
+            "sp-cp-confirm-err",
+            this.value !== document.getElementById("sp-cp-new").value
+              ? "Passwords do not match."
+              : "",
+          );
+        });
 
-// ── Change Password ──
-document.getElementById('sp-cp-new').addEventListener('input', function() {
-  spSetFieldErr('sp-cp-new-err', this.value && this.value.length < 6 ? 'Password must be at least 6 characters.' : '');
-  const c = document.getElementById('sp-cp-confirm').value;
-  if (c) spSetFieldErr('sp-cp-confirm-err', c !== this.value ? 'Passwords do not match.' : '');
-});
-document.getElementById('sp-cp-confirm').addEventListener('input', function() {
-  spSetFieldErr('sp-cp-confirm-err', this.value !== document.getElementById('sp-cp-new').value ? 'Passwords do not match.' : '');
-});
+      function spSubmitChangePassword() {
+        const current = document.getElementById("sp-cp-current").value;
+        const newPw = document.getElementById("sp-cp-new").value;
+        const confirm = document.getElementById("sp-cp-confirm").value;
+        const errBox = document.getElementById("spCpErr");
+        errBox.style.display = "none";
 
-function spSubmitChangePassword() {
-  const current  = document.getElementById('sp-cp-current').value;
-  const newPw    = document.getElementById('sp-cp-new').value;
-  const confirm  = document.getElementById('sp-cp-confirm').value;
-  const errBox   = document.getElementById('spCpErr');
-  errBox.style.display = 'none';
+        // Reset errors
+        ["sp-cp-current-err", "sp-cp-new-err", "sp-cp-confirm-err"].forEach(
+          (id) => spSetFieldErr(id, ""),
+        );
 
-  // Reset errors
-  ['sp-cp-current-err','sp-cp-new-err','sp-cp-confirm-err'].forEach(id => spSetFieldErr(id,''));
+        let valid = true;
+        if (!current) {
+          spSetFieldErr("sp-cp-current-err", "Current password is required.");
+          valid = false;
+        } else if (current !== getSpAuth().password) {
+          spSetFieldErr("sp-cp-current-err", "Current password is incorrect.");
+          valid = false;
+        }
 
-  let valid = true;
-  if (!current) { spSetFieldErr('sp-cp-current-err','Current password is required.'); valid=false; }
-  else if (current !== getSpAuth().password) { spSetFieldErr('sp-cp-current-err','Current password is incorrect.'); valid=false; }
+        if (!newPw) {
+          spSetFieldErr("sp-cp-new-err", "New password is required.");
+          valid = false;
+        } else if (newPw.length < 6) {
+          spSetFieldErr(
+            "sp-cp-new-err",
+            "Password must be at least 6 characters.",
+          );
+          valid = false;
+        } else if (newPw === current) {
+          spSetFieldErr(
+            "sp-cp-new-err",
+            "New password must differ from your current password.",
+          );
+          valid = false;
+        }
 
-  if (!newPw) { spSetFieldErr('sp-cp-new-err','New password is required.'); valid=false; }
-  else if (newPw.length < 6) { spSetFieldErr('sp-cp-new-err','Password must be at least 6 characters.'); valid=false; }
-  else if (newPw === current) { spSetFieldErr('sp-cp-new-err','New password must differ from your current password.'); valid=false; }
+        if (!confirm) {
+          spSetFieldErr(
+            "sp-cp-confirm-err",
+            "Please confirm your new password.",
+          );
+          valid = false;
+        } else if (confirm !== newPw) {
+          spSetFieldErr("sp-cp-confirm-err", "Passwords do not match.");
+          valid = false;
+        }
 
-  if (!confirm) { spSetFieldErr('sp-cp-confirm-err','Please confirm your new password.'); valid=false; }
-  else if (confirm !== newPw) { spSetFieldErr('sp-cp-confirm-err','Passwords do not match.'); valid=false; }
+        if (!valid) return;
 
-  if (!valid) return;
+        const auth = getSpAuth();
+        auth.password = newPw;
+        setSpAuth(auth);
+        spCloseModal("spChangePasswordModal");
+        spShowToast("✅ Password updated successfully!");
+      }
 
-  const auth = getSpAuth();
-  auth.password = newPw;
-  setSpAuth(auth);
-  spCloseModal('spChangePasswordModal');
-  spShowToast('✅ Password updated successfully!');
-}
+      // ── Update Contact ──
+      function spOpenContactModal() {
+        const p = getProfile();
+        document.getElementById("sp-ct-email").value = p.email || "";
+        document.getElementById("sp-ct-email-confirm").value = "";
+        document.getElementById("sp-ct-phone").value = p.phone || "";
+        spOpenModal("spContactModal");
+      }
 
-// ── Update Contact ──
-async function spOpenContactModal() {
-  const p = await getProfile();
-  document.getElementById('sp-ct-email').value         = p.email || '';
-  document.getElementById('sp-ct-email-confirm').value = '';
-  document.getElementById('sp-ct-phone').value         = p.phone || '';
-  spOpenModal('spContactModal');
-}
+      document
+        .getElementById("sp-ct-email")
+        .addEventListener("input", function () {
+          const v = this.value.trim();
+          if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+            spSetFieldErr(
+              "sp-ct-email-err",
+              "Please enter a valid email address.",
+            );
+          } else {
+            spSetFieldErr("sp-ct-email-err", "");
+          }
+          const c = document.getElementById("sp-ct-email-confirm").value;
+          if (c)
+            spSetFieldErr(
+              "sp-ct-email-confirm-err",
+              c !== v ? "Email addresses do not match." : "",
+            );
+        });
+      document
+        .getElementById("sp-ct-email-confirm")
+        .addEventListener("input", function () {
+          spSetFieldErr(
+            "sp-ct-email-confirm-err",
+            this.value !== document.getElementById("sp-ct-email").value.trim()
+              ? "Email addresses do not match."
+              : "",
+          );
+        });
+      document
+        .getElementById("sp-ct-phone")
+        .addEventListener("input", function () {
+          const v = this.value.trim();
+          if (v && !/^[\+]?[\d\s\-\(\)]{7,15}$/.test(v)) {
+            spSetFieldErr(
+              "sp-ct-phone-err",
+              "Enter a valid phone number (7–15 digits).",
+            );
+          } else {
+            spSetFieldErr("sp-ct-phone-err", "");
+          }
+        });
 
-document.getElementById('sp-ct-email').addEventListener('input', function() {
-  const v = this.value.trim();
-  if (v && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
-    spSetFieldErr('sp-ct-email-err','Please enter a valid email address.');
-  } else { spSetFieldErr('sp-ct-email-err',''); }
-  const c = document.getElementById('sp-ct-email-confirm').value;
-  if (c) spSetFieldErr('sp-ct-email-confirm-err', c !== v ? 'Email addresses do not match.' : '');
-});
-document.getElementById('sp-ct-email-confirm').addEventListener('input', function() {
-  spSetFieldErr('sp-ct-email-confirm-err', this.value !== document.getElementById('sp-ct-email').value.trim() ? 'Email addresses do not match.' : '');
-});
-document.getElementById('sp-ct-phone').addEventListener('input', function() {
-  const v = this.value.trim();
-  if (v && !/^[\+]?[\d\s\-\(\)]{7,15}$/.test(v)) {
-    spSetFieldErr('sp-ct-phone-err','Enter a valid phone number (7–15 digits).');
-  } else { spSetFieldErr('sp-ct-phone-err',''); }
-});
+      function spSubmitContact() {
+        const email = document.getElementById("sp-ct-email").value.trim();
+        const eConfirm = document
+          .getElementById("sp-ct-email-confirm")
+          .value.trim();
+        const phone = document.getElementById("sp-ct-phone").value.trim();
 
-function spSubmitContact() {
-  const email   = document.getElementById('sp-ct-email').value.trim();
-  const eConfirm= document.getElementById('sp-ct-email-confirm').value.trim();
-  const phone   = document.getElementById('sp-ct-phone').value.trim();
+        [
+          "sp-ct-email-err",
+          "sp-ct-email-confirm-err",
+          "sp-ct-phone-err",
+        ].forEach((id) => spSetFieldErr(id, ""));
+        let valid = true;
 
-  ['sp-ct-email-err','sp-ct-email-confirm-err','sp-ct-phone-err'].forEach(id => spSetFieldErr(id,''));
-  let valid = true;
+        if (!email) {
+          spSetFieldErr("sp-ct-email-err", "Email address is required.");
+          valid = false;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          spSetFieldErr(
+            "sp-ct-email-err",
+            "Please enter a valid email address.",
+          );
+          valid = false;
+        }
 
-  if (!email) { spSetFieldErr('sp-ct-email-err','Email address is required.'); valid=false; }
-  else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { spSetFieldErr('sp-ct-email-err','Please enter a valid email address.'); valid=false; }
+        if (!eConfirm) {
+          spSetFieldErr(
+            "sp-ct-email-confirm-err",
+            "Please confirm your email.",
+          );
+          valid = false;
+        } else if (eConfirm !== email) {
+          spSetFieldErr(
+            "sp-ct-email-confirm-err",
+            "Email addresses do not match.",
+          );
+          valid = false;
+        }
 
-  if (!eConfirm) { spSetFieldErr('sp-ct-email-confirm-err','Please confirm your email.'); valid=false; }
-  else if (eConfirm !== email) { spSetFieldErr('sp-ct-email-confirm-err','Email addresses do not match.'); valid=false; }
+        if (phone && !/^[\+]?[\d\s\-\(\)]{7,15}$/.test(phone)) {
+          spSetFieldErr(
+            "sp-ct-phone-err",
+            "Enter a valid phone number (7–15 digits).",
+          );
+          valid = false;
+        }
 
-  if (phone && !/^[\+]?[\d\s\-\(\)]{7,15}$/.test(phone)) {
-    spSetFieldErr('sp-ct-phone-err','Enter a valid phone number (7–15 digits).'); valid=false;
-  }
+        if (!valid) return;
 
-  if (!valid) return;
+        const current = getProfile();
+        current.email = email;
+        if (phone) current.phone = phone;
+        saveProfile(current);
 
-  // We are skipping the real backend persist for this demo.
-  spCloseModal('spContactModal');
-  await renderProfileCard();
-  spShowToast('✅ Contact information updated successfully!');
-}
+        spCloseModal("spContactModal");
+        renderProfileCard();
+        spShowToast("✅ Contact information updated successfully!");
+      }
 
-// ── Toast ──
-function spShowToast(msg, dur = 3500) {
-  const t = document.getElementById('spToast');
-  t.textContent = msg;
-  t.style.display = 'block';
-  setTimeout(() => { t.style.display = 'none'; }, dur);
-}
-</script>
-</body>
+      // ── Toast ──
+      function spShowToast(msg, dur = 3500) {
+        const t = document.getElementById("spToast");
+        t.textContent = msg;
+        t.style.display = "block";
+        setTimeout(() => {
+          t.style.display = "none";
+        }, dur);
+      }
+    </script>
+  </body>
 </html>

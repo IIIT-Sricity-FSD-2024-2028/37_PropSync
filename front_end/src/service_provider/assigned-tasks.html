@@ -1,68 +1,151 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Assigned Tasks — PropSync</title>
-  
-  <link rel="stylesheet" href="../css/styles.css">
-</head>
-<body>
-<script src="../js/complaint_bridge.js"></script>
-<script src="../js/taskData.js"></script>
-<script>
-/* =========================================================
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Assigned Tasks — PropSync</title>
+
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/route_guard.js"></script>
+  </head>
+  <body>
+    <script src="../js/complaint_bridge.js"></script>
+    <script src="../js/taskData.js"></script>
+    <script>
+      /* =========================================================
    Assigned Tasks Page
    ========================================================= */
 
-function isOverdue(deadline) {
-  const today = new Date('2026-03-06');
-  const d = new Date(deadline);
-  return d < today;
-}
+      const API = "http://localhost:3000";
+      const SP_HEADERS = {
+        role: "service_provider",
+        "Content-Type": "application/json",
+      };
 
-async function getFilteredTasks() {
-  const tasks = await getTasksArray();
-  const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-  const statusF = document.getElementById('status-filter')?.value || 'All';
-  const priorityF = document.getElementById('priority-filter')?.value || 'All';
-  return tasks.filter(t => {
-    const matchSearch = t.id.toLowerCase().includes(search);
-    const matchStatus = statusF === 'All' || t.status === statusF;
-    const matchPriority = priorityF === 'All' || t.priority === priorityF;
-    return matchSearch && matchStatus && matchPriority;
-  });
-}
+      let currentProviderId = 4;
+      try {
+        const cu = JSON.parse(localStorage.getItem("currentUser"));
+        if (cu && cu.id) currentProviderId = cu.id;
+      } catch (e) {}
 
-async function renderTable() {
-  const filtered = await getFilteredTasks();
-  const tbody = document.getElementById('tasks-tbody');
-  const emptyState = document.getElementById('empty-state');
-  const tableCard = document.getElementById('table-card');
-  if (!tbody) return;
+      let apiTasks = [];
 
-  if (filtered.length === 0) {
-    emptyState.style.display = 'block';
-    tableCard.style.display = 'none';
-    return;
-  }
-  emptyState.style.display = 'none';
-  tableCard.style.display = 'block';
+      async function loadTasksFromAPI() {
+        try {
+          const [res, estRes] = await Promise.all([
+            fetch(`${API}/complaints/provider/${currentProviderId}`, {
+              headers: SP_HEADERS,
+            }),
+            fetch(`${API}/estimates/provider/${currentProviderId}`, {
+              headers: SP_HEADERS,
+            }),
+          ]);
+          if (res.ok) {
+            const data = await res.json();
+            const estimates = estRes.ok ? await estRes.json() : [];
+            apiTasks = data.map((c) => ({
+              id: String(c.id),
+              issueType: c.category,
+              title: c.title,
+              description: c.description,
+              location: c.location || "Unknown",
+              deadline: c.deadline || "None",
+              priority: c.priority
+                ? c.priority.charAt(0).toUpperCase() + c.priority.slice(1)
+                : "Low",
+              status: statusLabel(c.status),
+              estimateSubmitted:
+                c.estimateSubmitted ||
+                estimates.some((e) => Number(e.complaintId) === Number(c.id)),
+              estimateApproved:
+                c.estimateApproved ||
+                estimates.some(
+                  (e) =>
+                    Number(e.complaintId) === Number(c.id) &&
+                    e.approved === true,
+                ),
+            }));
+          }
+        } catch (e) {
+          console.error("Failed to load tasks from API:", e);
+        }
+      }
 
-  tbody.innerHTML = filtered.map(t => {
-    const overdueFlag = isOverdue(t.deadline) && t.status !== 'Completed';
-    const deadlineHTML = `
+      function canUpdateStatus(task) {
+        return (
+          task.status === "In Progress" ||
+          (task.status !== "Completed" && task.estimateApproved)
+        );
+      }
+
+      function statusLabel(status) {
+        const labels = {
+          assigned: "Assigned",
+          estimating_cost: "Estimating Cost",
+          in_progress: "In Progress",
+          completed: "Completed",
+          billed: "Billed",
+          paid: "Paid",
+          closed: "Closed",
+        };
+        return labels[status] || status;
+      }
+
+      function isOverdue(deadline) {
+        const today = new Date("2026-03-06");
+        const d = new Date(deadline);
+        return d < today;
+      }
+
+      function getFilteredTasks() {
+        const search = (
+          document.getElementById("search-input")?.value || ""
+        ).toLowerCase();
+        const statusF =
+          document.getElementById("status-filter")?.value || "All";
+        const priorityF =
+          document.getElementById("priority-filter")?.value || "All";
+        return apiTasks.filter((t) => {
+          const matchSearch =
+            t.id.toLowerCase().includes(search) ||
+            t.title.toLowerCase().includes(search);
+          const matchStatus = statusF === "All" || t.status === statusF;
+          const matchPriority = priorityF === "All" || t.priority === priorityF;
+          return matchSearch && matchStatus && matchPriority;
+        });
+      }
+
+      function renderTable() {
+        const filtered = getFilteredTasks();
+        const tbody = document.getElementById("tasks-tbody");
+        const emptyState = document.getElementById("empty-state");
+        const tableCard = document.getElementById("table-card");
+        if (!tbody) return;
+
+        if (filtered.length === 0) {
+          emptyState.style.display = "block";
+          tableCard.style.display = "none";
+          return;
+        }
+        emptyState.style.display = "none";
+        tableCard.style.display = "block";
+
+        tbody.innerHTML = filtered
+          .map((t) => {
+            const overdueFlag =
+              isOverdue(t.deadline) && t.status !== "Completed";
+            const deadlineHTML = `
       <div style="display:flex;align-items:center;gap:8px;">
         <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:var(--muted-foreground);stroke-width:2;fill:none"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-        <span class="${overdueFlag ? 'overdue-text' : ''}" style="font-size:0.88rem;">${t.deadline}</span>
-        ${overdueFlag ? '<span class="overdue-badge">Overdue</span>' : ''}
+        <span class="${overdueFlag ? "overdue-text" : ""}" style="font-size:0.88rem;">${t.deadline}</span>
+        ${overdueFlag ? '<span class="overdue-badge">Overdue</span>' : ""}
       </div>`;
-    const actionsHTML = `
+            const actionsHTML = `
       <div style="display:flex;align-items:center;gap:4px;" onclick="event.stopPropagation()">
-        ${!t.estimateSubmitted ? `<button onclick="location.href='submit-estimate.html?task=${t.id}'" title="Submit Estimate" style="padding:7px;background:none;border:none;cursor:pointer;color:#16A34A;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='rgba(22,163,74,0.1)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>` : ''}
-        ${t.status !== 'Completed' ? `<button onclick="location.href='update-status.html?task=${t.id}'" title="Update Status" style="padding:7px;background:none;border:none;cursor:pointer;color:#F59E0B;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>` : ''}
+        ${!t.estimateSubmitted ? `<button onclick="location.href='submit-estimate.html?task=${t.id}'" title="Submit Estimate" style="padding:7px;background:none;border:none;cursor:pointer;color:#16A34A;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='rgba(22,163,74,0.1)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></button>` : ""}
+        ${canUpdateStatus(t) ? `<button onclick="location.href='update-status.html?task=${t.id}'" title="Update Status" style="padding:7px;background:none;border:none;cursor:pointer;color:#F59E0B;border-radius:6px;transition:background 0.15s;" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='none'"><svg viewBox="0 0 24 24" style="width:16px;height:16px;stroke:currentColor;stroke-width:2;fill:none"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>` : ""}
       </div>`;
-    return `
+            return `
       <tr class="clickable" onclick="location.href='task-details.html?task=${t.id}'">
         <td><span style="font-weight:600;color:var(--foreground);">${t.id}</span></td>
         <td><span class="badge badge-green" style="border-radius:999px;">${t.issueType}</span></td>
@@ -72,13 +155,14 @@ async function renderTable() {
         <td><span class="badge ${statusClass(t.status)}">${t.status}</span></td>
         <td>${actionsHTML}</td>
       </tr>`;
-  }).join('');
-}
+          })
+          .join("");
+      }
 
-async function buildPage() {
-  await initShell('tasks');
-  const content = document.getElementById('page-content');
-  content.innerHTML = `
+      function buildPage() {
+        initShell("tasks");
+        const content = document.getElementById("page-content");
+        content.innerHTML = `
     <div class="page-header">
       <h1>Assigned Tasks</h1>
       <p>View complaints that have been officially assigned to you by the maintenance manager.</p>
@@ -96,8 +180,8 @@ async function buildPage() {
           <select class="filter-select" id="status-filter">
             <option value="All">All Status</option>
             <option value="Assigned">Assigned</option>
+            <option value="Estimating Cost">Estimating Cost</option>
             <option value="In Progress">In Progress</option>
-            <option value="Waiting for Materials">Waiting for Materials</option>
             <option value="Completed">Completed</option>
           </select>
         </div>
@@ -149,13 +233,22 @@ async function buildPage() {
     </div>
   `;
 
-  document.getElementById('search-input').addEventListener('input', renderTable);
-  document.getElementById('status-filter').addEventListener('change', renderTable);
-  document.getElementById('priority-filter').addEventListener('change', renderTable);
-  await renderTable();
-}
+        document
+          .getElementById("search-input")
+          .addEventListener("input", renderTable);
+        document
+          .getElementById("status-filter")
+          .addEventListener("change", renderTable);
+        document
+          .getElementById("priority-filter")
+          .addEventListener("change", renderTable);
+        renderTable();
+      }
 
-document.addEventListener('DOMContentLoaded', buildPage);
-</script>
-</body>
+      document.addEventListener("DOMContentLoaded", async () => {
+        await loadTasksFromAPI();
+        buildPage();
+      });
+    </script>
+  </body>
 </html>

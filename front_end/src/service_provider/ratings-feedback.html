@@ -10,6 +10,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/route_guard.js"></script>
   </head>
   <body>
     <script src="../js/complaint_bridge.js"></script>
@@ -19,23 +20,104 @@
    Ratings & Feedback Page
    ========================================================= */
 
-      // Stats and distribution computed dynamically from backend data
-      let overviewStats = { averageRating: 0, totalReviews: 0, completedComplaints: 0, satisfactionRate: 0 };
-      let ratingDistribution = [
-        { stars: 5, count: 0, percentage: 0 },
-        { stars: 4, count: 0, percentage: 0 },
-        { stars: 3, count: 0, percentage: 0 },
-        { stars: 2, count: 0, percentage: 0 },
-        { stars: 1, count: 0, percentage: 0 },
-      ];
+      const API = "http://localhost:3000";
+      const SP_HEADERS = {
+        role: "service_provider",
+        "Content-Type": "application/json",
+      };
 
-      // feedbackList removed, using getRatings() from backend
+      let currentProviderId = 4;
+      try {
+        const cu = JSON.parse(localStorage.getItem("currentUser"));
+        if (cu && cu.id) currentProviderId = cu.id;
+      } catch (e) {}
+
+      let overviewStats = {
+        averageRating: 0,
+        totalReviews: 0,
+        completedComplaints: 0,
+        satisfactionRate: 0,
+      };
+      let ratingDistribution = [5, 4, 3, 2, 1].map((stars) => ({
+        stars,
+        count: 0,
+        percentage: 0,
+      }));
+      let feedbackList = [];
 
       let ratingFilter = "All";
       let serviceFilter = "All";
 
-      async function getFiltered() {
-        const feedbackList = await getRatings();
+      async function loadRatingsFromAPI() {
+        try {
+          const taskRes = await fetch(
+            `${API}/complaints/provider/${currentProviderId}`,
+            { headers: SP_HEADERS },
+          );
+          const tasks = taskRes.ok ? await taskRes.json() : [];
+          const taskMap = new Map(tasks.map((c) => [c.id, c]));
+          const taskIds = new Set(tasks.map((c) => c.id));
+
+          const ratingRes = await fetch(`${API}/ratings`, {
+            headers: SP_HEADERS,
+          });
+          const ratings = ratingRes.ok ? await ratingRes.json() : [];
+          const providerRatings = ratings.filter((r) =>
+            taskIds.has(r.complaintId),
+          );
+
+          feedbackList = providerRatings.map((r) => {
+            const c = taskMap.get(r.complaintId) || {};
+            return {
+              id: String(r.id),
+              complaintId: `C-${r.complaintId}`,
+              serviceType: c.category || "General",
+              rating: r.score,
+              comment: r.feedback || "No written feedback.",
+              date: r.ratedAt || "",
+              location: c.location || "Unknown",
+              ownerName: `Owner #${r.ownerId}`,
+            };
+          });
+
+          const total = feedbackList.length;
+          const average = total
+            ? feedbackList.reduce((sum, f) => sum + f.rating, 0) / total
+            : 0;
+          overviewStats = {
+            averageRating: average.toFixed(1),
+            totalReviews: total,
+            completedComplaints: tasks.filter((c) =>
+              [
+                "completed",
+                "billed",
+                "paid",
+                "closed",
+                "payment_pending",
+                "resolved",
+              ].includes(c.status),
+            ).length,
+            satisfactionRate: total
+              ? Math.round(
+                  (feedbackList.filter((f) => f.rating >= 4).length / total) *
+                    100,
+                )
+              : 0,
+          };
+          ratingDistribution = [5, 4, 3, 2, 1].map((stars) => {
+            const count = feedbackList.filter((f) => f.rating === stars).length;
+            return {
+              stars,
+              count,
+              percentage: total ? Math.round((count / total) * 100) : 0,
+            };
+          });
+        } catch (e) {
+          console.error("Failed to load ratings:", e);
+        }
+      }
+
+      function getFiltered() {
         return feedbackList.filter((f) => {
           const matchRating =
             ratingFilter === "All" || f.rating === parseInt(ratingFilter);
@@ -45,8 +127,8 @@
         });
       }
 
-      async function renderFeedback() {
-        const filtered = await getFiltered();
+      function renderFeedback() {
+        const filtered = getFiltered();
         const container = document.getElementById("feedback-list");
         const countEl = document.getElementById("feedback-count");
         if (countEl) countEl.textContent = filtered.length;
@@ -94,32 +176,9 @@
       }
 
       async function buildPage() {
-        await initShell("ratings");
+        initShell("ratings");
+        await loadRatingsFromAPI();
         const content = document.getElementById("page-content");
-
-        // Fetch all ratings upfront and compute stats
-        const allRatings = await getRatings();
-        const total = allRatings.length;
-        const avg = total > 0
-          ? (allRatings.reduce((s, r) => s + r.rating, 0) / total)
-          : 0;
-        const satisfied = allRatings.filter(r => r.rating >= 4).length;
-
-        overviewStats.averageRating = Math.round(avg * 10) / 10;
-        overviewStats.totalReviews = total;
-        overviewStats.completedComplaints = total; // each rating corresponds to a completed service
-        overviewStats.satisfactionRate = total > 0 ? Math.round((satisfied / total) * 100) : 0;
-
-        // Compute distribution
-        [5, 4, 3, 2, 1].forEach((stars, i) => {
-          const count = allRatings.filter(r => r.rating === stars).length;
-          ratingDistribution[i] = {
-            stars,
-            count,
-            percentage: total > 0 ? Math.round((count / total) * 100) : 0
-          };
-        });
-
         content.innerHTML = `
     <div class="page-header">
       <h1>Ratings & Feedback</h1>
@@ -229,24 +288,24 @@
     </div>
 
     <!-- Feedback List -->
-    <h2 style="margin-bottom:16px;">Recent Feedback (<span id="feedback-count">0</span>)</h2>
+    <h2 style="margin-bottom:16px;">Recent Feedback (<span id="feedback-count">${feedbackList.length}</span>)</h2>
     <div id="feedback-list"></div>
   `;
 
         document
           .getElementById("rating-filter")
-          .addEventListener("change", async function () {
+          .addEventListener("change", function () {
             ratingFilter = this.value;
-            await renderFeedback();
+            renderFeedback();
           });
         document
           .getElementById("service-filter")
-          .addEventListener("change", async function () {
+          .addEventListener("change", function () {
             serviceFilter = this.value;
-            await renderFeedback();
+            renderFeedback();
           });
 
-        await renderFeedback();
+        renderFeedback();
       }
 
       document.addEventListener("DOMContentLoaded", buildPage);

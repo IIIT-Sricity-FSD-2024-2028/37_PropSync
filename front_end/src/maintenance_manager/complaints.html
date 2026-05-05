@@ -317,14 +317,18 @@ async function renderTable() {
     _isOwnerComplaint: true,
   }));
   const existingIds = new Set(complaints.map(c => String(c.id)));
-  const merged = [...complaints, ...bridgeMapped.filter(bc => !existingIds.has(bc.id))];
+  const merged = [...complaints, ...bridgeMapped.filter(bc => !existingIds.has(bc.id))].map(c => ({
+    ...c,
+    issue: c.issue || c.title || 'No Title',
+    submitted: c.submitted || c.reportedDate || '—',
+  }));
 
   const statusMap = {all:'',pending:'Pending',approved:'Approved',inprogress:'In Progress',completed:'Completed',payment:'Payment Pending',rejected:'Rejected'};
   let data = merged.filter(c => {
     if (search && !c.id.toLowerCase().includes(search) && !c.issue.toLowerCase().includes(search)) return false;
     if (priority && c.priority !== priority) return false;
     const want = statusMap[currentTab];
-    return !want || c.status === want;
+    return !want || (c.status && c.status.toLowerCase() === want.toLowerCase());
   });
 
   const heads = {

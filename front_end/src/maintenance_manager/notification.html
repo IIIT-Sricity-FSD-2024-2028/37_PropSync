@@ -52,10 +52,10 @@
     /* ── Owner-style notification cards ── */
     .notification_card { display:flex; gap:16px; padding:20px 22px; border-radius:14px; border:2px solid #42a443; background:#fff; margin-bottom:12px; transition:all .2s; box-shadow:0 1px 4px rgba(66,164,67,0.08); cursor:pointer; }
     .notification_card:hover { background:#F0FDF4; box-shadow:0 4px 16px rgba(66,164,67,0.18); transform:translateY(-1px); }
-    .notification_card.unread { border-color:#42a443; background:#fff; }
-    .notification_card.unread:hover { background:#F0FDF4; }
-    .notification_card.read { border-color:#42a443; background:#fff; }
-    .notification_card.read:hover { background:#F0FDF4; }
+    .notification_card.unread { border-color:#16A34A; background:#F0FDF4; border-left-width: 6px; }
+    .notification_card.unread:hover { background:#DCFCE7; }
+    .notification_card.read { border-color:#E5E7EB; background:#fff; opacity: 0.85; }
+    .notification_card.read:hover { background:#F9FAFB; }
     .notification_card.sent-item { border-color:#42a443; background:#fff; }
     .notification_card.sent-item:hover { background:#F0FDF4; }
     .notif-icon-circle { width:48px; height:48px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
@@ -431,8 +431,8 @@ function buildNotifItem(n, isSent) {
 
   const actions = !isSent ? `
     <div class="notif-actions">
-      <span class="notif-mark-read" onclick="event.stopPropagation();markSingleRead(${n.id})">✓ Mark as Read</span>
-      <span class="notif-delete-btn" onclick="event.stopPropagation();deleteSingleNotif(${n.id})">🗑 Delete</span>
+      <span class="notif-mark-read" onclick="event.stopPropagation();markSingleRead('${n.id}')">✓ Mark as Read</span>
+      <span class="notif-delete-btn" onclick="event.stopPropagation();deleteSingleNotif('${n.id}')">🗑 Delete</span>
     </div>` : '';
 
   return `
@@ -528,6 +528,7 @@ function setSentTab(tab, el) {
 /* ─── Mark single read ─── */
 async function markSingleRead(id) {
   await markNotifRead(id);
+  if (typeof renderNotifs === 'function') await renderNotifs();
   showToast('Marked as read.');
 }
 

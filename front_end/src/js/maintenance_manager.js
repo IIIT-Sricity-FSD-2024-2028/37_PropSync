@@ -6,8 +6,8 @@
 const MM_API = "http://localhost:3000";
 const MM_HEADERS = {
   "Content-Type": "application/json",
-  "role": "maintenance_manager",
-  "user-email": "manager@propsync.com",
+  "role": localStorage.getItem("role") || "maintenance_manager",
+  "user-email": localStorage.getItem("user-email") || "manager@communityhub.com",
 };
 
 /* ============================================================

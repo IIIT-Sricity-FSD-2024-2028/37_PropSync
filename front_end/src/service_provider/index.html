@@ -1,72 +1,170 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard — PropSync</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="../css/styles.css">
-</head>
-<body>
-<script src="../js/complaint_bridge.js"></script>
-<script src="../js/taskData.js"></script>
-<script>
-const svgIcons = {
-  'alert-circle': `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-  'clock':        `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-  'check-circle': `<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
-};
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard — PropSync</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/styles.css" />
+    <script src="../js/route_guard.js"></script>
+  </head>
+  <body>
+    <script src="../js/complaint_bridge.js"></script>
+    <script src="../js/taskData.js"></script>
+    <script>
+      const svgIcons = {
+        "alert-circle": `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+        clock: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
+        "check-circle": `<svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`,
+      };
 
-function statusBadge(status) {
-  return `<span class="badge ${statusClass(status)}">${status}</span>`;
-}
+      const API = "http://localhost:3000";
+      const SP_HEADERS = {
+        role: "service_provider",
+        "Content-Type": "application/json",
+      };
 
-async function buildPage() {
-  await initShell('dashboard');
-  const content = document.getElementById('page-content');
+      let currentProviderId = 4;
+      try {
+        const cu = JSON.parse(localStorage.getItem("currentUser"));
+        if (cu && cu.id) currentProviderId = cu.id;
+      } catch (e) {}
 
-  // Live data from backend
-  const tasks      = await getTasksArray();
-  const complaints = await getAllComplaints();
-  const profile    = await getProfile();
-  const notifsList = await getNotifications();
-  const notifs     = notifsList.slice(0, 3);
+      function statusLabel(status) {
+        const labels = {
+          assigned: "Assigned",
+          estimating_cost: "Estimating Cost",
+          in_progress: "In Progress",
+          completed: "Completed",
+          billed: "Billed",
+          paid: "Paid",
+          closed: "Closed",
+          payment_pending: "Payment Pending",
+          resolved: "Resolved",
+        };
+        return labels[status] || status;
+      }
 
-  const totalAssigned  = tasks.length;
-  const inProgress     = tasks.filter(t => t.status === 'In Progress').length;
-  const completed      = tasks.filter(t => t.status === 'Completed').length;
-  const pendingEst     = tasks.filter(t => !t.estimateSubmitted).length;
+      async function fetchProviderTasks() {
+        try {
+          const res = await fetch(
+            `${API}/complaints/provider/${currentProviderId}`,
+            { headers: SP_HEADERS },
+          );
+          if (!res.ok) return [];
+          const complaints = await res.json();
+          return complaints.map((c) => ({
+            id: String(c.id),
+            issueType: c.category || "General",
+            title: c.title,
+            description: c.description || "No description provided.",
+            imageUrl:
+              c.photo ||
+              "https://placehold.co/128x128/e5e7eb/6b7280?text=Image",
+            location: c.location || "Unknown",
+            deadline: c.deadline || "None",
+            status: statusLabel(c.status),
+            estimateSubmitted: [
+              "estimating_cost",
+              "in_progress",
+              "completed",
+              "billed",
+              "paid",
+              "closed",
+              "payment_pending",
+              "resolved",
+            ].includes(c.status),
+          }));
+        } catch (e) {
+          console.error("Failed to load provider tasks:", e);
+          return [];
+        }
+      }
 
-  // Recent complaints — show both unassigned (Approved) and assigned complaints
-  const recentComplaints = complaints.slice(0, 3).map(c => ({
-    id: c.id,
-    issueType: c.category || c.issueType,
-    title: c.title,
-    description: c.description,
-    imageUrl: c.image || 'https://placehold.co/128x128/e5e7eb/6b7280?text=Image',
-    location: c.location,
-    deadline: c.deadline || 'TBD',
-    accepted: c.status !== 'Approved',
-    status: c.status
-  }));
+      function statusBadge(status) {
+        return `<span class="badge ${statusClass(status)}">${status}</span>`;
+      }
 
-  // Tasks table — show latest 4 assigned tasks
-  const tableTasks = tasks.slice(0, 4);
+      async function buildPage() {
+        initShell("dashboard");
+        const content = document.getElementById("page-content");
 
-  const notifIconMap = {
-    new_complaint: { cls:'notif-icon-green',  icon:'alert-circle' },
-    assignment:    { cls:'notif-icon-green',  icon:'check-circle' },
-    deadline:      { cls:'notif-icon-yellow', icon:'clock' },
-    approval:      { cls:'notif-icon-teal',   icon:'check-circle' },
-    completion:    { cls:'notif-icon-teal',   icon:'check-circle' },
-  };
+        const tasks = await fetchProviderTasks();
+        const complaints = [];
+        const profile = getProfile();
+        const notifs = getNotifications().slice(0, 3);
 
-  const feedbacksList = await getRatings();
-  const feedbacks = feedbacksList.slice(0, 3);
-  const unreadCount = await getUnreadCount();
+        const totalAssigned = tasks.length;
+        const inProgress = tasks.filter(
+          (t) => t.status === "In Progress",
+        ).length;
+        const completed = tasks.filter((t) =>
+          [
+            "Completed",
+            "Billed",
+            "Paid",
+            "Closed",
+            "Payment Pending",
+            "Resolved",
+          ].includes(t.status),
+        ).length;
+        const pendingEst = tasks.filter((t) => !t.estimateSubmitted).length;
 
-  content.innerHTML = `
+        // Recent complaints — show accepted/assigned tasks on dashboard (not unaccepted available)
+        const recentComplaints =
+          tasks.length > 0
+            ? tasks.slice(0, 3).map((t) => ({
+                id: t.id,
+                issueType: t.issueType,
+                title: t.title,
+                description: t.description,
+                imageUrl:
+                  t.imageUrl ||
+                  "https://placehold.co/128x128/e5e7eb/6b7280?text=Image",
+                location: t.location,
+                deadline: t.deadline,
+                accepted: true,
+                status: t.status,
+              }))
+            : complaints.filter((c) => c.accepted).slice(0, 3);
+
+        // Tasks table — show latest 4 assigned tasks
+        const tableTasks = tasks.slice(0, 4);
+
+        const notifIconMap = {
+          new_complaint: { cls: "notif-icon-green", icon: "alert-circle" },
+          assignment: { cls: "notif-icon-green", icon: "check-circle" },
+          deadline: { cls: "notif-icon-yellow", icon: "clock" },
+          approval: { cls: "notif-icon-teal", icon: "check-circle" },
+          completion: { cls: "notif-icon-teal", icon: "check-circle" },
+        };
+
+        const feedbacks = [
+          {
+            name: "Sarah Johnson",
+            rating: 5,
+            comment: "Excellent work! Very professional and quick service.",
+            date: "Mar 4, 2026",
+          },
+          {
+            name: "Michael Chen",
+            rating: 4,
+            comment: "Good service, minor delay but quality work.",
+            date: "Mar 2, 2026",
+          },
+          {
+            name: "Emily Davis",
+            rating: 5,
+            comment: "Outstanding service! Highly recommended.",
+            date: "Feb 28, 2026",
+          },
+        ];
+
+        content.innerHTML = `
     <div class="page-header">
       <h1>Dashboard</h1>
       <p>Welcome back, ${profile.name}! Here's your overview.</p>
@@ -98,8 +196,12 @@ async function buildPage() {
       <div class="card">
         <div class="card-body">
           <h2 style="margin-bottom:20px;">Recent Complaints</h2>
-          ${recentComplaints.length === 0 ? `<p style="color:var(--muted-foreground);">No available complaints.</p>` :
-            recentComplaints.map(c => `
+          ${
+            recentComplaints.length === 0
+              ? `<p style="color:var(--muted-foreground);">No available complaints.</p>`
+              : recentComplaints
+                  .map(
+                    (c) => `
               <div class="complaint-card">
                 <img src="${c.imageUrl}" alt="${c.title}" class="complaint-img"
                   onerror="this.src='https://placehold.co/128x128/e5e7eb/6b7280?text=Image'">
@@ -107,7 +209,7 @@ async function buildPage() {
                   <div class="complaint-badges">
                     <span class="badge badge-green">${c.id}</span>
                     <span class="badge badge-dark">${c.issueType}</span>
-                    ${c.accepted ? '<span class="badge" style="background:#16A34A;color:#fff;border-radius:999px;">✓ Accepted</span>' : ''}
+                    ${c.accepted ? '<span class="badge" style="background:#16A34A;color:#fff;border-radius:999px;">✓ Accepted</span>' : ""}
                   </div>
                   <p class="complaint-title">${c.title}</p>
                   <p class="complaint-desc">${c.description}</p>
@@ -115,7 +217,9 @@ async function buildPage() {
                     <div class="complaint-meta-row"><svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span>${c.location}</span></div>
                     <div class="complaint-meta-row"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Deadline: ${c.deadline}</span></div>
                   </div>
-                  ${!c.accepted ? `
+                  ${
+                    !c.accepted
+                      ? `
                   <div class="complaint-actions">
                     <button class="btn btn-green btn-sm" onclick="dashAccept('${c.id}')">
                       <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>Accept
@@ -123,13 +227,18 @@ async function buildPage() {
                     <button class="btn btn-red btn-sm" onclick="dashReject('${c.id}')">
                       <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>Reject
                     </button>
-                  </div>` : `
+                  </div>`
+                      : `
                   <div style="margin-top:8px;">
-                    <a href="task-details.html?task=${c.id}" class="btn-link" style="font-size:0.82rem;">View Details →</a>
-                  </div>`}
+                    <a href="assigned-tasks.html" class="btn-link" style="font-size:0.82rem;">View in Assigned Tasks →</a>
+                  </div>`
+                  }
                 </div>
               </div>
-          `).join('')}
+          `,
+                  )
+                  .join("")
+          }
         </div>
       </div>
 
@@ -139,23 +248,28 @@ async function buildPage() {
           <div class="notif-panel-header">
             <div class="notif-panel-title">
               <h2 style="font-size:1.05rem;font-weight:700;">Notifications</h2>
-              <span class="notif-count-badge">${unreadCount}</span>
+              <span class="notif-count-badge">${getUnreadCount()}</span>
             </div>
             <button class="btn-link" onclick="location.href='notifications.html'">View All <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
           </div>
-          ${notifs.length === 0 ? `<p style="color:var(--muted-foreground);font-size:0.9rem;">No notifications.</p>` :
-            notifs.map(n => {
-              const cfg = notifIconMap[n.type] || notifIconMap.assignment;
-              return `
-              <div class="notif-item" onclick="location.href='notifications.html'" style="${!n.isRead?'background:rgba(66,164,67,0.04);border-left:3px solid #42a443;border-radius:8px;':''}">
+          ${
+            notifs.length === 0
+              ? `<p style="color:var(--muted-foreground);font-size:0.9rem;">No notifications.</p>`
+              : notifs
+                  .map((n) => {
+                    const cfg = notifIconMap[n.type] || notifIconMap.assignment;
+                    return `
+              <div class="notif-item" onclick="location.href='notifications.html'" style="${!n.read ? "background:rgba(66,164,67,0.04);border-left:3px solid #42a443;border-radius:8px;" : ""}">
                 <div class="notif-icon-wrap ${cfg.cls}">${svgIcons[cfg.icon]}</div>
                 <div class="notif-info">
-                  <p class="notif-title">${n.title}${!n.isRead?'<span style="background:#42a443;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:999px;margin-left:6px;font-weight:700;">New</span>':''}</p>
+                  <p class="notif-title">${n.title}${!n.read ? '<span style="background:#42a443;color:#fff;font-size:0.65rem;padding:1px 6px;border-radius:999px;margin-left:6px;font-weight:700;">New</span>' : ""}</p>
                   <p class="notif-msg">${n.message}</p>
-                  <p class="notif-time">${n.createdAt ? new Date(n.createdAt).toLocaleString() : ''}</p>
+                  <p class="notif-time">${n.timestamp}</p>
                 </div>
               </div>`;
-            }).join('')}
+                  })
+                  .join("")
+          }
         </div>
       </div>
     </div>
@@ -166,13 +280,18 @@ async function buildPage() {
       <div class="card">
         <div class="card-header-bar"><h2>Recent Tasks</h2></div>
         <div class="table-wrap">
-          ${tableTasks.length === 0 ? `<p style="padding:24px;color:var(--muted-foreground);">No assigned tasks yet.</p>` : `
+          ${
+            tableTasks.length === 0
+              ? `<p style="padding:24px;color:var(--muted-foreground);">No assigned tasks yet.</p>`
+              : `
           <table>
             <thead><tr>
               <th>Complaint ID</th><th>Issue Type</th><th>Status</th><th>Deadline</th><th>Action</th>
             </tr></thead>
             <tbody>
-              ${tableTasks.map(t => `
+              ${tableTasks
+                .map(
+                  (t) => `
                 <tr class="clickable" onclick="location.href='task-details.html?task=${t.id}'">
                   <td style="font-weight:600;">${t.id}</td>
                   <td>${t.issueType}</td>
@@ -184,9 +303,12 @@ async function buildPage() {
                       Update Status
                     </button>
                   </td>
-                </tr>`).join('')}
+                </tr>`,
+                )
+                .join("")}
             </tbody>
-          </table>`}
+          </table>`
+          }
         </div>
       </div>
     </div>
@@ -209,33 +331,38 @@ async function buildPage() {
             <p class="ratings-total-label">Total Reviews</p>
           </div>
         </div>
-        ${feedbacks.map(f => `
+        ${feedbacks
+          .map(
+            (f) => `
           <div class="feedback-item">
             <div class="feedback-header">
               <div class="feedback-user">
-                <div class="feedback-avatar">${f.ownerName ? f.ownerName[0] : 'U'}</div>
-                <div><div class="feedback-name">${f.ownerName}</div><div class="feedback-date">${f.date}</div></div>
+                <div class="feedback-avatar">${f.name[0]}</div>
+                <div><div class="feedback-name">${f.name}</div><div class="feedback-date">${f.date}</div></div>
               </div>
               ${renderStars(f.rating, 12)}
             </div>
             <p class="feedback-comment">${f.comment}</p>
-          </div>`).join('')}
+          </div>`,
+          )
+          .join("")}
       </div>
     </div>
   `;
-}
+      }
 
-// Dashboard inline accept/reject — persists to backend
-async function dashAccept(id) {
-  await acceptComplaint(id);
-  await buildPage(); // re-render with updated state
-}
-async function dashReject(id) {
-  await rejectComplaint(id);
-  await buildPage();
-}
+      // Dashboard inline accept/reject — persists to localStorage
+      function dashAccept(id) {
+        location.href = `available-complaints.html?open=${id}`;
+      }
+      function dashReject(id) {
+        console.warn(
+          "Dashboard reject is disabled; use Available Complaints backend flow.",
+          id,
+        );
+      }
 
-document.addEventListener('DOMContentLoaded', buildPage);
-</script>
-</body>
+      document.addEventListener("DOMContentLoaded", buildPage);
+    </script>
+  </body>
 </html>

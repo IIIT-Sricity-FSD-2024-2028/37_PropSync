@@ -1,1220 +1,1174 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PropSync – Dashboard</title>
-    <link rel="stylesheet" href="../css/maintenance_manager.css" />
-    <style>
-      *,
-      *::before,
-      *::after {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
 
-      body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          "Helvetica Neue", Arial, sans-serif;
-        font-size: 14px;
-        color: #111827;
-        line-height: 1.5;
-        background: #f9fafb;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PropSync – Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/maintenance_manager.css" />
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
 
-      /* OVERLAY */
-      #overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.4);
-        z-index: 99;
-      }
-      #overlay.active {
-        display: block;
-      }
+    body {
+      font-family:
+        'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      color: #111827;
+      line-height: 1.5;
+      background: #f9fafb;
+    }
 
-      /* SIDEBAR */
-      #sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 260px;
-        height: 100%;
-        background: #fff;
-        border-right: 1px solid #e5e7eb;
-        z-index: 100;
-        transform: translateX(-260px);
-        transition: transform 0.25s ease;
-        overflow-y: auto;
-      }
-      #sidebar.open {
-        transform: translateX(0);
-      }
+    /* OVERLAY */
+    #overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      z-index: 99;
+    }
 
-      .sidebar-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        border-bottom: 1px solid #e5e7eb;
-      }
-      #closeBtn {
-        cursor: pointer;
-        font-size: 16px;
-        color: #6b7280;
-        line-height: 1;
-        padding: 4px;
-      }
-      #closeBtn:hover {
-        color: #111827;
-      }
+    #overlay.active {
+      display: block;
+    }
 
-      #sidebar ul {
-        list-style: none;
-        padding: 12px 0;
-      }
-      #sidebar ul a.nav-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 10px 20px;
-        font-size: 14px;
-        font-weight: 500;
-        color: #374151;
-        text-decoration: none;
-        transition:
-          background 0.15s,
-          color 0.15s;
-      }
-      #sidebar ul a.nav-item svg {
-        width: 24px;
-        height: 24px;
-        flex-shrink: 0;
-      }
-      #sidebar ul a.nav-item:hover,
-      #sidebar ul a.nav-item.active {
-        color: #16a34a;
-        background: #f0fdf4;
-      }
-      #sidebar ul a.nav-item:hover svg,
-      #sidebar ul a.nav-item.active svg {
-        stroke: #16a34a;
-      }
-      #sidebar ul a.nav-item #arrow {
-        margin: 0;
-        font-size: 17px;
-        font-weight: 700;
-      }
+    /* SIDEBAR */
+    #sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 260px;
+      height: 100%;
+      background: #fff;
+      border-right: 1px solid #e5e7eb;
+      z-index: 100;
+      transform: translateX(-260px);
+      transition: transform 0.25s ease;
+      overflow-y: auto;
+    }
 
-      /* NAVBAR */
-      .navbar {
-        position: sticky;
-        top: 0;
-        z-index: 50;
-        background: #fff;
-        border-bottom: 1px solid #e5e7eb;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 20px;
-        height: 60px;
-      }
-      .navbar .left {
-        display: flex;
-        align-items: center;
-        gap: 14px;
-      }
-      .navbar .menu {
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        padding: 4px;
-      }
-      .navbar .right {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-      }
-      .navbar .icon {
-        display: flex;
-        align-items: center;
-        color: #374151;
-        text-decoration: none;
-      }
-      .navbar .icon:hover {
-        color: #16a34a;
-      }
-      .navbar .profile .avatar {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-        color: #374151;
-        font-weight: 600;
-        font-size: 14px;
-      }
-      .navbar .profile .avatar:hover {
-        color: #16a34a;
-      }
+    #sidebar.open {
+      transform: translateX(0);
+    }
 
-      /* CONTAINER */
-      .container {
-        padding: 28px 32px;
-        max-width: 1280px;
-        margin: 0 auto;
-      }
-      .container > h1 {
-        font-size: 28px;
-        font-weight: 800;
-        color: #111827;
-        margin-bottom: 4px;
-      }
-      .container > .sub {
-        font-size: 14px;
-        color: #6b7280;
-        font-weight: 400;
-        margin-bottom: 28px;
-      }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid #e5e7eb;
+    }
 
-      /* STAT CARDS */
+    #closeBtn {
+      cursor: pointer;
+      font-size: 16px;
+      color: #6b7280;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    #closeBtn:hover {
+      color: #111827;
+    }
+
+    #sidebar ul {
+      list-style: none;
+      padding: 12px 0;
+    }
+
+    #sidebar ul a.nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      text-decoration: none;
+      transition:
+        background 0.15s,
+        color 0.15s;
+    }
+
+    #sidebar ul a.nav-item svg {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    #sidebar ul a.nav-item:hover,
+    #sidebar ul a.nav-item.active {
+      color: #16a34a;
+      background: #f0fdf4;
+    }
+
+    #sidebar ul a.nav-item:hover svg,
+    #sidebar ul a.nav-item.active svg {
+      stroke: #16a34a;
+    }
+
+    #sidebar ul a.nav-item #arrow {
+      margin: 0;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    /* NAVBAR */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      height: 60px;
+    }
+
+    .navbar .left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .navbar .menu {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 4px;
+    }
+
+    .navbar .right {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .navbar .icon {
+      display: flex;
+      align-items: center;
+      color: #374151;
+      text-decoration: none;
+    }
+
+    .navbar .icon:hover {
+      color: #16a34a;
+    }
+
+    .navbar .profile .avatar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: #374151;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .navbar .profile .avatar:hover {
+      color: #16a34a;
+    }
+
+    /* CONTAINER */
+    .container {
+      padding: 28px 32px;
+      width: 100vw;
+      margin: 0;
+    }
+
+    .container>h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .container>.sub {
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 400;
+      margin-bottom: 28px;
+    }
+
+    /* STAT CARDS */
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 900px) {
       .cards-container {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-        margin-bottom: 24px;
+        grid-template-columns: repeat(2, 1fr);
       }
-      @media (max-width: 900px) {
-        .cards-container {
-          grid-template-columns: repeat(2, 1fr);
-        }
-      }
+    }
 
-      .cards {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 20px;
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        gap: 12px;
-      }
-      .card-text > p {
-        font-size: 13px;
-        color: #6b7280;
-        font-weight: 400;
-        margin-bottom: 6px;
-      }
-      .card-text > h2 {
-        font-size: 30px;
-        font-weight: 700;
-        color: #111827;
-        line-height: 1;
-      }
-      .card-icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        background: #dcfce7;
-        color: #16a34a;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .card-icon svg {
-        width: 24px;
-        height: 24px;
-        display: block;
-      }
-      .card-icon.yellow {
-        background: #fef3c7;
-        color: #d97706;
-      }
-      .card-icon.red {
-        background: #fee2e2;
-        color: #dc2626;
-      }
-      .cards.clickable {
-        cursor: pointer;
-      }
-      .cards.clickable:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      }
+    .cards {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      gap: 12px;
+    }
 
-      /* MID */
-      .mid {
-        display: flex;
-        gap: 16px;
-        margin-bottom: 24px;
-        align-items: flex-start;
-      }
-      .box {
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        padding: 20px;
-      }
-      .box-large {
-        flex: 3;
-        min-width: 0;
-      }
-      .box-small {
-        flex: 1;
-        min-width: 0;
-      }
+    .card-text>p {
+      font-size: 13px;
+      color: #6b7280;
+      font-weight: 400;
+      margin-bottom: 6px;
+    }
 
-      .box-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-      }
-      .box-header h3 {
-        font-size: 16px;
-        font-weight: 700;
-        color: #111827;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-      .box-header .badge {
-        background: #e5e7eb;
-        color: #374151;
-        font-size: 13px;
-        font-weight: 700;
-        padding: 2px 10px;
-        border-radius: 20px;
-        line-height: 1.6;
-      }
-      .view-all {
-        font-size: 13px;
-        font-weight: 600;
-        color: #16a34a;
-        text-decoration: none;
-        white-space: nowrap;
-      }
-      .view-all:hover {
-        text-decoration: underline;
-      }
+    .card-text>h2 {
+      font-size: 30px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1;
+    }
 
-      /* ITEMS — pixel-perfect owner match */
-      .item {
-        display: flex;
-        align-items: flex-start;
-        gap: 16px;
-        padding: 16px 16px;
-        cursor: pointer;
-        border-radius: 10px;
-        margin-bottom: 4px;
-        border: 1px solid transparent;
-        transition:
-          background 0.15s,
-          border-color 0.15s;
-      }
-      .item:hover {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
-      }
-      .item.read {
-        background: #f0fdf4;
-        border-color: #bbf7d0;
-      }
-      .item .icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        font-weight: 700;
-        flex-shrink: 0;
-      }
-      .item .icon.yellow {
-        background: #fef3c7;
-        color: #d97706;
-      }
-      .item .icon.green {
-        background: #dcfce7;
-        color: #16a34a;
-      }
-      .item .title {
-        font-size: 15px;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 6px;
-        line-height: 1.4;
-      }
-      .item .new-badge {
-        display: inline-block;
-        background: #16a34a;
-        color: #fff;
-        font-size: 11px;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 20px;
-        margin-left: 8px;
-        vertical-align: middle;
-      }
-      .item .desc {
-        font-size: 13px;
-        color: #6b7280;
-        margin-bottom: 6px;
-        line-height: 1.5;
-      }
-      .item .time {
-        font-size: 12px;
-        color: #9ca3af;
-      }
+    .card-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: #dcfce7;
+      color: #16a34a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
 
-      /* COMPLAINTS */
-      .complaints-container {
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        padding: 20px;
-        margin-bottom: 24px;
-      }
-      .complaints-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 16px;
-      }
-      .complaints-header h2 {
-        font-size: 16px;
-        font-weight: 700;
-        color: #111827;
-      }
-      .complaints-controls {
-        display: flex;
-        gap: 10px;
-        margin-bottom: 16px;
-      }
-      .search-box {
-        flex: 1;
-        padding: 8px 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 13px;
-        outline: none;
-      }
-      .search-box:focus {
-        border-color: #16a34a;
-      }
-      .status-filter {
-        padding: 8px 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 13px;
-        background: #fff;
-        outline: none;
-        cursor: pointer;
-      }
+    .card-icon svg {
+      width: 24px;
+      height: 24px;
+      display: block;
+    }
 
-      .data-table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 13px;
-      }
-      .data-table th {
-        text-align: left;
-        padding: 10px 12px;
-        background: #f9fafb;
-        border-bottom: 1px solid #e5e7eb;
-        font-size: 12px;
-        font-weight: 600;
-        color: #6b7280;
-        text-transform: uppercase;
-      }
-      .data-table td {
-        padding: 12px;
-        border-bottom: 1px solid #f3f4f6;
-      }
-      .data-table tr:last-child td {
-        border-bottom: none;
-      }
-      .complaint-link {
-        color: #16a34a;
-        font-weight: 600;
-        text-decoration: none;
-      }
-      .complaint-link:hover {
-        text-decoration: underline;
-      }
+    .card-icon.yellow {
+      background: #fef3c7;
+      color: #d97706;
+    }
 
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 6px 14px;
-        border-radius: 7px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        border: none;
-        text-decoration: none;
-      }
-      .btn-success {
-        background: #16a34a;
-        color: #fff;
-      }
-      .btn-success:hover {
-        background: #15803d;
-      }
-      .btn-danger {
-        background: #dc2626;
-        color: #fff;
-      }
-      .btn-danger:hover {
-        background: #b91c1c;
-      }
-      .btn-outline {
-        background: transparent;
-        color: #374151;
-        border: 1px solid #e5e7eb;
-      }
-      .btn-outline:hover {
-        background: #f9fafb;
-      }
-      .btn-sm {
-        padding: 4px 10px;
-        font-size: 12px;
-      }
+    .card-icon.red {
+      background: #fee2e2;
+      color: #dc2626;
+    }
 
-      .bottom-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-      }
-      .bottom-card {
-        background: #fff;
-        border-radius: 12px;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        padding: 20px;
-      }
-      .bottom-card h3 {
-        font-size: 15px;
-        font-weight: 700;
-        color: #111827;
-        margin-bottom: 12px;
-      }
+    .cards.clickable {
+      cursor: pointer;
+    }
 
-      .modal-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0, 0, 0, 0.5);
-        z-index: 200;
-        align-items: center;
-        justify-content: center;
-      }
-      .modal-overlay.active {
-        display: flex;
-      }
-      .modal {
-        background: #fff;
-        border-radius: 16px;
-        padding: 32px;
-        width: 520px;
-        max-width: 94vw;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-        position: relative;
-      }
-      .modal-close-btn {
-        position: absolute;
-        top: 16px;
-        right: 16px;
-        width: 34px;
-        height: 34px;
-        border-radius: 50%;
-        background: #f3f4f6;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-        color: #6b7280;
-        transition:
-          background 0.15s,
-          color 0.15s;
-        line-height: 1;
-      }
-      .modal-close-btn:hover {
-        background: #fee2e2;
-        color: #dc2626;
-      }
-      .form-group {
-        margin-bottom: 16px;
-      }
-      .form-group label {
-        display: block;
-        font-size: 14px;
-        font-weight: 700;
-        margin-bottom: 8px;
-        color: #111827;
-      }
-      .form-control {
-        width: 100%;
-        padding: 12px 14px;
-        border: 1.5px solid #e5e7eb;
-        border-radius: 10px;
-        font-size: 14px;
-        resize: vertical;
-        font-family: inherit;
-        min-height: 120px;
-      }
-      .form-control:focus {
-        outline: none;
-        border-color: #16a34a;
-        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
-      }
-      .modal-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-        margin-top: 24px;
-      }
-      .btn-ghost {
-        background: #fff;
-        color: #374151;
-        border: 1.5px solid #d1d5db;
-        font-size: 14px;
-        padding: 10px 22px;
-      }
-      .btn-ghost:hover {
-        background: #f9fafb;
-        border-color: #9ca3af;
-      }
+    .cards.clickable:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
 
-      #mmToast {
-        position: fixed;
-        bottom: 24px;
-        right: 24px;
-        background: #111827;
-        color: #fff;
-        padding: 12px 20px;
-        border-radius: 10px;
-        font-size: 13.5px;
-        font-weight: 600;
-        z-index: 9999;
-        opacity: 0;
-        transition: opacity 0.3s;
-        pointer-events: none;
-        max-width: 320px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="overlay"></div>
+    /* MID */
+    .mid {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 24px;
+      align-items: flex-start;
+    }
 
-    <!-- SIDEBAR — exact owner structure -->
-    <div id="sidebar">
-      <div class="sidebar-header">
-        <img src="../../public/image.png" alt="logo" height="45px" />
-        <span id="closeBtn">&#x2716;</span>
-      </div>
-      <ul>
-        <a class="nav-item active" href="dashboard.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
-            <path
-              d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"
-            /></svg
-          >Dashboard
-        </a>
-        <a class="nav-item" href="complaints.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
-            <path
-              d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"
-            />
-            <path d="M12 11h4" />
-            <path d="M12 16h4" />
-            <path d="M8 11h.01" />
-            <path d="M8 16h.01" /></svg
-          >Complaints
-        </a>
-        <a class="nav-item" href="service-estimate.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"
-            />
-            <path d="M14 2v4a2 2 0 0 0 2 2h4" />
-            <path d="M10 9H8" />
-            <path d="M16 13H8" />
-            <path d="M16 17H8" /></svg
-          >Service Estimate
-        </a>
-        <a class="nav-item" href="service-bills.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="22"
-            viewBox="0 0 40 42"
-            fill="currentColor"
-            stroke="currentColor"
-            stroke-width="3"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M25.4545 21H28.1818V26.922L32.6182 29.883L31.2545 32.613L25.4545 28.749V21ZM40 27.3C40 31.1987 38.6591 34.9377 36.2723 37.6945C33.8854 40.4513 30.6482 42 27.2727 42C22.2 42 17.8182 38.556 15.7636 33.6H3.63636C2.67194 33.6 1.74702 33.1575 1.06507 32.3698C0.383116 31.5822 0 30.5139 0 29.4V4.2C0 1.869 1.61818 0 3.63636 0H32.7273C33.6917 0 34.6166 0.442499 35.2986 1.23015C35.9805 2.0178 36.3636 3.08609 36.3636 4.2V17.01C38.6182 19.656 40 23.289 40 27.3ZM14.5455 27.3C14.5455 23.184 16.0182 19.467 18.3636 16.8H3.63636V29.4H14.6727C14.5455 28.707 14.5455 28.014 14.5455 27.3ZM27.2727 16.8C24.8617 16.8 22.5494 17.9062 20.8445 19.8754C19.1396 21.8445 18.1818 24.5152 18.1818 27.3C18.1818 30.0848 19.1396 32.7555 20.8445 34.7246C22.5494 36.6938 24.8617 37.8 27.2727 37.8C29.6838 37.8 31.9961 36.6938 33.701 34.7246C35.4058 32.7555 36.3636 30.0848 36.3636 27.3C36.3636 24.5152 35.4058 21.8445 33.701 19.8754C31.9961 17.9062 29.6838 16.8 27.2727 16.8ZM32.7273 8.4V4.2H3.63636V8.4H32.7273Z"
-              fill="none"
-            /></svg
-          >Payment History
-        </a>
-        <a class="nav-item" href="provider-performance.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
-            <polyline points="16 7 22 7 22 13" /></svg
-          >Provider Performance
-        </a>
-        <a class="nav-item" href="notification.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M10.268 21a2 2 0 0 0 3.464 0" />
-            <path
-              d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-            /></svg
-          >Alerts &amp; Notifications
-        </a>
-        <a class="nav-item" href="profile.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-            <circle cx="12" cy="7" r="4" /></svg
-          >Profile
-        </a>
-        <a class="nav-item" href="../login_signup.html">
-          <p id="arrow">&rarr;</p>
-          Logout
-        </a>
-      </ul>
+    .box {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      padding: 20px;
+    }
+
+    .box-large {
+      flex: 3;
+      min-width: 0;
+    }
+
+    .box-small {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .box-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .box-header h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .box-header .badge {
+      background: #e5e7eb;
+      color: #374151;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      line-height: 1.6;
+    }
+
+    .view-all {
+      font-size: 13px;
+      font-weight: 600;
+      color: #16a34a;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .view-all:hover {
+      text-decoration: underline;
+    }
+
+    /* ITEMS — pixel-perfect owner match */
+    .item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 16px 16px;
+      cursor: pointer;
+      border-radius: 10px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      transition:
+        background 0.15s,
+        border-color 0.15s;
+    }
+
+    .item:hover {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .item.read {
+      background: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+
+    .item .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .item .icon.yellow {
+      background: #fef3c7;
+      color: #d97706;
+    }
+
+    .item .icon.green {
+      background: #dcfce7;
+      color: #16a34a;
+    }
+
+    .item .title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .item .new-badge {
+      display: inline-block;
+      background: #16a34a;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+
+    .item .desc {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+
+    .item .time {
+      font-size: 12px;
+      color: #9ca3af;
+    }
+
+    /* COMPLAINTS */
+    .complaints-container {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .complaints-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .complaints-header h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .complaints-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .search-box {
+      flex: 1;
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .search-box:focus {
+      border-color: #16a34a;
+    }
+
+    .status-filter {
+      padding: 8px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 13px;
+      background: #fff;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 10px 12px;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .data-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .complaint-link {
+      color: #16a34a;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .complaint-link:hover {
+      text-decoration: underline;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+
+    .btn-success {
+      background: #16a34a;
+      color: #fff;
+    }
+
+    .btn-success:hover {
+      background: #15803d;
+    }
+
+    .btn-danger {
+      background: #dc2626;
+      color: #fff;
+    }
+
+    .btn-danger:hover {
+      background: #b91c1c;
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: #374151;
+      border: 1px solid #e5e7eb;
+    }
+
+    .btn-outline:hover {
+      background: #f9fafb;
+    }
+
+    .btn-sm {
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .bottom-card {
+      background: #fff;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      padding: 20px;
+    }
+
+    .bottom-card h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 12px;
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      border-radius: 16px;
+      padding: 32px;
+      width: 520px;
+      max-width: 94vw;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #f3f4f6;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #6b7280;
+      transition:
+        background 0.15s,
+        color 0.15s;
+      line-height: 1;
+    }
+
+    .modal-close-btn:hover {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 14px;
+      resize: vertical;
+      font-family: inherit;
+      min-height: 120px;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #16a34a;
+      box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.08);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    .btn-ghost {
+      background: #fff;
+      color: #374151;
+      border: 1.5px solid #d1d5db;
+      font-size: 14px;
+      padding: 10px 22px;
+    }
+
+    .btn-ghost:hover {
+      background: #f9fafb;
+      border-color: #9ca3af;
+    }
+
+    #mmToast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #111827;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13.5px;
+      font-weight: 600;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      max-width: 320px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="overlay"></div>
+
+  <!-- SIDEBAR — exact owner structure -->
+  <div id="sidebar">
+    <div class="sidebar-header">
+      <img src="../../public/image.png" alt="logo" height="45px" />
+      <span id="closeBtn">&#x2716;</span>
     </div>
+    <ul>
+      <a class="nav-item active" href="dashboard.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
+          <path
+            d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        </svg>Dashboard
+      </a>
+      <a class="nav-item" href="complaints.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect width="8" height="4" x="8" y="2" rx="1" ry="1" />
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+          <path d="M12 11h4" />
+          <path d="M12 16h4" />
+          <path d="M8 11h.01" />
+          <path d="M8 16h.01" />
+        </svg>Complaints
+      </a>
+      <a class="nav-item" href="service-estimate.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+          <path d="M14 2v4a2 2 0 0 0 2 2h4" />
+          <path d="M10 9H8" />
+          <path d="M16 13H8" />
+          <path d="M16 17H8" />
+        </svg>Service Estimate
+      </a>
+      <a class="nav-item" href="service-bills.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="22" viewBox="0 0 40 42" fill="currentColor"
+          stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path
+            d="M25.4545 21H28.1818V26.922L32.6182 29.883L31.2545 32.613L25.4545 28.749V21ZM40 27.3C40 31.1987 38.6591 34.9377 36.2723 37.6945C33.8854 40.4513 30.6482 42 27.2727 42C22.2 42 17.8182 38.556 15.7636 33.6H3.63636C2.67194 33.6 1.74702 33.1575 1.06507 32.3698C0.383116 31.5822 0 30.5139 0 29.4V4.2C0 1.869 1.61818 0 3.63636 0H32.7273C33.6917 0 34.6166 0.442499 35.2986 1.23015C35.9805 2.0178 36.3636 3.08609 36.3636 4.2V17.01C38.6182 19.656 40 23.289 40 27.3ZM14.5455 27.3C14.5455 23.184 16.0182 19.467 18.3636 16.8H3.63636V29.4H14.6727C14.5455 28.707 14.5455 28.014 14.5455 27.3ZM27.2727 16.8C24.8617 16.8 22.5494 17.9062 20.8445 19.8754C19.1396 21.8445 18.1818 24.5152 18.1818 27.3C18.1818 30.0848 19.1396 32.7555 20.8445 34.7246C22.5494 36.6938 24.8617 37.8 27.2727 37.8C29.6838 37.8 31.9961 36.6938 33.701 34.7246C35.4058 32.7555 36.3636 30.0848 36.3636 27.3C36.3636 24.5152 35.4058 21.8445 33.701 19.8754C31.9961 17.9062 29.6838 16.8 27.2727 16.8ZM32.7273 8.4V4.2H3.63636V8.4H32.7273Z"
+            fill="none" />
+        </svg>Payment History
+      </a>
+      <a class="nav-item" href="provider-performance.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+          <polyline points="16 7 22 7 22 13" />
+        </svg>Provider Performance
+      </a>
+      <a class="nav-item" href="notification.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+          <path
+            d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+        </svg>Alerts &amp; Notifications
+      </a>
+      <a class="nav-item" href="profile.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>Profile
+      </a>
+      <a class="nav-item" href="../login_signup.html">
+        <p id="arrow">&rarr;</p>
+        Logout
+      </a>
+    </ul>
+  </div>
 
-    <!-- NAVBAR — exact owner .navbar -->
-    <header class="navbar">
-      <div class="left">
-        <span class="menu" id="menuBtn">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 30 30"
-            fill="none"
-          >
-            <path
-              d="M3.75 15H26.25M3.75 7.5H26.25M3.75 22.5H26.25"
-              stroke="rgb(55,65,81)"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            />
-          </svg>
-        </span>
-        <div class="logo">
-          <img src="../../public/image.png" alt="logo" height="40px" />
-        </div>
+  <!-- NAVBAR — exact owner .navbar -->
+  <header class="navbar">
+    <div class="left">
+      <span class="menu" id="menuBtn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 30 30" fill="none">
+          <path d="M3.75 15H26.25M3.75 7.5H26.25M3.75 22.5H26.25" stroke="rgb(55,65,81)" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <div class="logo">
+        <img src="../../public/image.png" alt="logo" height="40px" />
       </div>
-      <div class="right">
-        <a class="icon" href="notification.html">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+    </div>
+    <div class="right">
+      <a class="icon" href="notification.html">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.268 21a2 2 0 0 0 3.464 0" />
+          <path
+            d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326" />
+        </svg>
+      </a>
+      <div class="profile">
+        <a class="avatar" href="profile.html">
+          <svg xmlns="http://www.w3.org/2000/svg" width="35" height="35" viewBox="0 0 45 45" fill="none">
             <path
-              d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
-            />
-          </svg>
+              d="M10.9688 32.0625C12.5625 30.8438 14.3438 29.8828 16.3125 29.1797C18.2813 28.4766 20.3438 28.125 22.5 28.125C24.6562 28.125 26.7188 28.4766 28.6875 29.1797C30.6562 29.8828 32.4375 30.8438 34.0312 32.0625C35.125 30.7812 35.9766 29.3281 36.5859 27.7031C37.1953 26.0781 37.5 24.3438 37.5 22.5C37.5 18.3438 36.0391 14.8047 33.1172 11.8828C30.1953 8.96094 26.6562 7.5 22.5 7.5C18.3438 7.5 14.8047 8.96094 11.8828 11.8828C8.96094 14.8047 7.5 18.3438 7.5 22.5C7.5 24.3438 7.80469 26.0781 8.41406 27.7031C9.02344 29.3281 9.875 30.7812 10.9688 32.0625ZM22.5 24.375C20.6562 24.375 19.1016 23.7422 17.8359 22.4766C16.5703 21.2109 15.9375 19.6562 15.9375 17.8125C15.9375 15.9688 16.5703 14.4141 17.8359 13.1484C19.1016 11.8828 20.6562 11.25 22.5 11.25C24.3438 11.25 25.8984 11.8828 27.1641 13.1484C28.4297 14.4141 29.0625 15.9688 29.0625 17.8125C29.0625 19.6562 28.4297 21.2109 27.1641 22.4766C25.8984 23.7422 24.3438 24.375 22.5 24.375ZM22.5 41.25C19.9062 41.25 17.4688 40.7578 15.1875 39.7734C12.9062 38.7891 10.9219 37.4531 9.23438 35.7656C7.54688 34.0781 6.21094 32.0938 5.22656 29.8125C4.24219 27.5313 3.75 25.0938 3.75 22.5C3.75 19.9062 4.24219 17.4688 5.22656 15.1875C6.21094 12.9062 7.54688 10.9219 9.23438 9.23438C10.9219 7.54688 12.9062 6.21094 15.1875 5.22656C17.4688 4.24219 19.9062 3.75 22.5 3.75C25.0938 3.75 27.5313 4.24219 29.8125 5.22656C32.0938 6.21094 34.0781 7.54688 35.7656 9.23438C37.4531 10.9219 38.7891 12.9062 39.7734 15.1875C40.7578 17.4688 41.25 19.9062 41.25 22.5C41.25 25.0938 40.7578 27.5313 39.7734 29.8125C38.7891 32.0938 37.4531 34.0781 35.7656 35.7656C34.0781 37.4531 32.0938 38.7891 29.8125 39.7734C27.5313 40.7578 25.0938 41.25 22.5 41.25Z"
+              fill="#2D1067" />
+          </svg>Maintenance Manager
         </a>
-        <div class="profile">
-          <a class="avatar" href="profile.html">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="35"
-              height="35"
-              viewBox="0 0 45 45"
-              fill="none"
-            >
-              <path
-                d="M10.9688 32.0625C12.5625 30.8438 14.3438 29.8828 16.3125 29.1797C18.2813 28.4766 20.3438 28.125 22.5 28.125C24.6562 28.125 26.7188 28.4766 28.6875 29.1797C30.6562 29.8828 32.4375 30.8438 34.0312 32.0625C35.125 30.7812 35.9766 29.3281 36.5859 27.7031C37.1953 26.0781 37.5 24.3438 37.5 22.5C37.5 18.3438 36.0391 14.8047 33.1172 11.8828C30.1953 8.96094 26.6562 7.5 22.5 7.5C18.3438 7.5 14.8047 8.96094 11.8828 11.8828C8.96094 14.8047 7.5 18.3438 7.5 22.5C7.5 24.3438 7.80469 26.0781 8.41406 27.7031C9.02344 29.3281 9.875 30.7812 10.9688 32.0625ZM22.5 24.375C20.6562 24.375 19.1016 23.7422 17.8359 22.4766C16.5703 21.2109 15.9375 19.6562 15.9375 17.8125C15.9375 15.9688 16.5703 14.4141 17.8359 13.1484C19.1016 11.8828 20.6562 11.25 22.5 11.25C24.3438 11.25 25.8984 11.8828 27.1641 13.1484C28.4297 14.4141 29.0625 15.9688 29.0625 17.8125C29.0625 19.6562 28.4297 21.2109 27.1641 22.4766C25.8984 23.7422 24.3438 24.375 22.5 24.375ZM22.5 41.25C19.9062 41.25 17.4688 40.7578 15.1875 39.7734C12.9062 38.7891 10.9219 37.4531 9.23438 35.7656C7.54688 34.0781 6.21094 32.0938 5.22656 29.8125C4.24219 27.5313 3.75 25.0938 3.75 22.5C3.75 19.9062 4.24219 17.4688 5.22656 15.1875C6.21094 12.9062 7.54688 10.9219 9.23438 9.23438C10.9219 7.54688 12.9062 6.21094 15.1875 5.22656C17.4688 4.24219 19.9062 3.75 22.5 3.75C25.0938 3.75 27.5313 4.24219 29.8125 5.22656C32.0938 6.21094 34.0781 7.54688 35.7656 9.23438C37.4531 10.9219 38.7891 12.9062 39.7734 15.1875C40.7578 17.4688 41.25 19.9062 41.25 22.5C41.25 25.0938 40.7578 27.5313 39.7734 29.8125C38.7891 32.0938 37.4531 34.0781 35.7656 35.7656C34.0781 37.4531 32.0938 38.7891 29.8125 39.7734C27.5313 40.7578 25.0938 41.25 22.5 41.25Z"
-                fill="#2D1067"
-              /></svg
-            >Maintenance Manager
-          </a>
-        </div>
       </div>
-    </header>
+    </div>
+  </header>
 
-    <!-- MAIN — exact owner .container -->
-    <div class="container">
-      <h1>Welcome Back, Maintenance Manager</h1>
-      <p class="sub">
-        Manage your property maintenance and service coordination efficiently
-      </p>
+  <!-- MAIN — exact owner .container -->
+  <div class="container">
+    <h1>Welcome Back, Maintenance Manager</h1>
+    <p class="sub">
+      Manage your property maintenance and service coordination efficiently
+    </p>
 
-      <!-- STAT CARDS -->
-      <div class="cards-container" id="kpiGrid"></div>
+    <!-- STAT CARDS -->
+    <div class="cards-container" id="kpiGrid"></div>
 
-      <!-- MID SECTION -->
-      <div class="mid">
-        <div class="box box-large">
-          <div class="box-header">
-            <h3>Notifications <span class="badge" id="notifBadge">0</span></h3>
-            <a href="notification.html" class="view-all">View All &#8594;</a>
-          </div>
-          <div id="dashNotifs"></div>
+    <!-- MID SECTION -->
+    <div class="mid">
+      <div class="box box-large">
+        <div class="box-header">
+          <h3>Notifications <span class="badge" id="notifBadge">0</span></h3>
+          <a href="notification.html" class="view-all">View All &#8594;</a>
         </div>
-        <div class="box box-small">
-          <div class="box-header">
-            <h3>Payment History</h3>
-            <a href="service-bills.html" class="view-all">View All &#8594;</a>
-          </div>
-          <div class="item">
-            <div class="icon yellow">!</div>
-            <div>
-              <p class="title">Current Month</p>
-              <p class="desc">Monthly Maintenance cost pending!!</p>
-            </div>
-          </div>
-          <div class="item read">
-            <div class="icon green">&#10003;</div>
-            <div>
-              <p class="title">Last Month</p>
-              <p class="desc">Successfully processed all payments.</p>
-            </div>
-          </div>
-        </div>
+        <div id="dashNotifs"></div>
       </div>
-
-      <!-- COMPLAINTS TABLE -->
-      <div class="complaints-container">
-        <div class="complaints-header">
-          <h2>New Complaints Needing Approval</h2>
-          <a href="complaints.html" class="view-all">View All &#8594;</a>
+      <div class="box box-small">
+        <div class="box-header">
+          <h3>Payment History</h3>
+          <a href="service-bills.html" class="view-all">View All &#8594;</a>
         </div>
-        <div class="complaints-controls">
-          <input
-            type="text"
-            placeholder="Search complaints..."
-            class="search-box"
-            id="complaintSearch"
-          />
-          <select class="status-filter" id="complaintFilter">
-            <option>All Status</option>
-            <option>Pending</option>
-            <option>In Progress</option>
-            <option>Approved</option>
-            <option>Completed</option>
-          </select>
+        <div class="item">
+          <div class="icon yellow">!</div>
+          <div>
+            <p class="title">Current Month</p>
+            <p class="desc">Monthly Maintenance cost pending!!</p>
+          </div>
         </div>
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Issue</th>
-              <th>Location</th>
-              <th>Priority</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody id="dashComplaintsBody"></tbody>
-        </table>
-      </div>
-
-      <!-- BOTTOM ROW -->
-      <div class="bottom-grid">
-        <div class="bottom-card">
-          <h3>Complaint Status Overview</h3>
-          <div
-            id="statusBars"
-            style="display: flex; flex-direction: column; gap: 10px"
-          ></div>
-        </div>
-        <div class="bottom-card">
-          <h3>Pending Payments</h3>
-          <div style="font-size: 28px; font-weight: 800; color: #16a34a">
-            &#8377;8,000
+        <div class="item read">
+          <div class="icon green">&#10003;</div>
+          <div>
+            <p class="title">Last Month</p>
+            <p class="desc">Successfully processed all payments.</p>
           </div>
-          <div style="font-size: 12px; color: #6b7280; margin-top: 4px">
-            2 bills awaiting payment
-          </div>
-          <a
-            href="service-bills.html"
-            class="btn btn-success btn-sm"
-            style="margin-top: 12px; display: inline-block"
-            >Process Payments</a
-          >
-        </div>
-        <div class="bottom-card">
-          <h3>Top Provider</h3>
-          <div style="font-size: 14px; font-weight: 700" id="dashTopProviderName">
-            Urban Lift Repairs
-          </div>
-          <div style="font-size: 12px; color: #6b7280; margin-top: 3px" id="dashTopProviderMeta">
-            4.9 &#11088; &middot; 98% on-time &middot; 54 jobs
-          </div>
-          <a
-            href="provider-performance.html"
-            class="btn btn-outline btn-sm"
-            style="margin-top: 12px; display: inline-block"
-            >View All Providers</a
-          >
         </div>
       </div>
     </div>
 
-    <!-- Reject Modal -->
-    <div
-      class="modal-overlay"
-      id="rejectModal"
-      onclick="if (event.target === this) closeRejectModal();"
-    >
-      <div class="modal">
-        <button
-          class="modal-close-btn"
-          onclick="closeRejectModal()"
-          title="Close"
-        >
-          &#x2715;
-        </button>
-        <h2
-          style="
+    <!-- COMPLAINTS TABLE -->
+    <div class="complaints-container">
+      <div class="complaints-header">
+        <h2>New Complaints Needing Approval</h2>
+        <a href="complaints.html" class="view-all">View All &#8594;</a>
+      </div>
+      <div class="complaints-controls">
+        <input type="text" placeholder="Search complaints..." class="search-box" id="complaintSearch" />
+        <select class="status-filter" id="complaintFilter">
+          <option>All Status</option>
+          <option>Pending</option>
+          <option>In Progress</option>
+          <option>Approved</option>
+          <option>Completed</option>
+        </select>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Issue</th>
+            <th>Location</th>
+            <th>Priority</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="dashComplaintsBody"></tbody>
+      </table>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="bottom-grid">
+      <div class="bottom-card">
+        <h3>Complaint Status Overview</h3>
+        <div id="statusBars" style="display: flex; flex-direction: column; gap: 10px"></div>
+      </div>
+      <div class="bottom-card">
+        <h3>Pending Payments</h3>
+        <div style="font-size: 28px; font-weight: 800; color: #16a34a">
+          &#8377;8,000
+        </div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 4px">
+          2 bills awaiting payment
+        </div>
+        <a href="service-bills.html" class="btn btn-success btn-sm"
+          style="margin-top: 12px; display: inline-block">Process Payments</a>
+      </div>
+      <div class="bottom-card">
+        <h3>Top Provider</h3>
+        <div style="font-size: 14px; font-weight: 700" id="dashTopProviderName">
+          Urban Lift Repairs
+        </div>
+        <div style="font-size: 12px; color: #6b7280; margin-top: 3px" id="dashTopProviderMeta">
+          4.9 &#11088; &middot; 98% on-time &middot; 54 jobs
+        </div>
+        <a href="provider-performance.html" class="btn btn-outline btn-sm"
+          style="margin-top: 12px; display: inline-block">View All Providers</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div class="modal-overlay" id="rejectModal" onclick="if (event.target === this) closeRejectModal();">
+    <div class="modal">
+      <button class="modal-close-btn" onclick="closeRejectModal()" title="Close">
+        &#x2715;
+      </button>
+      <h2 style="
             margin-bottom: 8px;
             font-size: 20px;
             font-weight: 800;
             color: #111827;
-          "
-        >
-          Reject Complaint <span id="rejectModalComplaintId"></span>
-        </h2>
-        <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px">
-          This reason will be sent to the resident who raised the complaint.
-        </p>
-        <div class="form-group">
-          <label>Rejection Reason</label>
-          <textarea
-            class="form-control"
-            id="rejectReason"
-            placeholder="Enter reason for rejection..."
-          ></textarea>
-        </div>
-        <div class="modal-actions">
-          <button class="btn btn-ghost" onclick="closeRejectModal()">
-            Cancel
-          </button>
-          <button class="btn btn-danger" onclick="submitReject()">
-            Submit Rejection
-          </button>
-        </div>
+          ">
+        Reject Complaint <span id="rejectModalComplaintId"></span>
+      </h2>
+      <p style="font-size: 14px; color: #6b7280; margin-bottom: 20px">
+        This reason will be sent to the resident who raised the complaint.
+      </p>
+      <div class="form-group">
+        <label>Rejection Reason</label>
+        <textarea class="form-control" id="rejectReason" placeholder="Enter reason for rejection..."></textarea>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeRejectModal()">
+          Cancel
+        </button>
+        <button class="btn btn-danger" onclick="submitReject()">
+          Submit Rejection
+        </button>
       </div>
     </div>
+  </div>
 
-    <div id="mmToast"></div>
+  <div id="mmToast"></div>
 
-    <script>
-      /* Sidebar */
-      const sidebar = document.getElementById("sidebar");
-      const overlay = document.getElementById("overlay");
-      document.getElementById("menuBtn").addEventListener("click", () => {
-        sidebar.classList.add("open");
-        overlay.classList.add("active");
-      });
-      document.getElementById("closeBtn").addEventListener("click", () => {
-        sidebar.classList.remove("open");
-        overlay.classList.remove("active");
-      });
-      overlay.addEventListener("click", () => {
-        sidebar.classList.remove("open");
-        overlay.classList.remove("active");
-      });
+  <script>
+    /* Sidebar */
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("overlay");
+    document.getElementById("menuBtn").addEventListener("click", () => {
+      sidebar.classList.add("open");
+      overlay.classList.add("active");
+    });
+    document.getElementById("closeBtn").addEventListener("click", () => {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("active");
+    });
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("open");
+      overlay.classList.remove("active");
+    });
 
-      /* Notifications and complaint data are now fetched from backend
-         via the shared maintenance_manager.js (loaded below).
-         No local getNotifications/saveNotifications/addNotification/seed needed. */
-      function showToast(msg) {
-        const t = document.getElementById("mmToast");
-        t.textContent = msg;
-        t.style.opacity = "1";
-        clearTimeout(t._t);
-        t._t = setTimeout(() => (t.style.opacity = "0"), 3000);
-      }
-      function hideModal(id) {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove("active");
-      }
-      function closeRejectModal() {
-        const modal = document.getElementById("rejectModal");
-        modal.classList.remove("active");
-        document.getElementById("rejectReason").value = "";
-        document.getElementById("rejectReason").style.borderColor = "";
-        _rejectId = null;
-        _rejectCb = null;
-      }
-    </script>
+    /* Notifications and complaint data are now fetched from backend
+       via the shared maintenance_manager.js (loaded below).
+       No local getNotifications/saveNotifications/addNotification/seed needed. */
+    function showToast(msg) {
+      const t = document.getElementById("mmToast");
+      t.textContent = msg;
+      t.style.opacity = "1";
+      clearTimeout(t._t);
+      t._t = setTimeout(() => (t.style.opacity = "0"), 3000);
+    }
+    function hideModal(id) {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove("active");
+    }
+    function closeRejectModal() {
+      const modal = document.getElementById("rejectModal");
+      modal.classList.remove("active");
+      document.getElementById("rejectReason").value = "";
+      document.getElementById("rejectReason").style.borderColor = "";
+      _rejectId = null;
+      _rejectCb = null;
+    }
+  </script>
 
-    <script src="../js/complaint_bridge.js"></script>
-    <script src="../js/maintenance_manager.js"></script>
+  <script src="../js/complaint_bridge.js"></script>
+  <script src="../js/maintenance_manager.js"></script>
 
-    <script>
-      const ICONS = {
-        clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>`,
-        fileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
-        trending: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
-        checkCirc: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>`,
-      };
+  <script>
+    const ICONS = {
+      clipboard: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>`,
+      fileText: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>`,
+      trending: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>`,
+      checkCirc: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.801 10A10 10 0 1 1 17 3.335"/><path d="m9 11 3 3L22 4"/></svg>`,
+    };
 
-      async function renderKPIs() {
-        const complaints = await getComplaints();
-        const total = complaints.length,
-          pending = complaints.filter((c) => c.status === "Pending").length,
-          inProg = complaints.filter((c) => c.status === "In Progress").length,
-          completed = complaints.filter((c) => c.status === "Completed").length;
-        const ownerPend =
-          typeof bridgeGetAll === "function"
-            ? bridgeGetAll().filter((c) => c.status === "pending").length
-            : 0;
-        let estCount = 0;
-        try {
-          const res = await fetch(`${MM_API}/estimates`);
-          if (res.ok) {
-            const data = await res.json();
-            estCount = data.filter(e => e.status === 'pending').length;
-          }
-        } catch (e) {}
+    async function renderKPIs() {
+      const complaints = await getComplaints();
+      const total = complaints.length,
+        pending = complaints.filter((c) => c.status === "Pending").length,
+        inProg = complaints.filter((c) => c.status === "In Progress").length,
+        completed = complaints.filter((c) => c.status === "Completed").length;
+      const ownerPend =
+        typeof bridgeGetAll === "function"
+          ? bridgeGetAll().filter((c) => c.status === "pending").length
+          : 0;
+      let estCount = 0;
+      try {
+        const res = await fetch(`${MM_API}/estimates`);
+        if (res.ok) {
+          const data = await res.json();
+          estCount = data.filter(e => e.status === 'pending').length;
+        }
+      } catch (e) { }
 
-        let html = `
+      let html = `
     <div class="cards"><div class="card-text"><p>Total Complaints</p><h2>${total}</h2></div><div class="card-icon">${ICONS.clipboard}</div></div>
     <div class="cards"><div class="card-text"><p>Pending Approvals</p><h2>${pending}</h2></div><div class="card-icon">${ICONS.trending}</div></div>
     <div class="cards"><div class="card-text"><p>In Progress</p><h2>${inProg}</h2></div><div class="card-icon">${ICONS.checkCirc}</div></div>
     <div class="cards"><div class="card-text"><p>Completed</p><h2>${completed}</h2></div><div class="card-icon">${ICONS.fileText}</div></div>`;
-        if (estCount > 0)
-          html += `<div class="cards clickable" onclick="location.href='service-estimate.html'" style="border:2px solid #F59E0B;"><div class="card-text"><p style="color:#B45309;">Estimates Awaiting Review</p><h2 style="color:#B45309;">${estCount}</h2><span style="font-size:11px;color:#D97706;">Click to review &#8594;</span></div><div class="card-icon yellow">${ICONS.fileText}</div></div>`;
-        if (ownerPend > 0)
-          html += `<div class="cards clickable" onclick="location.href='complaints.html'" style="border:2px solid #EF4444;"><div class="card-text"><p style="color:#DC2626;">Owner Complaints</p><h2 style="color:#DC2626;">${ownerPend}</h2><span style="font-size:11px;color:#EF4444;">Click to review &#8594;</span></div><div class="card-icon red">${ICONS.clipboard}</div></div>`;
-        document.getElementById("kpiGrid").innerHTML = html;
+      if (estCount > 0)
+        html += `<div class="cards clickable" onclick="location.href='service-estimate.html'" style="border:2px solid #F59E0B;"><div class="card-text"><p style="color:#B45309;">Estimates Awaiting Review</p><h2 style="color:#B45309;">${estCount}</h2><span style="font-size:11px;color:#D97706;">Click to review &#8594;</span></div><div class="card-icon yellow">${ICONS.fileText}</div></div>`;
+      if (ownerPend > 0)
+        html += `<div class="cards clickable" onclick="location.href='complaints.html'" style="border:2px solid #EF4444;"><div class="card-text"><p style="color:#DC2626;">Owner Complaints</p><h2 style="color:#DC2626;">${ownerPend}</h2><span style="font-size:11px;color:#EF4444;">Click to review &#8594;</span></div><div class="card-icon red">${ICONS.clipboard}</div></div>`;
+      document.getElementById("kpiGrid").innerHTML = html;
 
-        document.getElementById("statusBars").innerHTML = [
-          { label: "Pending", val: pending, color: "#D97706" },
-          { label: "In Progress", val: inProg, color: "#DC2626" },
-          { label: "Completed", val: completed, color: "#16A34A" },
-        ]
-          .map(
-            (s) =>
-              `<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12.5px;">${s.label}</span><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:7px;background:#E5E7EB;border-radius:4px;overflow:hidden;"><div style="width:${total ? Math.round((s.val / total) * 100) : 0}%;height:100%;background:${s.color};border-radius:4px;"></div></div><span style="font-size:12px;font-weight:700;">${s.val}</span></div></div>`,
-          )
-          .join("");
-      }
+      document.getElementById("statusBars").innerHTML = [
+        { label: "Pending", val: pending, color: "#D97706" },
+        { label: "In Progress", val: inProg, color: "#DC2626" },
+        { label: "Completed", val: completed, color: "#16A34A" },
+      ]
+        .map(
+          (s) =>
+            `<div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:12.5px;">${s.label}</span><div style="display:flex;align-items:center;gap:8px;"><div style="width:80px;height:7px;background:#E5E7EB;border-radius:4px;overflow:hidden;"><div style="width:${total ? Math.round((s.val / total) * 100) : 0}%;height:100%;background:${s.color};border-radius:4px;"></div></div><span style="font-size:12px;font-weight:700;">${s.val}</span></div></div>`,
+        )
+        .join("");
+    }
 
-      async function renderDashNotifs() {
-        const allNotifs = await getNotifications();
-        const notifs = allNotifs.slice(0, 5);
-        const badge = document.getElementById("notifBadge");
-        if (badge) badge.textContent = allNotifs.length;
-        const container = document.getElementById("dashNotifs");
-        if (!notifs.length) {
-          container.innerHTML =
-            '<p style="font-size:13px;color:#9CA3AF;padding:8px 0;">No notifications</p>';
-          return;
-        }
-        container.innerHTML = notifs
-          .map((n) => {
-            const cls = n.unread ? "yellow" : "green",
-              char = n.unread ? "!" : "&#10003;";
-            const readCls = !n.unread ? " read" : "";
-            return `<div class="item${readCls}" onclick="location.href='notification.html'"><div class="icon ${cls}">${char}</div><div><p class="title">${n.title}${n.unread ? '<span class="new-badge">New</span>' : ""}</p><p class="desc">${n.desc}</p><span class="time">${n.time}</span></div></div>`;
-          })
-          .join("");
+    async function renderDashNotifs() {
+      const allNotifs = await getNotifications();
+      const notifs = allNotifs.slice(0, 5);
+      const badge = document.getElementById("notifBadge");
+      if (badge) badge.textContent = allNotifs.length;
+      const container = document.getElementById("dashNotifs");
+      if (!notifs.length) {
+        container.innerHTML =
+          '<p style="font-size:13px;color:#9CA3AF;padding:8px 0;">No notifications</p>';
+        return;
       }
+      container.innerHTML = notifs
+        .map((n) => {
+          const isUnread = n.unread !== undefined ? n.unread : !n.isRead;
+          const desc = n.desc || n.message || "";
+          const time = n.time || (n.createdAt ? new Date(n.createdAt).toLocaleString() : "");
+          const cls = isUnread ? "yellow" : "green",
+            char = isUnread ? "!" : "&#10003;";
+          const readCls = !isUnread ? " read" : "";
+          return `<div class="item${readCls}" onclick="location.href='notification.html'"><div class="icon ${cls}">${char}</div><div><p class="title">${n.title}${isUnread ? '<span class="new-badge">New</span>' : ""}</p><p class="desc">${desc}</p><span class="time">${time}</span></div></div>`;
+        })
+        .join("");
+    }
 
-      function priorityBadge(p) {
-        const colors = { High: "#DC2626", Medium: "#D97706", Low: "#16A34A" },
-          bg = { High: "#FEE2E2", Medium: "#FEF3C7", Low: "#DCFCE7" },
-          lbl = p || "Medium";
-        return `<span style="background:${bg[lbl] || "#F3F4F6"};color:${colors[lbl] || "#374151"};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">${lbl}</span>`;
-      }
+    function priorityBadge(p) {
+      const colors = { High: "#DC2626", Medium: "#D97706", Low: "#16A34A" },
+        bg = { High: "#FEE2E2", Medium: "#FEF3C7", Low: "#DCFCE7" },
+        lbl = p || "Medium";
+      return `<span style="background:${bg[lbl] || "#F3F4F6"};color:${colors[lbl] || "#374151"};padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;">${lbl}</span>`;
+    }
 
-      let _rejectId, _rejectCb;
-      function openRejectModal(id, cb) {
-        _rejectId = id;
-        _rejectCb = cb;
-        document.getElementById("rejectModalComplaintId").textContent = id;
-        document.getElementById("rejectReason").value = "";
-        document.getElementById("rejectReason").style.borderColor = "";
-        document.getElementById("rejectModal").classList.add("active");
+    let _rejectId, _rejectCb;
+    function openRejectModal(id, cb) {
+      _rejectId = id;
+      _rejectCb = cb;
+      document.getElementById("rejectModalComplaintId").textContent = id;
+      document.getElementById("rejectReason").value = "";
+      document.getElementById("rejectReason").style.borderColor = "";
+      document.getElementById("rejectModal").classList.add("active");
+    }
+    async function submitReject() {
+      const r = document.getElementById("rejectReason").value.trim();
+      if (!r) {
+        document.getElementById("rejectReason").style.borderColor = "#DC2626";
+        document.getElementById("rejectReason").focus();
+        return;
       }
-      async function submitReject() {
-        const r = document.getElementById("rejectReason").value.trim();
-        if (!r) {
-          document.getElementById("rejectReason").style.borderColor = "#DC2626";
-          document.getElementById("rejectReason").focus();
-          return;
-        }
-        if (typeof rejectComplaintById === "function")
-          await rejectComplaintById(_rejectId, r);
-        closeRejectModal();
-        if (_rejectCb) await _rejectCb();
-        showToast("Complaint " + _rejectId + " rejected.");
-      }
+      if (typeof rejectComplaintById === "function")
+        await rejectComplaintById(_rejectId, r);
+      closeRejectModal();
+      if (_rejectCb) await _rejectCb();
+      showToast("Complaint " + _rejectId + " rejected.");
+    }
 
-      async function renderDashboardComplaints() {
-        const complaints = await getComplaints();
-        const pending = complaints.filter((c) => c.status === "Pending");
-        const bridgePend =
-          typeof bridgeGetAll === "function"
-            ? bridgeGetAll()
-                .filter((c) => c.status === "pending")
-                .map((bc) => ({
-                  id: bc.id,
-                  issue: bc.title,
-                  location: bc.location || "Property",
-                  priority: bc.urgency || "Medium",
-                  status: "Pending",
-                  fromOwner: true,
-                }))
-            : [];
-        const all = [...pending, ...bridgePend];
-        const tbody = document.getElementById("dashComplaintsBody");
-        if (!all.length) {
-          tbody.innerHTML =
-            '<tr><td colspan="5" style="text-align:center;padding:20px;color:#9CA3AF;">No pending complaints</td></tr>';
-          return;
-        }
-        tbody.innerHTML = all
-          .map(
-            (c) =>
-              `<tr><td><a class="complaint-link" href="complaint-details.html?id=${c.id}">${c.id}</a>${c.fromOwner ? '<span style="font-size:10px;background:#DBEAFE;color:#1D4ED8;padding:1px 6px;border-radius:10px;margin-left:4px;">Owner</span>' : ""}</td><td>${c.issue}</td><td style="font-size:12px;color:#6B7280;">${c.location}</td><td>${priorityBadge(c.priority)}</td><td>${c.fromOwner ? `<button class="btn btn-success btn-sm" onclick="dashApproveOwner('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="dashRejectOwner('${c.id}')">Reject</button>` : `<button class="btn btn-success btn-sm" onclick="dashApprove('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openRejectModal('${c.id}',function(){renderDashboardComplaints();renderKPIs();})">Reject</button>`}</td></tr>`,
-          )
-          .join("");
+    async function renderDashboardComplaints() {
+      const complaints = await getComplaints();
+      const pending = complaints.filter((c) => c.status && c.status.toLowerCase() === "pending");
+      const bridgePend =
+        typeof bridgeGetAll === "function"
+          ? bridgeGetAll()
+            .filter((c) => c.status && c.status.toLowerCase() === "pending")
+            .map((bc) => ({
+              id: bc.id,
+              issue: bc.title,
+              location: bc.location || "Property",
+              priority: bc.urgency || "Medium",
+              status: "Pending",
+              fromOwner: true,
+            }))
+          : [];
+      const all = [...pending, ...bridgePend];
+      const tbody = document.getElementById("dashComplaintsBody");
+      if (!all.length) {
+        tbody.innerHTML =
+          '<tr><td colspan="5" style="text-align:center;padding:20px;color:#9CA3AF;">No pending complaints</td></tr>';
+        return;
       }
+      tbody.innerHTML = all
+        .map(
+          (c) =>
+            `<tr><td><a class="complaint-link" href="complaint-details.html?id=${c.id}">${c.id}</a>${c.fromOwner ? '<span style="font-size:10px;background:#DBEAFE;color:#1D4ED8;padding:1px 6px;border-radius:10px;margin-left:4px;">Owner</span>' : ""}</td><td>${c.issue || c.title || "No Title"}</td><td style="font-size:12px;color:#6B7280;">${c.location || "N/A"}</td><td>${priorityBadge(c.priority)}</td><td>${c.fromOwner ? `<button class="btn btn-success btn-sm" onclick="dashApproveOwner('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="dashRejectOwner('${c.id}')">Reject</button>` : `<button class="btn btn-success btn-sm" onclick="dashApprove('${c.id}',this)">Approve</button><button class="btn btn-danger btn-sm" style="margin-left:5px;" onclick="openRejectModal('${c.id}',function(){renderDashboardComplaints();renderKPIs();})">Reject</button>`}</td></tr>`,
+        )
+        .join("");
+    }
 
-      async function dashApproveOwner(id) {
-        if (typeof bridgeApproveComplaint === "function")
-          bridgeApproveComplaint(id);
+    async function dashApproveOwner(id) {
+      if (typeof bridgeApproveComplaint === "function")
+        bridgeApproveComplaint(id);
+      await addNotification(
+        "check",
+        "#DCFCE7",
+        "Owner Complaint Approved",
+        "Complaint " + id + " approved and forwarded to providers.",
+        "all",
+        false,
+      );
+      await renderDashboardComplaints();
+      await renderKPIs();
+      showToast("Complaint " + id + " approved.");
+    }
+    function dashRejectOwner(id) {
+      openRejectModal(id, async function () {
+        if (typeof bridgeRejectComplaint === "function")
+          bridgeRejectComplaint(id, "Rejected by Maintenance Manager");
         await addNotification(
-          "check",
-          "#DCFCE7",
-          "Owner Complaint Approved",
-          "Complaint " + id + " approved and forwarded to providers.",
+          "warn",
+          "#FEE2E2",
+          "Owner Complaint Rejected",
+          "Complaint " + id + " rejected.",
           "all",
           false,
         );
         await renderDashboardComplaints();
         await renderKPIs();
-        showToast("Complaint " + id + " approved.");
-      }
-      function dashRejectOwner(id) {
-        openRejectModal(id, async function () {
-          if (typeof bridgeRejectComplaint === "function")
-            bridgeRejectComplaint(id, "Rejected by Maintenance Manager");
-          await addNotification(
-            "warn",
-            "#FEE2E2",
-            "Owner Complaint Rejected",
-            "Complaint " + id + " rejected.",
-            "all",
-            false,
-          );
-          await renderDashboardComplaints();
-          await renderKPIs();
-        });
-      }
-      async function dashApprove(id) {
-        if (typeof approveComplaintById === "function")
-          await approveComplaintById(id);
-        await renderDashboardComplaints();
-        await renderKPIs();
-        showToast("Complaint " + id + " approved.");
-      }
-
-      document.addEventListener("DOMContentLoaded", async () => {
-        await renderKPIs();
-        await renderDashboardComplaints();
-        await renderDashNotifs();
-        if (typeof providers !== 'undefined' && providers.length > 0) {
-          const top = [...providers].sort((a, b) => b.rating - a.rating)[0];
-          const nameEl = document.getElementById('dashTopProviderName');
-          const metaEl = document.getElementById('dashTopProviderMeta');
-          if (nameEl && top) nameEl.textContent = top.name;
-          if (metaEl && top) metaEl.innerHTML = `${top.rating} &#11088; &middot; ${top.onTime}% on-time &middot; ${top.jobs} jobs`;
-        }
       });
-    </script>
-  </body>
+    }
+    async function dashApprove(id) {
+      if (typeof approveComplaintById === "function")
+        await approveComplaintById(id);
+      await renderDashboardComplaints();
+      await renderKPIs();
+      showToast("Complaint " + id + " approved.");
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await renderKPIs();
+      await renderDashboardComplaints();
+      await renderDashNotifs();
+      if (typeof providers !== 'undefined' && providers.length > 0) {
+        const top = [...providers].sort((a, b) => b.rating - a.rating)[0];
+        const nameEl = document.getElementById('dashTopProviderName');
+        const metaEl = document.getElementById('dashTopProviderMeta');
+        if (nameEl && top) nameEl.textContent = top.name;
+        if (metaEl && top) metaEl.innerHTML = `${top.rating} &#11088; &middot; ${top.onTime}% on-time &middot; ${top.jobs} jobs`;
+      }
+    });
+  </script>
+</body>
+
 </html>
