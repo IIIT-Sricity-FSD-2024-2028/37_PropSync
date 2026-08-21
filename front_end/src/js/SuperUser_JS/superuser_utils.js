@@ -16,20 +16,8 @@ function validateParticipantName(val) {
   return '';
 }
 
-function validateParticipantEmail(val) {
-  if (!val) return 'Email is required';
-  if (!val.includes('@')) return 'Email must contain @';
-  if (!val.includes('.')) return 'Email must contain a dot (.)';
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) return 'Please enter a valid email address';
-  return '';
-}
-
 function validateParticipantContact(val) {
-  if (!val) return 'Phone number is required';
-  if (!val.startsWith('+91 ')) return 'Phone number must start with +91 followed by a space (e.g. +91 9876543210)';
-  const digits = val.slice(4); // strip "+91 "
-  if (!/^\d{10}$/.test(digits)) return 'Enter exactly 10 digits after +91';
-  if (/^(\d)\1{9}$/.test(digits)) return 'Phone number cannot have all identical digits';
+  if (!/^[0-9+]*$/.test(val)) return 'Contact should only contain numbers and + symbol';
   return '';
 }
 

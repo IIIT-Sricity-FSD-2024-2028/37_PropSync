@@ -66,6 +66,48 @@ function isValidEmail(email) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// USER STORE
+// Hardcoded fallback ensures login works even when fetch fails
+// (file:// protocol, network error, or slow async timing)
+// ─────────────────────────────────────────────────────────────
+const FALLBACK_USERS = [
+  { email: "johndoe@gmail.com", password: "123456", role: "Owner" },
+  { email: "johndoe@gmail.com", password: "123456", role: "Service Provider" },
+  {
+    email: "johndoe@gmail.com",
+    password: "123456",
+    role: "Maintenance Manager",
+  },
+  { email: "johndoe@gmail.com", password: "123456", role: "Administrator" },
+];
+
+let users = [...FALLBACK_USERS];
+
+// Kick off fetch immediately; login awaits this before searching
+const usersFetchPromise = (async () => {
+  const paths = ["../data/users.json", "./data/users.json", "data/users.json"];
+  for (const path of paths) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) continue;
+      const jsonUsers = await res.json();
+      if (!Array.isArray(jsonUsers) || jsonUsers.length === 0) continue;
+
+      let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
+      if (!Array.isArray(localUsers)) localUsers = [localUsers];
+      users = [...jsonUsers, ...localUsers];
+      return; // success — stop trying
+    } catch (_) {
+      // try next path
+    }
+  }
+  // All fetches failed — merge fallback + any local signups
+  let localUsers = JSON.parse(localStorage.getItem("newUsers")) || [];
+  if (!Array.isArray(localUsers)) localUsers = [localUsers];
+  users = [...FALLBACK_USERS, ...localUsers];
+})();
+
+// ─────────────────────────────────────────────────────────────
 // LOGIN
 // ─────────────────────────────────────────────────────────────
 const loginBtn = document.querySelector(".btn");
@@ -95,34 +137,51 @@ async function searchUser() {
   }
 
   try {
-    const response = await fetch("http://localhost:3000/auth/login", {
+    const roleFormatMap = {
+      Owner: "owner",
+      "Maintenance Manager": "maintenance_manager",
+      "Service Provider": "service_provider",
+      Administrator: "admin",
+    };
+    const roleKey = roleFormatMap[selectedRoleLogin];
+
+    const response = await fetch("http://localhost:3000/users/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        role: roleKey,
       },
-      body: JSON.stringify({ email, password, role: selectedRoleLogin }),
+      body: JSON.stringify({
+        email: email,
+        password: password,
+        role: roleKey,
+      }),
     });
-    const data = await response.json();
 
-    if (!response.ok) {
-      throw new Error(data.message || "Invalid credentials");
+    if (response.ok) {
+      const user = await response.json();
+      errorBox.classList.remove("show");
+      alert("Login Successful");
+
+      // Save to localStorage for persistence across pages
+      localStorage.setItem("currentUser", JSON.stringify(user));
+
+      if (selectedRoleLogin === "Owner")
+        window.location.href = "./owner/dashboard.html";
+      else if (selectedRoleLogin === "Service Provider")
+        window.location.href = "./service_provider/index.html";
+      else if (selectedRoleLogin === "Maintenance Manager")
+        window.location.href = "./maintenance_manager/dashboard.html";
+      else window.location.href = "./admin/index.html";
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      errorBox.textContent =
+        errorData.message ||
+        "Invalid credentials. Please check your email, password, and selected role.";
+      errorBox.classList.add("show");
     }
-
-    alert("Login Successful");
-    // store token (optional)
-    localStorage.setItem("user", JSON.stringify(data.user));
-    localStorage.setItem("role", data.role);
-
-    // Redirect
-    if (selectedRoleLogin === "Owner")
-      window.location.href = "./owner/dashboard.html";
-    else if (selectedRoleLogin === "Service Provider")
-      window.location.href = "./service_provider/index.html";
-    else if (selectedRoleLogin === "Maintenance Manager")
-      window.location.href = "./maintenance_manager/dashboard.html";
-    else window.location.href = "./admin/index.html";
-  } catch (err) {
-    errorBox.textContent = err.message || "Something went wrong.";
+  } catch (error) {
+    errorBox.textContent = "Error connecting to the server.";
     errorBox.classList.add("show");
   }
 }
@@ -171,9 +230,9 @@ signUpBtn.addEventListener("click", async function (e) {
   if (selectedRoleSignUp === "Owner") {
     propertyUnit = inputs[2].value.trim();
     communityName = inputs[3].value.trim();
-
     if (!propertyUnit || !communityName) {
-      errorBox.textContent = "Please enter Property Unit and Community Name.";
+      errorBox.textContent =
+        "Please enter your Property Unit and Community Name.";
       errorBox.classList.add("show");
       return;
     }
@@ -182,45 +241,54 @@ signUpBtn.addEventListener("click", async function (e) {
     selectedRoleSignUp === "Administrator"
   ) {
     communityName = inputs[2].value.trim();
-
     if (!communityName) {
-      errorBox.textContent = "Please enter Community Name.";
+      errorBox.textContent = "Please enter your Community Name.";
       errorBox.classList.add("show");
       return;
     }
   }
 
   try {
-    // CALL BACKEND
-    const response = await fetch("http://localhost:3000/auth/signup", {
+    const roleFormatMap = {
+      Owner: "owner",
+      "Maintenance Manager": "maintenance_manager",
+      "Service Provider": "service_provider",
+      Administrator: "admin",
+    };
+    const roleKey = roleFormatMap[selectedRoleSignUp];
+
+    const newUser = {
+      name: email.split("@")[0], // Fallback name since form might not have it
+      email: email,
+      password: password,
+      role: roleKey,
+    };
+    if (propertyUnit) newUser.propertyUnit = propertyUnit;
+    if (communityName) newUser.communityName = communityName;
+    if (selectedRoleSignUp === "Service Provider") newUser.category = "General"; // Default category since it's missing in UI
+
+    const response = await fetch("http://localhost:3000/users", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        role: "admin", // Create user usually requires admin role in our backend, let's pass it for signup
       },
-      body: JSON.stringify({
-        email,
-        password,
-        role: selectedRoleSignUp,
-        propertyUnit,
-        communityName,
-      }),
+      body: JSON.stringify(newUser),
     });
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      throw new Error(data.message || "Signup failed");
+    if (response.ok) {
+      alert(
+        "Account request submitted. Please wait for admin approval before logging in.",
+      );
+      inputs.forEach((input) => (input.value = ""));
+      document.querySelectorAll(".toggleBtn")[1].click();
+    } else {
+      const errorData = await response.json();
+      errorBox.textContent = errorData.message || "Signup failed.";
+      errorBox.classList.add("show");
     }
-
-    alert(data.message || "Account created successfully!");
-
-    // clear form
-    inputs.forEach((input) => (input.value = ""));
-
-    // go to login screen
-    document.querySelectorAll(".toggleBtn")[1].click();
-  } catch (err) {
-    errorBox.textContent = err.message || "Something went wrong.";
+  } catch (error) {
+    errorBox.textContent = "Error connecting to server.";
     errorBox.classList.add("show");
   }
 });

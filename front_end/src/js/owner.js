@@ -18,6 +18,94 @@ function closeSidebar() {
   if (overlay) overlay.classList.remove("active");
 }
 
+function getOwnerIdentity() {
+  try {
+    return JSON.parse(localStorage.getItem("currentUser")) || {};
+  } catch {
+    return {};
+  }
+}
+
+function getOwnerProfileIdentity(user) {
+  if (!user.email) return null;
+  try {
+    return (
+      JSON.parse(localStorage.getItem(`ownerProfile:${user.email}`)) || null
+    );
+  } catch {
+    return null;
+  }
+}
+
+function updateOwnerIdentityChrome() {
+  const user = getOwnerIdentity();
+  const profile = getOwnerProfileIdentity(user) || {};
+  const fullName = profile.name || user.name || "Property Owner";
+  const unit = profile.unit || user.propertyUnit || "A-101";
+  const community =
+    profile.community || user.communityName || "Green Valley Society";
+
+  document.querySelectorAll(".profile .avatar").forEach((avatar) => {
+    const svg = avatar.querySelector("svg")?.cloneNode(true);
+    avatar.textContent = "";
+    if (svg) avatar.appendChild(svg);
+    avatar.appendChild(document.createTextNode(fullName));
+    avatar.title = fullName;
+  });
+
+  const dashboardTitle = document.querySelector(".container > h1");
+  if (dashboardTitle && /Welcome Back/i.test(dashboardTitle.textContent)) {
+    dashboardTitle.textContent = `Welcome Back, ${fullName}!`;
+  }
+
+  const dashboardSub = document.querySelector(".container > .sub");
+  if (dashboardSub) dashboardSub.textContent = `${unit} | ${community}`;
+}
+
+document.addEventListener("DOMContentLoaded", updateOwnerIdentityChrome);
+
+function updateComplaintProfileLocation() {
+  const display = document.getElementById("profile_location_display");
+  if (!display) return;
+
+  const user = getOwnerIdentity();
+  const profile = getOwnerProfileIdentity(user) || {};
+  const unit = profile.unit || user.propertyUnit || "Property unit not set";
+  const community =
+    profile.community || user.communityName || "Community not set";
+  display.textContent = `${unit} | ${community}`;
+}
+
+document.addEventListener("DOMContentLoaded", updateComplaintProfileLocation);
+
+function normalizeStatus(status) {
+  return String(status || "pending")
+    .toLowerCase()
+    .replace(/_/g, " ");
+}
+
+function displayStatus(status) {
+  const normalized = normalizeStatus(status);
+  return (
+    {
+      pending: "Pending",
+      approved: "Approved",
+      rejected: "Rejected",
+      assigned: "Assigned",
+      "estimating cost": "Estimating Cost",
+      "in progress": "In Progress",
+      completed: "Completed",
+      billed: "Billed",
+      paid: "Paid",
+      closed: "Closed",
+      "payment pending": "Payment Pending",
+      resolved: "Resolved",
+    }[normalized] ||
+    status ||
+    "Pending"
+  );
+}
+
 const navItems = document.querySelectorAll(".nav-item");
 
 navItems.forEach((item) => {
@@ -32,37 +120,27 @@ let complaints = [];
 
 async function fetchComplaint() {
   try {
-    const response = await fetch("../../data/complaints.json");
-    const jsonComplaints = await response.json();
+    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+    const ownerId = currentUser.id || 1;
 
-    const localComplaint =
-      JSON.parse(localStorage.getItem("newComplaint")) || [];
+    const response = await fetch(
+      `http://localhost:3000/complaints/owner/${ownerId}`,
+      {
+        headers: { role: "owner" },
+      },
+    );
 
-    // 🔗 Bridge: sync statuses from manager actions
-    if (typeof bridgeSyncOwnerStatus === "function") {
-      bridgeSyncOwnerStatus();
+    if (response.ok) {
+      complaints = await response.json();
+      // Map API fields to frontend expectations if needed
+      complaints = complaints.map((c) => ({
+        ...c,
+        caption: c.description,
+        image: c.photo,
+      }));
+      console.log("All complaints:", complaints);
+      applyFilters(); // instead of loadComplaints directly to keep filters applied
     }
-
-    // Re-read after sync
-    const syncedLocal = JSON.parse(localStorage.getItem("newComplaint")) || [];
-
-    // 🔗 Bridge: overlay manager decision statuses onto local complaints
-    if (typeof bridgeGetAll === "function") {
-      const bridgeMap = {};
-      bridgeGetAll().forEach((bc) => {
-        bridgeMap[String(bc.id)] = bc.status;
-      });
-      syncedLocal.forEach((lc) => {
-        const bs = bridgeMap[String(lc.id)];
-        if (bs && bs !== "pending") lc.status = bs;
-      });
-    }
-
-    complaints = [...jsonComplaints, ...syncedLocal];
-
-    console.log("All complaints:", complaints);
-
-    loadComplaints(complaints);
   } catch (error) {
     console.log("Error loading complaints:", error);
   }
@@ -71,39 +149,7 @@ async function fetchComplaint() {
 fetchComplaint();
 
 // ✅ Poll every 15 seconds to pick up manager approve/reject decisions dynamically
-setInterval(async () => {
-  if (typeof bridgeSyncOwnerStatus === "function") {
-    bridgeSyncOwnerStatus();
-  }
-
-  let jsonComplaints = [];
-  try {
-    const response = await fetch("../../data/complaints.json");
-    jsonComplaints = await response.json();
-  } catch (_) {}
-
-  const syncedLocal = JSON.parse(localStorage.getItem("newComplaint")) || [];
-
-  if (typeof bridgeGetAll === "function") {
-    const bridgeMap = {};
-    bridgeGetAll().forEach((bc) => {
-      bridgeMap[String(bc.id)] = bc.status;
-    });
-    syncedLocal.forEach((lc) => {
-      const bs = bridgeMap[String(lc.id)];
-      if (bs) lc.status = bs; // always sync, including pending
-    });
-  }
-
-  complaints = [...jsonComplaints, ...syncedLocal];
-
-  // Re-apply current search/filter without resetting UI
-  if (typeof applyFilters === "function") {
-    applyFilters();
-  } else {
-    loadComplaints(complaints);
-  }
-}, 15000);
+setInterval(fetchComplaint, 15000);
 
 const comp_container =
   document.querySelector(".complaint-cards-list") ||
@@ -111,6 +157,7 @@ const comp_container =
 
 function loadComplaints(data) {
   if (!comp_container) return;
+  updateOwnerDashboardStats(data || []);
 
   comp_container.innerHTML = "";
 
@@ -132,7 +179,7 @@ function loadComplaints(data) {
     let statusClass = "pending";
     let statusText = c.status || "pending";
 
-    switch ((c.status || "").toLowerCase()) {
+    switch (normalizeStatus(c.status)) {
       case "pending":
         statusClass = "pending";
         statusText = "Pending";
@@ -149,6 +196,17 @@ function loadComplaints(data) {
         statusClass = "estimating";
         statusText = "Estimating Cost";
         break;
+      case "in progress":
+        statusClass = "estimating";
+        statusText = "In Progress";
+        break;
+      case "completed":
+      case "billed":
+      case "paid":
+      case "closed":
+        statusClass = "resolved";
+        statusText = displayStatus(c.status);
+        break;
       case "assigned":
         statusClass = "assigned";
         statusText = "Assigned";
@@ -160,6 +218,11 @@ function loadComplaints(data) {
     }
 
     div.innerHTML = `
+      ${
+        c.image
+          ? `<img class="complaint-thumb" src="${c.image}" alt="${c.title}" onerror="this.remove()">`
+          : ""
+      }
       <div class="card-left">
         <h3>${c.title}</h3>
 
@@ -187,6 +250,44 @@ function loadComplaints(data) {
   });
 }
 
+function updateOwnerDashboardStats(data) {
+  const cards = document.querySelectorAll(".cards-container .cards h2");
+  if (!cards.length) return;
+  const total = data.length;
+  const approved = data.filter((c) =>
+    [
+      "approved",
+      "assigned",
+      "estimating cost",
+      "in progress",
+      "completed",
+      "billed",
+      "paid",
+      "closed",
+      "payment pending",
+      "resolved",
+    ].includes(normalizeStatus(c.status)),
+  ).length;
+  const inProgress = data.filter((c) =>
+    [
+      "assigned",
+      "estimating cost",
+      "in progress",
+      "completed",
+      "billed",
+    ].includes(normalizeStatus(c.status)),
+  ).length;
+  const resolved = data.filter((c) =>
+    ["paid", "closed", "payment pending", "resolved"].includes(
+      normalizeStatus(c.status),
+    ),
+  ).length;
+  cards[0].textContent = total;
+  cards[1].textContent = approved;
+  cards[2].textContent = inProgress;
+  cards[3].textContent = resolved;
+}
+
 const search = document.querySelector(".search-box");
 const statusFilter = document.querySelector(".status-filter");
 
@@ -204,7 +305,7 @@ function applyFilters() {
     const matchesStatus =
       selectedStatus === "all status" ||
       selectedStatus === "" ||
-      (c.status || "").toLowerCase() === selectedStatus;
+      normalizeStatus(c.status) === selectedStatus;
 
     return matchesSearch && matchesStatus;
   });
@@ -226,6 +327,7 @@ if (form) {
     const title = document.getElementById("form_title").value.trim();
     const caption = document.getElementById("desc").value.trim();
     const category = document.getElementById("complaint_cat").value;
+    const priority = document.getElementById("complaint_priority").value;
     const imageInput = document.getElementById("form_image");
     const file = imageInput.files[0];
     const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
@@ -233,32 +335,41 @@ if (form) {
     let imageData = "";
 
     if (file) {
+      // Validate image size — max 1.5MB
+      if (file.size > 1_500_000) {
+        alert("Image is too large. Please select an image under 1.5MB.");
+        return;
+      }
       imageData = await toBase64(file);
     }
 
-    const newComplaint = {
-      id: Date.now(),
+    const complaintPayload = {
       title: title,
-      caption: caption,
-      status: "pending",
+      description: caption,
       category: category,
-      issuedBy: issuedBy,
-      serviceProviderQueue: [],
-      assignedTo: null,
-      image: imageData,
+      priority: priority,
+      ownerId: currentUser.id || 1,
+      photo: imageData,
     };
 
-    let stored = JSON.parse(localStorage.getItem("newComplaint")) || [];
-    stored.push(newComplaint);
-    localStorage.setItem("newComplaint", JSON.stringify(stored));
-
-    // 🔗 Bridge: push to shared store so Maintenance Manager can see & act on it
-    if (typeof bridgeAddComplaint === "function") {
-      bridgeAddComplaint(newComplaint);
+    try {
+      const response = await fetch("http://localhost:3000/complaints", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          role: "owner",
+        },
+        body: JSON.stringify(complaintPayload),
+      });
+      if (response.ok) {
+        alert("Complaint submitted successfully!");
+        window.location.href = "../owner/dashboard.html";
+      } else {
+        alert("Failed to submit complaint.");
+      }
+    } catch (e) {
+      alert("Error submitting complaint.");
     }
-
-    alert("Complaint submitted successfully!");
-    window.location.href = "../owner/dashboard.html";
   });
 }
 
@@ -275,11 +386,10 @@ function toBase64(file) {
 }
 
 function deleteComplaint(id) {
-  let stored = JSON.parse(localStorage.getItem("newComplaint")) || [];
-  stored = stored.filter((c) => c.id !== id);
-  localStorage.setItem("newComplaint", JSON.stringify(stored));
-  complaints = complaints.filter((c) => c.id !== id);
-  loadComplaints(complaints);
+  fetch(`http://localhost:3000/complaints/${id}`, {
+    method: "DELETE",
+    headers: { role: "admin" },
+  }).then(() => fetchComplaint());
 }
 
 //payments history
@@ -288,12 +398,36 @@ let payments = [];
 
 async function fetchPayments() {
   try {
-    const response = await fetch("../../data/owner_payments.json");
-    const jsonPayments = await response.json();
-    const localPayments = JSON.parse(localStorage.getItem("payments")) || [];
+    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+    const ownerId = currentUser.id || 1;
 
-    payments = [...jsonPayments, ...localPayments];
-    loadPayments(payments);
+    const summaryResponse = await fetch(
+      `http://localhost:3000/maintenance/owner/${ownerId}/summary`,
+      {
+        headers: { role: "owner" },
+      },
+    );
+    if (summaryResponse.ok) {
+      const summary = await summaryResponse.json();
+      const totalPaidEl = document.getElementById("totalPaid");
+      const pendingCountEl = document.getElementById("pendingCount");
+      const monthlyPaidEl = document.getElementById("monthlyPaid");
+      if (totalPaidEl) totalPaidEl.textContent = `₹${summary.totalPaid}`;
+      if (pendingCountEl) pendingCountEl.textContent = summary.pendingCount;
+      if (monthlyPaidEl) monthlyPaidEl.textContent = `₹${summary.monthlyPaid}`;
+    }
+
+    const response = await fetch(
+      `http://localhost:3000/maintenance/owner/${ownerId}`,
+      {
+        headers: { role: "owner" },
+      },
+    );
+
+    if (response.ok) {
+      payments = await response.json();
+      loadPayments(payments);
+    }
   } catch (error) {
     console.log("Error loading payments:", error);
   }
@@ -308,37 +442,20 @@ function loadPayments(data) {
   data.forEach((p) => {
     const div = document.createElement("div");
 
-    div.className = p.status === "pending" ? "payment pending" : "payment";
+    div.className = "payment";
 
     div.innerHTML = `
       <div class="row">
-        <h3>${p.month}</h3>
+        <h3>Bill #${p.billId}</h3>
 
-        <span class="status ${
-          p.status === "pending" ? "pending-badge" : "paid"
-        }">
-          ${p.status}
-        </span>
+        <span class="status paid">paid</span>
       </div>
 
       <p class="amount">
-        <b>Amount:</b> $${p.amount}
-        ${
-          p.status === "paid"
-            ? `&nbsp;&nbsp; <b>Paid on:</b> ${formatDate(p.paidOn)}`
-            : ""
-        }
+        <b>Amount:</b> ₹${p.amount}
+        &nbsp;&nbsp; <b>Paid on:</b> ${formatDate(p.paidAt)}
       </p>
 
-      ${
-        p.status === "pending"
-          ? `
-        <input type="file" onchange="uploadReceipt(event, ${p.id})" accept="image/*" />
-        <button onclick="submitPayment(${p.id})">
-          Upload
-        </button>
-      `
-          : `
         <p class="success conform"><svg
               xmlns="http://www.w3.org/2000/svg"
               width="16"
@@ -370,12 +487,65 @@ function loadPayments(data) {
             >
           Payment confirmation uploaded
         </p>
-      `
-      }
     `;
 
     container.append(div);
   });
+}
+
+function loadMaintenancePayments(data) {
+  if (!container) return;
+  container.innerHTML = "";
+
+  if (!data || data.length === 0) {
+    container.innerHTML = "<p>No maintenance charges found.</p>";
+    return;
+  }
+
+  data.forEach((p) => {
+    const div = document.createElement("div");
+    div.className = "payment";
+    div.innerHTML = `
+      <div class="row">
+        <h3>${p.month} Maintenance</h3>
+        <span class="status ${p.status === "paid" ? "paid" : "pending"}">${p.status}</span>
+      </div>
+      <p class="amount">
+        <b>Amount:</b> ₹${p.amount}
+        &nbsp;&nbsp; <b>Paid on:</b> ${p.paidAt ? formatDate(p.paidAt) : "Pending"}
+      </p>
+      ${
+        p.status === "paid"
+          ? `<p class="success conform">Payment completed</p>`
+          : `<button type="button" onclick="payMaintenance(${p.id})" style="margin-top:10px;background:#16a34a;color:white;border:none;border-radius:8px;padding:9px 14px;font-weight:700;cursor:pointer;">Pay Maintenance</button>`
+      }
+    `;
+    container.append(div);
+  });
+}
+
+loadPayments = loadMaintenancePayments;
+
+async function payMaintenance(id) {
+  const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+  const ownerId = currentUser.id || 1;
+  try {
+    const response = await fetch(
+      `http://localhost:3000/maintenance/${id}/pay?ownerId=${ownerId}`,
+      {
+        method: "PATCH",
+        headers: { role: "owner" },
+      },
+    );
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => ({}));
+      throw new Error(errorBody.message || "Failed to pay maintenance");
+    }
+    alert("Maintenance payment completed.");
+    fetchPayments();
+  } catch (error) {
+    alert(error.message || "Error paying maintenance");
+  }
 }
 
 let tempReceipt = {};
@@ -390,7 +560,7 @@ function uploadReceipt(event, id) {
   reader.readAsDataURL(file);
 }
 
-function submitPayment(id) {
+async function submitPayment(id) {
   const receipt = tempReceipt[id];
 
   if (!receipt) {
@@ -398,12 +568,30 @@ function submitPayment(id) {
     return;
   }
 
-  const index = payments.findIndex((p) => p.id === id);
-  payments[index].status = "paid";
-  payments[index].paidOn = new Date().toISOString().split("T")[0];
-  payments[index].receipt = receipt;
-  localStorage.setItem("payments", JSON.stringify(payments));
-  loadPayments(payments);
+  try {
+    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+    const response = await fetch("http://localhost:3000/payments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        role: "owner",
+      },
+      body: JSON.stringify({
+        billId: id,
+        ownerId: currentUser.id || 1,
+        amount: payments.find((p) => p.id === id)?.amount || 0,
+        receiptImage: receipt,
+      }),
+    });
+    if (response.ok) {
+      alert("Payment submitted successfully");
+      fetchPayments();
+    } else {
+      alert("Failed to submit payment");
+    }
+  } catch (e) {
+    alert("Error submitting payment");
+  }
 }
 
 function formatDate(dateStr) {
@@ -422,21 +610,20 @@ let notifications = [];
 
 async function fetchNotifications() {
   try {
-    const response = await fetch("../../data/notifications.json");
-    const jsonNotifications = await response.json();
+    const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+    const ownerId = currentUser.id || 1;
 
-    const localNotifications =
-      JSON.parse(localStorage.getItem("notifications")) || [];
+    const response = await fetch(
+      `http://localhost:3000/notifications?userId=${ownerId}`,
+      {
+        headers: { role: "owner" },
+      },
+    );
 
-    const map = new Map();
-
-    [...jsonNotifications, ...localNotifications].forEach((n) => {
-      map.set(n.id, n);
-    });
-
-    notifications = Array.from(map.values());
-
-    loadNotifications(notifications);
+    if (response.ok) {
+      notifications = await response.json();
+      loadNotifications(notifications);
+    }
   } catch (error) {
     console.log("Error loading notifications:", error);
   }
@@ -537,26 +724,28 @@ function updateUnreadCount() {
   unreadBadge.textContent = `${unread} Unread`;
 }
 
-function markAsRead(id) {
-  notifications = notifications.map((n) => {
-    if (n.id === id) {
-      return {
-        ...n,
-        status: "read",
-      };
-    }
-    return n;
-  });
-
-  saveNotifications();
-  loadNotifications(notifications);
+async function markAsRead(id) {
+  try {
+    await fetch(`http://localhost:3000/notifications/${id}/read`, {
+      method: "PATCH",
+      headers: { role: "owner" },
+    });
+    fetchNotifications();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
-function deleteNotification(id) {
-  notifications = notifications.filter((n) => n.id !== id);
-
-  saveNotifications();
-  loadNotifications(notifications);
+async function deleteNotification(id) {
+  try {
+    await fetch(`http://localhost:3000/notifications/${id}`, {
+      method: "DELETE",
+      headers: { role: "owner" },
+    });
+    fetchNotifications();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 if (markAllBtn) {
@@ -584,6 +773,107 @@ function saveNotifications() {
   localStorage.setItem("notifications", JSON.stringify(notifications));
 }
 
+const RATABLE_STATUSES = new Set([
+  "completed",
+  "payment pending",
+  "resolved",
+  "paid",
+  "closed",
+]);
+
+function isComplaintRatable(status) {
+  return RATABLE_STATUSES.has(normalizeStatus(status));
+}
+
+async function renderOwnerRating(c, currentStatus) {
+  const card = document.getElementById("owner-rating-card");
+  const form = document.getElementById("owner-rating-form");
+  const state = document.getElementById("owner-rating-state");
+  const feedback = document.getElementById("owner-rating-feedback");
+  const submitBtn = document.getElementById("owner-rating-submit");
+
+  if (!card || !form || !state || !feedback || !submitBtn) return;
+
+  card.hidden = true;
+  state.hidden = true;
+  form.hidden = false;
+
+  if (!isComplaintRatable(currentStatus) || !c.assignedProviderId) {
+    return;
+  }
+
+  card.hidden = false;
+  const currentUser = JSON.parse(localStorage.getItem("currentUser")) || {};
+  const ownerId = currentUser.id || c.ownerId || 1;
+  let existingRating = null;
+
+  try {
+    const existingRes = await fetch(
+      `http://localhost:3000/ratings?ownerId=${ownerId}&complaintId=${c.id}`,
+      { headers: { role: "owner" } },
+    );
+    if (existingRes.ok) {
+      const ratings = await existingRes.json();
+      existingRating = ratings[0] || null;
+    }
+  } catch (error) {
+    console.log("Error checking existing rating:", error);
+  }
+
+  if (existingRating) {
+    form.hidden = true;
+    state.hidden = false;
+    state.textContent = `You rated this service ${existingRating.score}/5${
+      existingRating.feedback ? `: ${existingRating.feedback}` : "."
+    }`;
+    return;
+  }
+
+  form.onsubmit = async (event) => {
+    event.preventDefault();
+    const checked = form.querySelector(
+      'input[name="owner-rating-score"]:checked',
+    );
+    const score = Number(checked?.value || 5);
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
+
+    try {
+      const response = await fetch("http://localhost:3000/ratings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          role: "owner",
+        },
+        body: JSON.stringify({
+          ownerId,
+          complaintId: c.id,
+          score,
+          feedback: feedback.value.trim() || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => ({}));
+        throw new Error(errorBody.message || "Failed to submit rating");
+      }
+
+      const rating = await response.json();
+      form.hidden = true;
+      state.hidden = false;
+      state.textContent = `Thank you. You rated this service ${rating.score}/5${
+        rating.feedback ? `: ${rating.feedback}` : "."
+      }`;
+    } catch (error) {
+      alert(error.message || "Error submitting rating");
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit Rating";
+    }
+  };
+}
+
 // ─────────────────────────────────────────────
 // Complaint Details Page — reads ?id= from URL
 // ─────────────────────────────────────────────
@@ -593,219 +883,222 @@ async function loadComplaintDetails() {
 
   if (!id) return;
 
-  // ✅ FIX: Sync bridge statuses into localStorage FIRST before reading
-  if (typeof bridgeSyncOwnerStatus === "function") {
-    bridgeSyncOwnerStatus();
-  }
-
-  // Load all complaints (JSON + localStorage)
-  let allComplaints = [];
   try {
-    const response = await fetch("../../data/complaints.json");
-    const jsonComplaints = await response.json();
-    const localComplaints =
-      JSON.parse(localStorage.getItem("newComplaint")) || [];
-    allComplaints = [...jsonComplaints, ...localComplaints];
-  } catch {
-    allComplaints = JSON.parse(localStorage.getItem("newComplaint")) || [];
-  }
+    const response = await fetch(`http://localhost:3000/complaints/${id}`, {
+      headers: { role: "owner" },
+    });
 
-  // Match by id (loose comparison handles both string and number ids)
-  let c = allComplaints.find((x) => String(x.id) === String(id));
-
-  // ✅ FIX: If not found in allComplaints, look directly in bridge (edge case for freshly submitted)
-  if (!c && typeof bridgeGetAll === "function") {
-    const bc = bridgeGetAll().find((b) => String(b.id) === String(id));
-    if (bc) {
-      c = {
-        id: bc.id,
-        title: bc.title,
-        caption: bc.caption || "",
-        category: bc.category || "General",
-        status: bc.status,
-        issuedBy: bc.issuedBy || "",
-        image: bc.image || "",
-        submittedOn: bc.submittedOn || "",
-        rejectionReason: bc.rejectionReason || "",
-      };
+    if (!response.ok) {
+      throw new Error("Not found");
     }
-  }
 
-  if (!c) {
-    const main = document.querySelector(".main");
-    if (main)
-      main.innerHTML = `<p style="padding:2rem;color:red;">Complaint not found.</p>`;
-    return;
-  }
+    let c = await response.json();
+    c.caption = c.description; // Map API description to frontend caption
+    c.image = c.photo; // Map API photo to the detail page image renderer
+    c.issuedBy = "Resident"; // Assuming issuedBy since backend stores ownerId
+    c.submittedOn = c.submittedAt;
 
-  // 🔗 Bridge: always sync latest status from bridge (approved/rejected/pending)
-  if (typeof bridgeGetAll === "function") {
-    const bc = bridgeGetAll().find((b) => String(b.id) === String(id));
-    if (bc) {
-      c = {
-        ...c,
-        status: bc.status,
-        rejectionReason: bc.rejectionReason || "",
-      };
-    }
-  }
-
-  // ── Helper: map status → stepper step index (1-based) ──
-  const statusStepMap = {
-    pending: 1,
-    rejected: 1,
-    approved: 2,
-    assigned: 3,
-    "estimating cost": 4,
-    "in progress": 5,
-    resolved: 6,
-  };
-  const currentStep = statusStepMap[(c.status || "").toLowerCase()] || 1;
-
-  // ── Stepper ──
-  const stepCircles = document.querySelectorAll(".step-circle");
-  const stepConnectors = document.querySelectorAll(".step-connector");
-  const stepLabels = document.querySelectorAll(".step-label");
-
-  stepCircles.forEach((el, i) => {
-    el.classList.remove("done", "current");
-    stepLabels[i]?.classList.remove("active");
-    if (i + 1 < currentStep) {
-      el.classList.add("done");
-      el.textContent = "✓";
-      stepLabels[i]?.classList.add("active");
-      if (stepConnectors[i]) stepConnectors[i].classList.add("done");
-    } else if (i + 1 === currentStep) {
-      el.classList.add("current");
-      el.textContent = i + 1;
-      stepLabels[i]?.classList.add("active");
-    } else {
-      el.textContent = i + 1;
-    }
-  });
-
-  // ── Complaint Information card ──
-  const set = (id, val) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = val;
-  };
-
-  set("detail-title", c.title || "—");
-  set("detail-category", c.category || "—");
-  set("detail-id", `C-${c.id}`);
-  set("detail-issuedby", c.issuedBy || "—");
-
-  const workStatusMap = {
-    pending: "Waiting for Maintenance Manager to approve…",
-    approved: "Complaint approved. Waiting for provider assignment.",
-    rejected: c.rejectionReason
-      ? `Complaint rejected. Reason: ${c.rejectionReason}`
-      : "Complaint was rejected by the Maintenance Manager.",
-    assigned: `Assigned to: ${c.assignedTo || "a service provider"}`,
-    "estimating cost": "Service provider is submitting cost estimate.",
-    "in progress": "Work is currently in progress.",
-    resolved: "Work has been completed and resolved.",
-  };
-  set(
-    "detail-workstatus",
-    workStatusMap[(c.status || "").toLowerCase()] || c.status || "—",
-  );
-
-  // Status badge
-  set("detail-status-text", c.status || "pending");
-  const badge = document.getElementById("detail-status-badge");
-  if (badge) {
-    const statusColorMap = {
-      pending:
-        "background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,.25)",
-      approved:
-        "background:var(--green-lt);color:var(--green);border-color:rgba(22,163,74,.25)",
-      rejected:
-        "background:#fee2e2;color:#b91c1c;border-color:rgba(185,28,28,.25)",
-      assigned:
-        "background:var(--blue-lt);color:var(--blue);border-color:rgba(29,78,216,.25)",
-      "estimating cost":
-        "background:#f5f3ff;color:#7c3aed;border-color:rgba(124,58,237,.25)",
-      "in progress":
-        "background:var(--teal-lt);color:var(--teal);border-color:rgba(13,148,136,.25)",
-      resolved:
-        "background:#f3f4f6;color:#374151;border-color:rgba(55,65,81,.25)",
+    // ── Helper: map status → stepper step index (1-based) ──
+    const statusStepMap = {
+      pending: 1,
+      rejected: 1,
+      approved: 2,
+      assigned: 3,
+      "estimating cost": 4,
+      "in progress": 5,
+      completed: 6,
+      billed: 6,
+      paid: 6,
+      closed: 6,
+      "payment pending": 6,
+      resolved: 6,
     };
-    badge.style.cssText = statusColorMap[(c.status || "").toLowerCase()] || "";
-  }
+    const currentStatus = normalizeStatus(c.status);
+    const currentStep = statusStepMap[currentStatus] || 1;
 
-  // ── Lifecycle list ──
-  const lcItems = document.querySelectorAll(".lc-item");
-  const lifecycleStages = [
-    { name: "Complaint Submitted", date: c.submittedOn || null },
-    { name: "Complaint Approved", date: null },
-    { name: "Service Provider Assigned", date: null },
-    { name: "Estimate Submitted", date: null },
-    { name: "Estimate Approved", date: null },
-    { name: "Work In Progress", date: null },
-    { name: "Work Completed", date: null },
-    { name: "Payment Processed", date: null },
-  ];
+    // ── Stepper ──
+    const stepCircles = document.querySelectorAll(".step-circle");
+    const stepConnectors = document.querySelectorAll(".step-connector");
+    const stepLabels = document.querySelectorAll(".step-label");
 
-  lcItems.forEach((item, i) => {
-    const dot = item.querySelector(".lc-dot");
-    const nameEl = item.querySelector(".lc-name");
-    const dateEl = item.querySelector(".lc-date");
-    const existingPill = nameEl?.querySelector(".cur-pill");
-    if (existingPill) existingPill.remove();
-
-    dot?.classList.remove("done", "cur");
-    nameEl?.classList.remove("dim");
-
-    const stageStep = i + 1;
-    if (stageStep < currentStep) {
-      dot?.classList.add("done");
-      if (nameEl)
-        nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
-    } else if (stageStep === currentStep) {
-      dot?.classList.add("cur");
-      if (nameEl) {
-        nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
-        const pill = document.createElement("span");
-        pill.className = "cur-pill";
-        pill.textContent = "Current";
-        nameEl.appendChild(pill);
+    stepCircles.forEach((el, i) => {
+      el.classList.remove("done", "current");
+      stepLabels[i]?.classList.remove("active");
+      if (i + 1 < currentStep) {
+        el.classList.add("done");
+        el.textContent = "✓";
+        stepLabels[i]?.classList.add("active");
+        if (stepConnectors[i]) stepConnectors[i].classList.add("done");
+      } else if (i + 1 === currentStep) {
+        el.classList.add("current");
+        el.textContent = i + 1;
+        stepLabels[i]?.classList.add("active");
+      } else {
+        el.textContent = i + 1;
       }
-      if (dateEl && lifecycleStages[i]?.date)
-        dateEl.textContent = lifecycleStages[i].date;
-    } else {
-      if (nameEl) {
-        nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
-        nameEl.classList.add("dim");
+    });
+
+    // ── Complaint Information card ──
+    const set = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
+
+    set("detail-title", c.title || "—");
+    set("detail-category", c.category || "—");
+    set("detail-id", `C-${c.id}`);
+    set("detail-location", c.location || "Location not provided");
+    set("detail-issuedby", c.issuedBy || "—");
+
+    const workStatusMap = {
+      pending: "Waiting for Maintenance Manager to approve…",
+      approved: "Complaint approved. Waiting for provider assignment.",
+      rejected: c.rejectionReason
+        ? `Complaint rejected. Reason: ${c.rejectionReason}`
+        : "Complaint was rejected by the Maintenance Manager.",
+      assigned: `Assigned to: ${c.assignedTo || "a service provider"}`,
+      "estimating cost": "Service provider is submitting cost estimate.",
+      "in progress": "Work is currently in progress.",
+      completed:
+        "Service provider marked the work as completed and submitted a bill.",
+      billed: "Service bill submitted. Payment is awaiting manager approval.",
+      paid: "Service bill payment has been completed.",
+      closed: "Payment completed. Complaint is closed.",
+      "payment pending": "Work is completed. Payment is pending.",
+      resolved: "Work has been completed and resolved.",
+    };
+    set(
+      "detail-workstatus",
+      workStatusMap[currentStatus] || displayStatus(c.status) || "—",
+    );
+
+    // Status badge
+    set("detail-status-text", displayStatus(c.status));
+    const badge = document.getElementById("detail-status-badge");
+    if (badge) {
+      const statusColorMap = {
+        pending:
+          "background:var(--amber-lt);color:var(--amber);border-color:rgba(217,119,6,.25)",
+        approved:
+          "background:var(--green-lt);color:var(--green);border-color:rgba(22,163,74,.25)",
+        rejected:
+          "background:#fee2e2;color:#b91c1c;border-color:rgba(185,28,28,.25)",
+        assigned:
+          "background:var(--blue-lt);color:var(--blue);border-color:rgba(29,78,216,.25)",
+        "estimating cost":
+          "background:#f5f3ff;color:#7c3aed;border-color:rgba(124,58,237,.25)",
+        "in progress":
+          "background:var(--teal-lt);color:var(--teal);border-color:rgba(13,148,136,.25)",
+        completed:
+          "background:var(--green-lt);color:var(--green);border-color:rgba(22,163,74,.25)",
+        billed:
+          "background:#f5f3ff;color:#7c3aed;border-color:rgba(124,58,237,.25)",
+        paid: "background:var(--green-lt);color:var(--green);border-color:rgba(22,163,74,.25)",
+        closed:
+          "background:var(--green-lt);color:var(--green);border-color:rgba(22,163,74,.25)",
+        "payment pending":
+          "background:#f5f3ff;color:#7c3aed;border-color:rgba(124,58,237,.25)",
+        resolved:
+          "background:#f3f4f6;color:#374151;border-color:rgba(55,65,81,.25)",
+      };
+      badge.style.cssText = statusColorMap[currentStatus] || "";
+    }
+
+    // ── Lifecycle list ──
+    const lcItems = document.querySelectorAll(".lc-item");
+    const lifecycleStages = [
+      { name: "Complaint Submitted", date: c.submittedOn || null },
+      { name: "Complaint Approved", date: null },
+      { name: "Service Provider Assigned", date: null },
+      { name: "Estimate Submitted", date: null },
+      { name: "Estimate Approved", date: null },
+      { name: "Work In Progress", date: null },
+      { name: "Work Completed", date: null },
+      { name: "Payment Processed", date: null },
+    ];
+    const lifecycleStepMap = {
+      pending: 1,
+      rejected: 1,
+      approved: 2,
+      assigned: 3,
+      "estimating cost": 4,
+      "in progress": 6,
+      completed: 7,
+      billed: 7,
+      paid: 8,
+      closed: 8,
+      "payment pending": 8,
+      resolved: 8,
+    };
+    const lifecycleCurrentStep = lifecycleStepMap[currentStatus] || 1;
+
+    lcItems.forEach((item, i) => {
+      const dot = item.querySelector(".lc-dot");
+      const nameEl = item.querySelector(".lc-name");
+      const dateEl = item.querySelector(".lc-date");
+      const existingPill = nameEl?.querySelector(".cur-pill");
+      if (existingPill) existingPill.remove();
+
+      dot?.classList.remove("done", "cur");
+      nameEl?.classList.remove("dim");
+
+      const stageStep = i + 1;
+      if (stageStep < lifecycleCurrentStep) {
+        dot?.classList.add("done");
+        if (nameEl)
+          nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
+      } else if (stageStep === lifecycleCurrentStep) {
+        dot?.classList.add("cur");
+        if (nameEl) {
+          nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
+          const pill = document.createElement("span");
+          pill.className = "cur-pill";
+          pill.textContent = "Current";
+          nameEl.appendChild(pill);
+        }
+        if (dateEl && lifecycleStages[i]?.date)
+          dateEl.textContent = lifecycleStages[i].date;
+      } else {
+        if (nameEl) {
+          nameEl.textContent = lifecycleStages[i]?.name || nameEl.textContent;
+          nameEl.classList.add("dim");
+        }
+        if (dateEl) dateEl.textContent = "";
       }
-      if (dateEl) dateEl.textContent = "";
-    }
-  });
+    });
 
-  // ── Description ──
-  const descEl = document.querySelector(".desc-text");
-  if (descEl) descEl.textContent = c.caption || "No description provided.";
+    // ── Description ──
+    const descEl = document.querySelector(".desc-text");
+    if (descEl) descEl.textContent = c.caption || "No description provided.";
 
-  // ── Photo ──
-  const photoWrap = document.querySelector(".photo-wrap");
-  if (photoWrap) {
-    if (c.image) {
-      const img = photoWrap.querySelector("img");
-      if (img) img.src = c.image;
-      const cap = photoWrap.querySelector(".photo-caption strong");
-      const capSmall = photoWrap.querySelector(".photo-caption small");
-      if (cap) cap.textContent = c.title;
-      if (capSmall)
-        capSmall.textContent = `Submitted by ${c.issuedBy || "resident"}`;
-    } else {
-      photoWrap.innerHTML = `<p style="padding:2rem;text-align:center;color:var(--muted);">No photo attached to this complaint.</p>`;
+    // ── Photo ──
+    const photoWrap = document.querySelector(".photo-wrap");
+    if (photoWrap) {
+      const imageSrc = c.image || c.photo;
+      if (imageSrc) {
+        const img = photoWrap.querySelector("img");
+        if (img) img.src = imageSrc;
+        const cap = photoWrap.querySelector(".photo-caption strong");
+        const capSmall = photoWrap.querySelector(".photo-caption small");
+        if (cap) cap.textContent = c.title;
+        if (capSmall)
+          capSmall.textContent = `Submitted by ${c.issuedBy || "resident"}`;
+      } else {
+        photoWrap.innerHTML = `<p style="padding:2rem;text-align:center;color:var(--muted);">No photo attached to this complaint.</p>`;
+      }
     }
+
+    // ── Page title ──
+    document.title = `PropSync – ${c.title}`;
+    const hdrTitle = document.querySelector(".hdr-title");
+    if (hdrTitle) hdrTitle.textContent = c.title;
+
+    await renderOwnerRating(c, currentStatus);
+  } catch (error) {
+    console.error("Failed to load complaint details:", error);
+    document.body.innerHTML =
+      "<h2 style='text-align:center;margin-top:50px;'>Error loading complaint details.</h2>";
   }
-
-  // ── Page title ──
-  document.title = `PropSync – ${c.title}`;
-  const hdrTitle = document.querySelector(".hdr-title");
-  if (hdrTitle) hdrTitle.textContent = c.title;
 }
 
 // Run on detail page (only if the stepper element exists)

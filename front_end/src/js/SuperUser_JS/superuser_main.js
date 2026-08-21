@@ -96,11 +96,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('ap-name-error').textContent = err;
       this.classList.toggle('error', !!err);
     });
-    document.getElementById('ap-email').addEventListener('input', function () {
-      const err = validateParticipantEmail(this.value);
-      document.getElementById('ap-email-error').textContent = err;
-      this.classList.toggle('error', !!err);
-    });
     document.getElementById('ap-contact').addEventListener('input', function () {
       const err = validateParticipantContact(this.value);
       document.getElementById('ap-contact-error').textContent = err;
@@ -119,29 +114,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const password = document.getElementById('ap-password').value;
       const role     = document.getElementById('ap-role').value;
 
-      let hasError = false;
-
-      const nameErr = validateParticipantName(name) || (!name ? 'Full Name is required' : '');
-      document.getElementById('ap-name-error').textContent = nameErr;
-      document.getElementById('ap-name').classList.toggle('error', !!nameErr);
-      if (nameErr) hasError = true;
-
-      const emailErr = validateParticipantEmail(email);
-      document.getElementById('ap-email-error').textContent = emailErr;
-      document.getElementById('ap-email').classList.toggle('error', !!emailErr);
-      if (emailErr) hasError = true;
-
+      if (!name || !email || !contact || !password) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      const nameErr    = validateParticipantName(name);
       const contactErr = validateParticipantContact(contact);
-      document.getElementById('ap-contact-error').textContent = contactErr;
-      document.getElementById('ap-contact').classList.toggle('error', !!contactErr);
-      if (contactErr) hasError = true;
-
-      const passErr = validateParticipantPassword(password) || (!password ? 'Password is required' : '');
-      document.getElementById('ap-password-error').textContent = passErr;
-      document.getElementById('ap-password').classList.toggle('error', !!passErr);
-      if (passErr) hasError = true;
-
-      if (hasError) return;
+      const passErr    = validateParticipantPassword(password);
+      if (nameErr || contactErr || passErr) {
+        alert('Please fix the validation errors before submitting');
+        return;
+      }
 
       const list = getParticipants();
       list.push({ id: generateParticipantId(list), name, email, role, status: 'Active' });
@@ -151,55 +134,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
       ['ap-name', 'ap-email', 'ap-contact', 'ap-password'].forEach(id => document.getElementById(id).value = '');
       document.getElementById('ap-role').value = 'Property Owner';
-      ['ap-name-error', 'ap-email-error', 'ap-contact-error', 'ap-password-error'].forEach(id => document.getElementById(id).textContent = '');
-      ['ap-name', 'ap-email', 'ap-contact', 'ap-password'].forEach(id => document.getElementById(id).classList.remove('error'));
+      ['ap-name-error', 'ap-contact-error', 'ap-password-error'].forEach(id => document.getElementById(id).textContent = '');
     });
 
     /* ────────────────────────────────────────────────────────
        MODAL — Edit Participant
        ──────────────────────────────────────────────────────── */
     document.getElementById('ep-name').addEventListener('input', function () {
-      const err = validateParticipantName(this.value);
-      document.getElementById('ep-name-error').textContent = err;
-      this.classList.toggle('error', !!err);
-    });
-    document.getElementById('ep-email').addEventListener('input', function () {
-      const err = validateParticipantEmail(this.value);
-      document.getElementById('ep-email-error').textContent = err;
-      this.classList.toggle('error', !!err);
+      document.getElementById('ep-name-error').textContent = validateParticipantName(this.value);
     });
     document.getElementById('ep-contact').addEventListener('input', function () {
-      const err = validateParticipantContact(this.value);
-      document.getElementById('ep-contact-error').textContent = err;
-      this.classList.toggle('error', !!err);
+      document.getElementById('ep-contact-error').textContent = validateParticipantContact(this.value);
     });
 
     document.getElementById('ep-save-btn').addEventListener('click', () => {
-      const id      = document.getElementById('ep-id').value;
-      const name    = document.getElementById('ep-name').value.trim();
-      const email   = document.getElementById('ep-email').value.trim();
-      const contact = document.getElementById('ep-contact').value.trim();
-      const role    = document.getElementById('ep-role').value;
-
-      let hasError = false;
-
-      const nameErr = validateParticipantName(name) || (!name ? 'Full Name is required' : '');
-      document.getElementById('ep-name-error').textContent = nameErr;
-      document.getElementById('ep-name').classList.toggle('error', !!nameErr);
-      if (nameErr) hasError = true;
-
-      const emailErr = validateParticipantEmail(email);
-      document.getElementById('ep-email-error').textContent = emailErr;
-      document.getElementById('ep-email').classList.toggle('error', !!emailErr);
-      if (emailErr) hasError = true;
-
-      const contactErr = validateParticipantContact(contact);
-      document.getElementById('ep-contact-error').textContent = contactErr;
-      document.getElementById('ep-contact').classList.toggle('error', !!contactErr);
-      if (contactErr) hasError = true;
-
-      if (hasError) return;
-
+      const id    = document.getElementById('ep-id').value;
+      const name  = document.getElementById('ep-name').value.trim();
+      const email = document.getElementById('ep-email').value.trim();
+      const role  = document.getElementById('ep-role').value;
+      if (!name || !email) { alert('Please fill in all required fields'); return; }
       const list = getParticipants().map(p => p.id === id ? { ...p, name, email, role } : p);
       saveParticipants(list);
       renderParticipants();
@@ -280,26 +233,8 @@ document.addEventListener('DOMContentLoaded', () => {
        MODAL — Update Contact
        ──────────────────────────────────────────────────────── */
     document.getElementById('ct-save-btn').addEventListener('click', () => {
-      const ctPhone = document.getElementById('ct-phone').value.trim();
-      const ctEmail = document.getElementById('ct-email').value.trim();
-
-      let hasError = false;
-
-      const ctEmailErr = validateParticipantEmail(ctEmail);
-      const ctEmailErrEl = document.getElementById('ct-email-error');
-      if (ctEmailErrEl) { ctEmailErrEl.textContent = ctEmailErr; document.getElementById('ct-email').classList.toggle('error', !!ctEmailErr); }
-      if (ctEmailErr) hasError = true;
-
-      const ctPhoneErr = validateParticipantContact(ctPhone);
-      const ctPhoneErrEl = document.getElementById('ct-phone-error');
-      if (ctPhoneErrEl) { ctPhoneErrEl.textContent = ctPhoneErr; document.getElementById('ct-phone').classList.toggle('error', !!ctPhoneErr); }
-      if (ctPhoneErr) hasError = true;
-
-      if (hasError) return;
-
-      AppState.userProfile.phone = ctPhone;
-      AppState.userProfile.email = ctEmail;
-      localStorage.setItem('userProfile', JSON.stringify(AppState.userProfile));
+      AppState.userProfile.phone = document.getElementById('ct-phone').value;
+      AppState.userProfile.email = document.getElementById('ct-email').value;
       alert('Contact information updated successfully!');
       closeModal('contact-modal');
       renderProfile();

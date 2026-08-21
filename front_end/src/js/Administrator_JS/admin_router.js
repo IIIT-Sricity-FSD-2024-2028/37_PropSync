@@ -218,53 +218,114 @@ function initNotificationPageEvents() {
     });
   }
 
-  // Notification item delegation (mark read / delete)
+  // Notification item delegation (accept / mark read / delete)
   const listEl = document.getElementById('notifications-list');
   if (listEl && !listEl._bound) {
     listEl._bound = true;
-    listEl.addEventListener('click', e => {
+    listEl.addEventListener('click', async e => {
+      const acceptBtn = e.target.closest('.accept-user-btn');
+      if (acceptBtn) {
+        const userId = acceptBtn.dataset.userId;
+        const backendId = acceptBtn.dataset.backendId;
+        try {
+          const res = await fetch(`http://localhost:3000/users/${userId}/approve`, {
+            method: 'PATCH',
+            headers: { role: 'admin' },
+          });
+          if (!res.ok) {
+            const errorBody = await res.json().catch(() => ({}));
+            throw new Error(errorBody.message || 'Could not approve user');
+          }
+          const approvedUser = await res.json();
+          addApprovedUserToParticipants(approvedUser);
+          acceptBackendNotification(backendId);
+          updateCachedBackendNotification(backendId, { isRead: true, isNew: false, accepted: true });
+          await fetch(`http://localhost:3000/notifications/${backendId}/read`, {
+            method: 'PATCH',
+            headers: { role: 'admin' },
+          }).catch(() => {});
+          renderNotifications(true);
+          updateNotifBadge();
+          alert(`${approvedUser.name} approved and added to Manage Participants.`);
+        } catch (error) {
+          alert(error.message || 'Could not approve user');
+        }
+        return;
+      }
+
       const markBtn = e.target.closest('.mark-read-btn');
       if (markBtn) {
-        const id   = parseInt(markBtn.dataset.notifId);
+        const id   = markBtn.dataset.notifId;
         let notifs = getNotifications();
         const n    = notifs.find(x => x.id === id);
 
-        // If it's a new user registration notification, add that person as a participant
-        if (n && n.title === 'New User Registration') {
-          const nameMatch = n.description.match(/'([^']+)'/);
-          const roleMatch = n.description.match(/as a ([^.]+)\./);
-          if (nameMatch && roleMatch) {
-            const userName     = nameMatch[1];
-            const userRole     = roleMatch[1].trim();
-            const participants = getParticipants();
-            if (!participants.some(p => p.name === userName)) {
-              participants.push({
-                id:     generateParticipantId(participants),
-                name:   userName,
-                email:  `${userName.toLowerCase().replace(/\s+/g, '.')}@email.com`,
-                role:   userRole,
-                status: 'Active',
-              });
-              saveParticipants(participants);
-            }
-          }
+        if (n && n.backendId) {
+          updateCachedBackendNotification(n.backendId, { isRead: true, isNew: false });
+          await fetch(`http://localhost:3000/notifications/${n.backendId}/read`, {
+            method: 'PATCH',
+            headers: { role: 'admin' },
+          }).catch(() => {});
         }
 
-        notifs = notifs.map(x => x.id === id ? { ...x, isRead: true } : x);
+        notifs = notifs.map(x => x.id === id ? { ...x, isRead: true, isNew: false } : x);
         saveNotifications(notifs);
-        renderNotifications();
+        renderNotifications(true);
         updateNotifBadge();
         return;
       }
 
       const delBtn = e.target.closest('.del-notif-btn');
       if (delBtn) {
-        const id = parseInt(delBtn.dataset.delNotif);
+        const id = delBtn.dataset.delNotif;
+        const notification = getNotifications().find(n => n.id === id);
+        if (notification && notification.requestedUserId) {
+          if (!confirm('Reject this signup request and remove this notification?')) return;
+          try {
+            const res = await fetch(`http://localhost:3000/users/${notification.requestedUserId}/reject`, {
+              method: 'PATCH',
+              headers: { role: 'admin' },
+            });
+            if (!res.ok) {
+              const errorBody = await res.json().catch(() => ({}));
+              throw new Error(errorBody.message || 'Could not reject user');
+            }
+          } catch (error) {
+            alert(error.message || 'Could not reject user');
+            return;
+          }
+        }
+        if (notification && notification.backendId) hideBackendNotification(notification.backendId);
         saveNotifications(getNotifications().filter(n => n.id !== id));
-        renderNotifications();
+        renderNotifications(true);
         updateNotifBadge();
       }
     });
+  }
+}
+
+function roleLabelFromApi(role) {
+  const labels = {
+    owner: 'Property Owner',
+    service_provider: 'Service Provider',
+    maintenance_manager: 'Maintenance Manager',
+    manager: 'Maintenance Manager',
+    admin: 'Administrator',
+  };
+  return labels[role] || role;
+}
+
+function addApprovedUserToParticipants(user) {
+  const participants = getParticipants();
+  if (!participants.some(p => p.email === user.email || p.backendUserId === user.id)) {
+    participants.push({
+      id: generateParticipantId(participants),
+      backendUserId: user.id,
+      name: user.name,
+      email: user.email,
+      role: roleLabelFromApi(user.role),
+      status: 'Active',
+    });
+    saveParticipants(participants);
   }
 }
 

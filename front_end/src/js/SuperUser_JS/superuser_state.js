@@ -8,16 +8,17 @@ const AppState = {
 
   // User profile
   userProfile: {
-    fullName: 'Sarah Mitchell',
-    email: 'sarah.mitchell@propsync.com',
-    password: 'super@123',
-    phone: '+1 (555) 987-6543',
+    fullName: 'Operations Administrator',
+    email: 'admin.operations@propsync.com',
+    password: 'admin123',
+    phone: '+91-9876543243',
     role: 'Super User',
-    department: 'IT Operations',
-    joinDate: 'January 15, 2024',
-    location: 'San Francisco, CA',
-    employeeId: 'ADM-2024-001',
+    department: 'Operations Administration',
+    joinDate: 'January 4, 2024',
+    location: 'Green Valley Society',
+    employeeId: 'ADM-016',
   },
+  userProfileStorageKey: 'userProfile:admin.operations@propsync.com:super',
 
   // Sidebar toggle
   sidebarOpen: false,
@@ -50,8 +51,28 @@ const AppState = {
 
 // LOAD USER PROFILE FROM STORAGE
 (function () {
-  const savedUser = localStorage.getItem('userProfile');
+  let currentUser = null;
+  try { currentUser = JSON.parse(localStorage.getItem('currentUser')); } catch {}
+
+  if (currentUser) {
+    AppState.userProfileStorageKey = `userProfile:${currentUser.email}:super`;
+    AppState.userProfile = {
+      fullName: currentUser.name || AppState.userProfile.fullName,
+      email: currentUser.email || AppState.userProfile.email,
+      password: currentUser.password || 'admin123',
+      phone: currentUser.phone || '+91-9876543243',
+      role: 'Super User',
+      department: currentUser.department || 'Operations Administration',
+      joinDate: currentUser.createdAt || 'January 4, 2024',
+      location: currentUser.communityName || 'Green Valley Society',
+      employeeId: `ADM-${String(currentUser.id || 16).padStart(3, '0')}`,
+    };
+  }
+
+  const savedUser = localStorage.getItem(AppState.userProfileStorageKey);
   if (savedUser) {
     try { AppState.userProfile = JSON.parse(savedUser); } catch (e) { /* use defaults */ }
   }
+  AppState.userProfile.role = 'Super User';
+  localStorage.setItem(AppState.userProfileStorageKey, JSON.stringify(AppState.userProfile));
 })();

@@ -11,7 +11,14 @@ function notifTypeColors(type) {
   }
 }
 
-function renderNotifications() {
+function renderNotifications(skipBackendRefresh = false) {
+  if (!skipBackendRefresh && typeof refreshBackendNotifications === 'function') {
+    refreshBackendNotifications().then(() => {
+      renderNotifications(true);
+      updateNotifBadge();
+    });
+  }
+
   let notifs     = getNotifications();
   const filter   = AppState.notifFilter;
 
@@ -64,6 +71,7 @@ function renderNotifications() {
             <span class="notif-category">${escHtml(n.category)}</span>
             <p class="notif-desc">${escHtml(n.description)}</p>
             <div class="notif-item-actions">
+              ${n.title === 'New User Registration' && n.requestedUserId && !n.accepted ? `<button class="accept-user-btn" data-notif-id="${n.id}" data-user-id="${n.requestedUserId}" data-backend-id="${n.backendId}">${ICONS.check}Accept</button>` : ''}
               ${!n.isRead ? `<button class="mark-read-btn" data-notif-id="${n.id}">${ICONS.check}Mark as Read</button>` : ''}
               <button class="del-notif-btn" data-del-notif="${n.id}">${ICONS.trash}Delete</button>
             </div>

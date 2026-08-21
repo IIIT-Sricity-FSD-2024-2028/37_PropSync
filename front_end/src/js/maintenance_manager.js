@@ -1,298 +1,558 @@
-/* PropSync maintenance_manager.js – unified shared JS (Backend-driven) */
+/* PropSync app.js – unified shared JS */
 
 /* ============================================================
-   BACKEND CONFIG
+   COMPLAINTS
    ============================================================ */
-const MM_API = "http://localhost:3000";
-const MM_HEADERS = {
-  "Content-Type": "application/json",
-  "role": localStorage.getItem("role") || "maintenance_manager",
-  "user-email": localStorage.getItem("user-email") || "manager@communityhub.com",
+let complaintsData = [];
+
+const PS_OWNER_DIRECTORY = {
+  1: { name: "Raj Kumar", email: "raj.owner@propsync.com", unit: "A-101" },
+  2: { name: "Anita Sharma", email: "anita.owner@propsync.com", unit: "B-202" },
+  3: { name: "Karan Mehta", email: "karan.owner@propsync.com", unit: "C-303" },
+  4: { name: "Priya Nair", email: "priya.owner@propsync.com", unit: "D-404" },
 };
 
-/* ============================================================
-   COMPLAINTS  (fetched from backend)
-   ============================================================ */
+function getOwnerDisplay(ownerId) {
+  const owner = PS_OWNER_DIRECTORY[Number(ownerId)];
+  if (!owner) return { name: `Owner #${ownerId || "-"}`, email: "", unit: "-" };
+  return owner;
+}
 
-/**
- * Fetch all complaints from backend.
- * Normalizes backend field names to the ones used by the HTML templates.
- */
-async function getComplaints() {
+function getMaintenanceManagerIdentity() {
   try {
-    const res = await fetch(`${MM_API}/complaints`, { headers: MM_HEADERS });
-    if (!res.ok) throw new Error("Failed");
-    const data = await res.json();
-    // Normalize backend → frontend field names
-    return data.map((c) => ({
-      id: c.id,
-      issue: c.title || c.category || "Untitled",
-      location: c.location || "",
-      priority: c.priority || "Medium",
-      status: c.status || "Pending",
-      subStatus: c.subStatus || "",
-      submitted: c.reportedDate || "",
-      deadline: c.deadline || "",
-      provider: c.assignedTo || "",
-      rejectionReason: c.rejectionReason || "",
-      // Keep raw fields too for detail views
-      title: c.title,
-      category: c.category,
-      description: c.description,
-      issuedBy: c.issuedBy,
-      image: c.image,
-      serviceProviderQueue: c.serviceProviderQueue || [],
-      reportedDate: c.reportedDate,
-      assignedTo: c.assignedTo,
-    }));
-  } catch (err) {
-    console.error("getComplaints error:", err);
-    return [];
+    return JSON.parse(localStorage.getItem("currentUser")) || {};
+  } catch {
+    return {};
   }
 }
 
-async function approveComplaintById(id) {
+function getMaintenanceManagerProfile(user) {
+  if (!user.email) return null;
   try {
-    await fetch(`${MM_API}/complaints/${id}/approved`, {
-      method: "PATCH",
-      headers: MM_HEADERS,
-    });
-    await addNotification(
-      "checkmark",
-      "#DCFCE7",
-      "Complaint Approved",
-      `Complaint ${id} approved and moved to Approved Complaints`,
-      "all",
-      false
-    );
-  } catch (err) {
-    console.error("approveComplaintById error:", err);
+    return JSON.parse(localStorage.getItem(`mmProfile:${user.email}`)) || null;
+  } catch {
+    return null;
   }
+}
+
+function updateMaintenanceManagerIdentityChrome() {
+  const user = getMaintenanceManagerIdentity();
+  const profile = getMaintenanceManagerProfile(user) || {};
+  const fullName = profile.name || user.name || "Maintenance Manager";
+  const community =
+    profile.community || user.communityName || "Green Valley Society";
+  const block = profile.block || user.block;
+
+  document.querySelectorAll(".topbar-right span, .user-role").forEach((el) => {
+    if (/Maintenance Manager/i.test(el.textContent)) {
+      el.textContent = fullName;
+      el.title = block
+        ? `${fullName} - Block ${block} Maintenance Manager`
+        : `${fullName} · Maintenance Manager`;
+    }
+  });
+
+  const welcomeTitle = document.querySelector(".welcome-banner h1");
+  if (welcomeTitle) welcomeTitle.textContent = `Welcome Back, ${fullName}`;
+
+  const welcomeSub = document.querySelector(".welcome-banner p");
+  if (welcomeSub) {
+    welcomeSub.textContent = block
+      ? `Manage Block ${block} maintenance for ${community}`
+      : `Manage ${community} maintenance and service coordination efficiently`;
+  }
+}
+
+document.addEventListener(
+  "DOMContentLoaded",
+  updateMaintenanceManagerIdentityChrome,
+);
+
+async function fetchComplaintsFromBackend() {
+  try {
+    const currentManager = getMaintenanceManagerIdentity();
+    const managerId = currentManager.id || 5;
+    const res = await fetch(
+      `http://localhost:3000/complaints?managerId=${managerId}`,
+      { headers: { role: "maintenance_manager" } },
+    );
+    if (res.ok) {
+      const data = await res.json();
+      const STATUS_LABEL = {
+        pending: "Pending",
+        approved: "Approved",
+        assigned: "Assigned",
+        estimating_cost: "Estimating Cost",
+        in_progress: "In Progress",
+        completed: "Completed",
+        billed: "Billed",
+        paid: "Paid",
+        closed: "Closed",
+        rejected: "Rejected",
+      };
+      const PRIORITY_LABEL = {
+        low: "Low",
+        medium: "Medium",
+        high: "High",
+      };
+
+      // map backend data to frontend format expected by maintenance manager
+      complaintsData = data.map((c) => {
+        const owner = getOwnerDisplay(c.ownerId);
+        return {
+          id: c.id,
+          issue: c.title,
+          description: c.description || "",
+          photo: c.photo || "",
+          location: c.location || "Property",
+          priority:
+            PRIORITY_LABEL[String(c.priority || "").toLowerCase()] ||
+            c.priority ||
+            "Medium",
+          status: STATUS_LABEL[c.status] || c.status,
+          // subStatus drives the action shown in the Approved tab.
+          subStatus:
+            c.status === "approved" &&
+            c.interestedProviders &&
+            c.interestedProviders.length > 0
+              ? "Waiting Provider Response"
+              : "",
+          interestedProviders: c.interestedProviders || [],
+          submitted: c.submittedAt ? c.submittedAt.split("T")[0] : "2024-03-01",
+          deadline: c.deadline || "",
+          provider: c.assignedProviderId
+            ? "Provider " + c.assignedProviderId
+            : "",
+          ownerId: c.ownerId,
+          ownerName: owner.name,
+          ownerEmail: owner.email,
+          ownerUnit: owner.unit,
+          submittedBy: `${owner.name} (${owner.unit})`,
+          rejectionReason: c.rejectionReason || "",
+        };
+      });
+
+      // Update global complaints array which some code might still use directly
+      complaints = complaintsData;
+
+      // Trigger re-renders
+      if (typeof renderTable === "function") renderTable();
+      if (typeof renderPendingComplaints === "function")
+        renderPendingComplaints();
+      if (typeof renderDashboardComplaints === "function")
+        renderDashboardComplaints();
+      if (typeof renderKPIs === "function") renderKPIs();
+      if (typeof renderDashNotifs === "function") renderDashNotifs();
+      if (typeof updateNotifDot === "function") updateNotifDot();
+    }
+  } catch (e) {
+    console.error("Error fetching complaints", e);
+  }
+}
+
+fetchComplaintsFromBackend();
+setInterval(fetchComplaintsFromBackend, 15000);
+
+function getComplaints() {
+  return complaintsData;
+}
+
+let complaints = [];
+
+function saveComplaints(data) {
+  // Not used directly for persistence anymore, replaced by API calls
+}
+
+async function approveComplaintById(id) {
+  const deadline = requestApprovalDeadline(id);
+  if (!deadline) return false;
+
+  try {
+    const res = await fetch(`http://localhost:3000/complaints/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        role: "maintenance_manager",
+      },
+      body: JSON.stringify({ status: "approved", deadline }),
+    });
+    if (res.ok) {
+      addNotification(
+        "checkmark",
+        "#DCFCE7",
+        "Complaint Approved",
+        `Complaint ${id} approved`,
+        "all",
+        false,
+      );
+      fetchComplaintsFromBackend();
+      return true;
+    }
+    const errorBody = await res.json().catch(() => ({}));
+    alert(errorBody.message || "Could not approve complaint.");
+  } catch (e) {
+    console.error(e);
+    alert("Network error approving complaint.");
+  }
+  return false;
+}
+
+function requestApprovalDeadline(id) {
+  const today = new Date().toISOString().split("T")[0];
+  const deadline = prompt(
+    `Set deadline for complaint ${id} before approving (YYYY-MM-DD):`,
+    today,
+  );
+  if (!deadline) return null;
+  const trimmed = deadline.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+    alert("Please enter the deadline in YYYY-MM-DD format.");
+    return null;
+  }
+  return trimmed;
 }
 
 async function rejectComplaintById(id, reason) {
   try {
-    await fetch(`${MM_API}/complaints/${id}/rejected`, {
+    const res = await fetch(`http://localhost:3000/complaints/${id}/status`, {
       method: "PATCH",
-      headers: MM_HEADERS,
-      body: JSON.stringify({ reason }),
+      headers: {
+        "Content-Type": "application/json",
+        role: "maintenance_manager",
+      },
+      body: JSON.stringify({ status: "rejected", rejectionReason: reason }),
     });
-    await addNotification(
-      "cross",
-      "#FEE2E2",
-      "Complaint Rejected",
-      `Complaint ${id} rejected. Rejection reason sent to resident.`,
-      "all",
-      false
-    );
-  } catch (err) {
-    console.error("rejectComplaintById error:", err);
+    if (res.ok) {
+      addNotification(
+        "cross",
+        "#FEE2E2",
+        "Complaint Rejected",
+        `Complaint ${id} rejected`,
+        "all",
+        false,
+      );
+      fetchComplaintsFromBackend();
+    }
+  } catch (e) {
+    console.error(e);
   }
 }
 
 /* ============================================================
-   PROVIDERS (Fetched from backend + local fallback)
+   PROVIDERS
    ============================================================ */
-const providers = [
-  {
-    name: "Urban Lift Repairs",
-    specialty: "Elevator",
-    rating: 4.9,
-    jobs: 54,
-    onTime: 98,
-    avgCost: 4200,
-    trend: "up",
-  },
-  {
-    name: "CoolAir Services",
-    specialty: "HVAC",
-    rating: 4.8,
-    jobs: 142,
-    onTime: 95,
-    avgCost: 2800,
-    trend: "up",
-  },
-  {
-    name: "QuickFix Plumbing",
-    specialty: "Plumbing",
-    rating: 4.6,
-    jobs: 98,
-    onTime: 88,
-    avgCost: 1200,
-    trend: "up",
-  },
-  {
-    name: "GlassFix Solutions",
-    specialty: "General",
-    rating: 4.7,
-    jobs: 65,
-    onTime: 91,
-    avgCost: 1600,
-    trend: "up",
-  },
-  {
-    name: "UrbanFix Electrical",
-    specialty: "Electrical",
-    rating: 4.5,
-    jobs: 112,
-    onTime: 82,
-    avgCost: 1800,
-    trend: "down",
-  },
-  {
-    name: "SecureFix Services",
-    specialty: "Security",
-    rating: 4.4,
-    jobs: 88,
-    onTime: 85,
-    avgCost: 900,
-    trend: "",
-  },
-  {
-    name: "HeatPro Services",
-    specialty: "Plumbing",
-    rating: 4.3,
-    jobs: 76,
-    onTime: 79,
-    avgCost: 2200,
-    trend: "down",
-  },
-  {
-    name: "ProPaint Co.",
-    specialty: "Painting",
-    rating: 4.2,
-    jobs: 43,
-    onTime: 80,
-    avgCost: 3500,
-    trend: "",
-  },
-];
+let providers = [];
 
-async function fetchBackendProviders() {
+async function fetchProvidersFromBackend() {
   try {
-    const res = await fetch(`${MM_API}/api/users?role=service_provider`, { headers: MM_HEADERS });
+    const res = await fetch(
+      "http://localhost:3000/users?role=service_provider",
+      { headers: { role: "maintenance_manager" } },
+    );
     if (res.ok) {
-      const backendUsers = await res.json();
-      const mapped = backendUsers.map(u => ({
+      const data = await res.json();
+      providers = data.map((u) => ({
+        id: u.id,
         name: u.name,
-        specialty: u.specialty || "General",
-        rating: 5.0,
-        jobs: 0,
-        onTime: 100,
-        avgCost: 0,
-        trend: "up"
+        specialty: u.category || "General",
+        rating: (4.0 + Math.random()).toFixed(1),
+        jobs: Math.floor(Math.random() * 100) + 10,
+        onTime: 80 + Math.floor(Math.random() * 20),
+        avgCost: 1000 + Math.floor(Math.random() * 3000),
+        trend: Math.random() > 0.5 ? "up" : "down",
       }));
-      mapped.forEach(sp => {
-        if (!providers.some(p => p.name === sp.name)) {
-          providers.push(sp);
-        }
-      });
+      if (typeof renderPerformance === "function") renderPerformance();
     }
-  } catch (err) {
-    console.error("Error fetching backend providers:", err);
+  } catch (e) {
+    console.error("Error fetching providers", e);
   }
 }
-fetchBackendProviders();
+fetchProvidersFromBackend();
 
 const providerReviews = {
   "Urban Lift Repairs": [
-    { author: "Rajesh Kumar", date: "2024-03-01", rating: 5, text: "Excellent service! The team was on time and very professional. Lift is running perfectly now." },
-    { author: "Priya Sharma", date: "2024-02-15", rating: 5, text: "Outstanding work. Completed the maintenance ahead of schedule with zero disruption." },
-    { author: "Amit Patel", date: "2024-02-05", rating: 5, text: "Best elevator maintenance company we have worked with. Highly recommend." },
+    {
+      author: "Rajesh Kumar",
+      date: "2024-03-01",
+      rating: 5,
+      text: "Excellent service! The team was on time and very professional. Lift is running perfectly now.",
+    },
+    {
+      author: "Priya Sharma",
+      date: "2024-02-15",
+      rating: 5,
+      text: "Outstanding work. Completed the maintenance ahead of schedule with zero disruption.",
+    },
+    {
+      author: "Amit Patel",
+      date: "2024-02-05",
+      rating: 5,
+      text: "Best elevator maintenance company we have worked with. Highly recommend.",
+    },
   ],
   "CoolAir Services": [
-    { author: "Sunita Reddy", date: "2024-03-03", rating: 5, text: "Very responsive. Fixed the AC issue within 2 hours of being assigned." },
-    { author: "Mohan Das", date: "2024-02-20", rating: 5, text: "Professional team, quick diagnosis. AC running better than ever." },
-    { author: "Kavitha Nair", date: "2024-02-12", rating: 4, text: "Good service. Slightly delayed but quality of work was top-notch." },
+    {
+      author: "Sunita Reddy",
+      date: "2024-03-03",
+      rating: 5,
+      text: "Very responsive. Fixed the AC issue within 2 hours of being assigned.",
+    },
+    {
+      author: "Mohan Das",
+      date: "2024-02-20",
+      rating: 5,
+      text: "Professional team, quick diagnosis. AC running better than ever.",
+    },
+    {
+      author: "Kavitha Nair",
+      date: "2024-02-12",
+      rating: 4,
+      text: "Good service. Slightly delayed but quality of work was top-notch.",
+    },
   ],
   "QuickFix Plumbing": [
-    { author: "Ravi Shankar", date: "2024-03-02", rating: 5, text: "Fixed the blockage quickly and cleaned up after. Very satisfied." },
-    { author: "Deepa Menon", date: "2024-02-25", rating: 4, text: "Reliable plumber. Showed up on time and resolved the issue completely." },
-    { author: "Suresh Babu", date: "2024-02-18", rating: 5, text: "Excellent work! The issue was more complex than expected but handled well." },
+    {
+      author: "Ravi Shankar",
+      date: "2024-03-02",
+      rating: 5,
+      text: "Fixed the blockage quickly and cleaned up after. Very satisfied.",
+    },
+    {
+      author: "Deepa Menon",
+      date: "2024-02-25",
+      rating: 4,
+      text: "Reliable plumber. Showed up on time and resolved the issue completely.",
+    },
+    {
+      author: "Suresh Babu",
+      date: "2024-02-18",
+      rating: 5,
+      text: "Excellent work! The issue was more complex than expected but handled well.",
+    },
   ],
   "GlassFix Solutions": [
-    { author: "Ananya Singh", date: "2024-02-28", rating: 5, text: "Window replacement done cleanly and efficiently. Very happy with the outcome." },
-    { author: "Vikram Rao", date: "2024-02-10", rating: 4, text: "Good work, neat finish. Would recommend for glass and window work." },
+    {
+      author: "Ananya Singh",
+      date: "2024-02-28",
+      rating: 5,
+      text: "Window replacement done cleanly and efficiently. Very happy with the outcome.",
+    },
+    {
+      author: "Vikram Rao",
+      date: "2024-02-10",
+      rating: 4,
+      text: "Good work, neat finish. Would recommend for glass and window work.",
+    },
   ],
   "UrbanFix Electrical": [
-    { author: "Lakshmi Iyer", date: "2024-03-05", rating: 4, text: "Resolved the wiring issue safely. Knowledgeable team." },
-    { author: "Kiran Kumar", date: "2024-02-22", rating: 3, text: "Work was done but took longer than expected. Communication could be better." },
-    { author: "Meera Pillai", date: "2024-02-14", rating: 5, text: "Great electrical team. Fixed the MCB issue and explained everything clearly." },
+    {
+      author: "Lakshmi Iyer",
+      date: "2024-03-05",
+      rating: 4,
+      text: "Resolved the wiring issue safely. Knowledgeable team.",
+    },
+    {
+      author: "Kiran Kumar",
+      date: "2024-02-22",
+      rating: 3,
+      text: "Work was done but took longer than expected. Communication could be better.",
+    },
+    {
+      author: "Meera Pillai",
+      date: "2024-02-14",
+      rating: 5,
+      text: "Great electrical team. Fixed the MCB issue and explained everything clearly.",
+    },
   ],
   "SecureFix Services": [
-    { author: "Rohit Varma", date: "2024-03-01", rating: 4, text: "Good security lock installation. Professional and quick." },
-    { author: "Pooja Krishnan", date: "2024-02-18", rating: 5, text: "Excellent! Door lock replaced swiftly and securely." },
+    {
+      author: "Rohit Varma",
+      date: "2024-03-01",
+      rating: 4,
+      text: "Good security lock installation. Professional and quick.",
+    },
+    {
+      author: "Pooja Krishnan",
+      date: "2024-02-18",
+      rating: 5,
+      text: "Excellent! Door lock replaced swiftly and securely.",
+    },
   ],
   "HeatPro Services": [
-    { author: "Ganesh Murthy", date: "2024-02-28", rating: 3, text: "Work completed but needed a follow-up visit. Quality should improve." },
-    { author: "Shanti Devi", date: "2024-02-10", rating: 4, text: "Decent service for boiler work. On time and reasonably priced." },
+    {
+      author: "Ganesh Murthy",
+      date: "2024-02-28",
+      rating: 3,
+      text: "Work completed but needed a follow-up visit. Quality should improve.",
+    },
+    {
+      author: "Shanti Devi",
+      date: "2024-02-10",
+      rating: 4,
+      text: "Decent service for boiler work. On time and reasonably priced.",
+    },
   ],
   "ProPaint Co.": [
-    { author: "Arun Joseph", date: "2024-02-25", rating: 4, text: "Clean paint job with good quality materials. Took slightly longer than estimated." },
-    { author: "Uma Rani", date: "2024-02-12", rating: 4, text: "Happy with the painting work. Good attention to detail." },
+    {
+      author: "Arun Joseph",
+      date: "2024-02-25",
+      rating: 4,
+      text: "Clean paint job with good quality materials. Took slightly longer than estimated.",
+    },
+    {
+      author: "Uma Rani",
+      date: "2024-02-12",
+      rating: 4,
+      text: "Happy with the painting work. Good attention to detail.",
+    },
   ],
 };
 
 /* ============================================================
-   NOTIFICATIONS  (fetched from backend)
+   NOTIFICATIONS  (localStorage for persistence across pages)
+   userCreated: true  → sent by the manager from the notifications form
+   userCreated: false → auto-generated by system actions
    ============================================================ */
-async function getNotifications() {
-  try {
-    const res = await fetch(`${MM_API}/notifications`, { headers: MM_HEADERS });
-    if (!res.ok) throw new Error("Failed");
-    const data = await res.json();
-    // Normalize backend fields to what the MM templates expect
-    return data.map((n) => ({
-      id: n.id,
-      icon: n.type === "complaint" ? "clipboard" : n.type === "system" ? "bell" : "checkmark",
-      color: n.isRead ? "#F0FDF4" : "#DCFCE7",
-      title: n.title,
-      desc: n.message,
-      time: n.createdAt ? new Date(n.createdAt).toLocaleString() : "Just now",
-      unread: !n.isRead,
-      recipient: n.forRole === "all" ? "all" : n.forRole,
+function getNotifications() {
+  const stored = localStorage.getItem("ps_notifications");
+  if (stored) return JSON.parse(stored);
+  const defaults = [
+    {
+      id: 1,
+      icon: "drop",
+      color: "#DCFCE7",
+      title: "New complaint submitted",
+      desc: "Resident from Building A reported water leakage (C-2410)",
+      time: "5 min ago",
+      unread: true,
+      recipient: "all",
       userCreated: false,
-      // Raw fields
-      isRead: n.isRead,
-      createdAt: n.createdAt,
-      forRole: n.forRole,
-      forUser: n.forUser,
-    }));
-  } catch (err) {
-    console.error("getNotifications error:", err);
-    return [];
-  }
+    },
+    {
+      id: 2,
+      icon: "chart",
+      color: "#FEF3C7",
+      title: "Service estimate received",
+      desc: "CoolAir Services submitted estimate for AC repair (C-2401)",
+      time: "30 min ago",
+      unread: true,
+      recipient: "provider",
+      userCreated: false,
+    },
+    {
+      id: 3,
+      icon: "checkmark",
+      color: "#DCFCE7",
+      title: "Work completed",
+      desc: "Electrical repair completed in Tower B, Apt 304 (C-2395)",
+      time: "2 hrs ago",
+      unread: false,
+      recipient: "all",
+      userCreated: false,
+    },
+    {
+      id: 4,
+      icon: "warn",
+      color: "#FEF3C7",
+      title: "Overdue maintenance request",
+      desc: "Complaint C-2404 is overdue by 2 days",
+      time: "3 hrs ago",
+      unread: false,
+      recipient: "all",
+      userCreated: false,
+    },
+    {
+      id: 5,
+      icon: "wrench",
+      color: "#F0FDF4",
+      title: "Provider assigned",
+      desc: "QuickFix Plumbing assigned to C-2407",
+      time: "Yesterday",
+      unread: false,
+      recipient: "provider",
+      userCreated: false,
+    },
+    {
+      id: 6,
+      icon: "cross",
+      color: "#FEE2E2",
+      title: "Provider declined assignment",
+      desc: "HeatPro Services declined assignment for C-2408",
+      time: "Yesterday",
+      unread: false,
+      recipient: "provider",
+      userCreated: false,
+    },
+    {
+      id: 7,
+      icon: "money",
+      color: "#F0FDF4",
+      title: "Payment processed",
+      desc: "Payment of ₹4500 processed for C-2385",
+      time: "2 days ago",
+      unread: false,
+      recipient: "all",
+      userCreated: false,
+    },
+    {
+      id: 8,
+      icon: "clipboard",
+      color: "#F0FDF4",
+      title: "Complaint awaiting approval",
+      desc: "Complaint C-2410 needs your review",
+      time: "2 days ago",
+      unread: false,
+      recipient: "owner",
+      userCreated: false,
+    },
+  ];
+  localStorage.setItem("ps_notifications", JSON.stringify(defaults));
+  return defaults;
 }
 
-async function addNotification(icon, color, title, desc, recipient, userCreated) {
-  try {
-    // Map the old icon/recipient system to backend notification format
-    const typeMap = { checkmark: "complaint", cross: "complaint", bell: "system", clipboard: "complaint", warn: "system", money: "system", wrench: "complaint", drop: "complaint", chart: "system" };
-    await fetch(`${MM_API}/notifications`, {
-      method: "POST",
-      headers: MM_HEADERS,
-      body: JSON.stringify({
-        title,
-        message: desc,
-        type: typeMap[icon] || "system",
-        forRole: recipient === "provider" ? "service_provider" : recipient === "owner" ? "owner" : "all",
-      }),
-    });
-    updateNotifDot();
-  } catch (err) {
-    console.error("addNotification error:", err);
-  }
+function saveNotifications(notifs) {
+  localStorage.setItem("ps_notifications", JSON.stringify(notifs));
+}
+
+/**
+ * addNotification – adds a notification to the store.
+ * @param {string} icon
+ * @param {string} color
+ * @param {string} title
+ * @param {string} desc
+ * @param {string} recipient  – 'all' | 'owner' | 'resident' | 'provider'
+ * @param {boolean} userCreated – true when manager manually sends from the form
+ */
+function addNotification(icon, color, title, desc, recipient, userCreated) {
+  const notifs = getNotifications();
+  const time = new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+  notifs.unshift({
+    id: Date.now(),
+    icon,
+    color,
+    title,
+    desc,
+    time: "Just now at " + time,
+    unread: true,
+    recipient: recipient || "all",
+    userCreated: userCreated === true,
+  });
+  saveNotifications(notifs);
+  updateNotifDot();
 }
 
 /* CREATE NOTIFICATION (from notifications page) */
-async function createCustomNotification(title, desc, recipient, icon, color) {
-  await addNotification(
+function createCustomNotification(title, desc, recipient, icon, color) {
+  addNotification(
     icon || "bell",
     color || "#DCFCE7",
     title,
     desc,
     recipient,
-    true
+    true,
   );
   showToast(`✅ Notification sent to ${recipientLabel(recipient)}.`);
 }
@@ -307,9 +567,9 @@ function recipientLabel(r) {
   return map[r] || r;
 }
 
-async function getUnreadCount() {
-  const notifs = await getNotifications();
-  return notifs.filter((n) => n.unread).length;
+function getUnreadCount() {
+  // Only count received (non-userCreated) unread notifications for the dot
+  return getNotifications().filter((n) => n.unread && !n.userCreated).length;
 }
 
 /* ============================================================
@@ -345,9 +605,11 @@ function statusBadge(s, sub) {
     Approved: "badge-approved",
     "In Progress": "badge-inprogress",
     Completed: "badge-completed",
+    Billed: "badge-payment",
+    Paid: "badge-completed",
+    Closed: "badge-completed",
     "Payment Pending": "badge-payment",
     Rejected: "badge-rejected",
-    Assigned: "badge-approved",
   };
   let label = s;
   if (s === "Approved" && sub) label = sub;
@@ -393,20 +655,22 @@ function openRejectModal(id, callback) {
   showModal("rejectModal");
 }
 
-async function submitReject() {
+function submitReject() {
   const r = (document.getElementById("rejectReason") || {}).value || "";
   if (!r.trim()) {
     showToast("Please enter a rejection reason.");
     return;
   }
-  await rejectComplaintById(_rejectTarget, r.trim());
+  rejectComplaintById(_rejectTarget, r.trim());
   hideModal("rejectModal");
   showToast(`Complaint ${_rejectTarget} rejected. Reason sent to resident.`);
   if (_rejectCallback) _rejectCallback(_rejectTarget, r.trim());
   else if (typeof renderTable === "function") {
-    await renderTable();
+    complaints = getComplaints();
+    renderTable();
   } else if (typeof renderDashboardComplaints === "function") {
-    await renderDashboardComplaints();
+    complaints = getComplaints();
+    renderDashboardComplaints();
   }
 }
 
@@ -490,47 +754,30 @@ function checkAlertsEmpty() {
 /* ============================================================
    NOTIFICATION HELPERS
    ============================================================ */
-async function markNotifRead(id) {
-  try {
-    await fetch(`${MM_API}/notifications/${id}/read`, {
-      method: "PATCH",
-      headers: MM_HEADERS,
-    });
+function markNotifRead(id) {
+  const notifs = getNotifications();
+  const n = notifs.find((x) => x.id === id);
+  if (n && n.unread) {
+    n.unread = false;
+    saveNotifications(notifs);
     updateNotifDot();
-  } catch (err) {
-    console.error("markNotifRead error:", err);
   }
-  if (typeof renderNotifs === "function") await renderNotifs();
+  if (typeof renderNotifs === "function") renderNotifs();
 }
 
-async function markAllNotifsRead() {
-  try {
-    await fetch(`${MM_API}/notifications/read-all`, {
-      method: "PATCH",
-      headers: MM_HEADERS,
-    });
-    updateNotifDot();
-  } catch (err) {
-    console.error("markAllNotifsRead error:", err);
-  }
-  if (typeof renderNotifs === "function") await renderNotifs();
+function markAllNotifsRead() {
+  const notifs = getNotifications();
+  notifs.forEach((n) => (n.unread = false));
+  saveNotifications(notifs);
+  updateNotifDot();
+  if (typeof renderNotifs === "function") renderNotifs();
   showToast("All notifications marked as read.");
 }
 
-async function clearAllNotifs() {
-  try {
-    const notifs = await getNotifications();
-    for (const n of notifs) {
-      await fetch(`${MM_API}/notifications/${n.id}`, {
-        method: "DELETE",
-        headers: MM_HEADERS,
-      });
-    }
-    updateNotifDot();
-  } catch (err) {
-    console.error("clearAllNotifs error:", err);
-  }
-  if (typeof renderNotifs === "function") await renderNotifs();
+function clearAllNotifs() {
+  saveNotifications([]);
+  updateNotifDot();
+  if (typeof renderNotifs === "function") renderNotifs();
   showToast("All notifications cleared.");
 }
 
@@ -542,32 +789,28 @@ function confirmLogout() {
 }
 function doLogout() {
   hideModal("logoutModal");
+  localStorage.removeItem("currentUser");
   showToast("Logged out successfully.");
   setTimeout(() => (location.href = "../login_signup.html"), 1200);
 }
 
 /* ============================================================
-   NOTIF DOT UPDATE  (now async)
+   NOTIF DOT UPDATE
    ============================================================ */
-async function updateNotifDot() {
-  try {
-    const count = await getUnreadCount();
-    document.querySelectorAll(".topbar-notif-dot").forEach((dot) => {
-      dot.style.display = count > 0 ? "block" : "none";
-    });
-    document.querySelectorAll(".notif-badge-count").forEach((el) => {
-      el.textContent = count;
-      el.style.display = count > 0 ? "inline" : "none";
-    });
-    const complaints = await getComplaints();
-    const pCount = complaints.filter((c) => c.status === "Pending").length;
-    document.querySelectorAll(".notif-complaints-count").forEach((el) => {
-      el.textContent = pCount;
-      el.style.display = pCount > 0 ? "inline" : "none";
-    });
-  } catch (err) {
-    console.error("updateNotifDot error:", err);
-  }
+function updateNotifDot() {
+  const count = getUnreadCount();
+  document.querySelectorAll(".topbar-notif-dot").forEach((dot) => {
+    dot.style.display = count > 0 ? "block" : "none";
+  });
+  document.querySelectorAll(".notif-badge-count").forEach((el) => {
+    el.textContent = count;
+    el.style.display = count > 0 ? "inline" : "none";
+  });
+  document.querySelectorAll(".notif-complaints-count").forEach((el) => {
+    const pCount = getComplaints().filter((c) => c.status === "Pending").length;
+    el.textContent = pCount;
+    el.style.display = pCount > 0 ? "inline" : "none";
+  });
 }
 
 /* ============================================================

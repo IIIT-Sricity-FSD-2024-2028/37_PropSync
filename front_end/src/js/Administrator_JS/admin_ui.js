@@ -23,8 +23,20 @@ function setSidebar(open) {
 
 /* ---- Header ---- */
 function updateHeaderUsername() {
-  document.getElementById("header-username").textContent =
-    AppState.userProfile.fullName;
+  const fullName = AppState.userProfile.fullName || "Administrator";
+  const username = document.getElementById("header-username");
+  if (username) username.textContent = fullName;
+
+  const avatar = document.querySelector(".user-avatar");
+  if (avatar) {
+    avatar.textContent = fullName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0].toUpperCase())
+      .join("");
+    avatar.title = fullName;
+  }
 }
 
 function updateNotifBadge() {

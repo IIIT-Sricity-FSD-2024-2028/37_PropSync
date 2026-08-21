@@ -93,11 +93,10 @@ function enterProfileEditMode() {
     <div class="form-group">
       <label>Email Address <span class="req">*</span></label>
       <input type="email" id="pf-email" class="form-control" value="${escHtml(u.email)}" placeholder="email@example.com" />
-      <p class="form-error" id="pf-email-error"></p>
     </div>
     <div class="form-group">
       <label>Phone Number <span class="req">*</span></label>
-      <input type="tel" id="pf-phone" class="form-control" value="${escHtml(u.phone)}" placeholder="+91 9876543210" />
+      <input type="tel" id="pf-phone" class="form-control" value="${escHtml(u.phone)}" placeholder="+1 (555) 987-6543" />
       <p class="form-error" id="pf-phone-error"></p>
     </div>
     <div class="form-group">
@@ -114,11 +113,6 @@ function enterProfileEditMode() {
   document.getElementById('pf-name').addEventListener('input', function () {
     const err = validateParticipantName(this.value);
     document.getElementById('pf-name-error').textContent = err;
-    this.classList.toggle('error', !!err);
-  });
-  document.getElementById('pf-email').addEventListener('input', function () {
-    const err = validateParticipantEmail(this.value);
-    document.getElementById('pf-email-error').textContent = err;
     this.classList.toggle('error', !!err);
   });
   document.getElementById('pf-phone').addEventListener('input', function () {
@@ -144,32 +138,31 @@ function saveProfile() {
   const dept     = document.getElementById('pf-dept').value.trim();
   const location = document.getElementById('pf-location').value.trim();
 
-  // Validate all fields and show errors inline — do NOT use alert()
-  let hasError = false;
+  if (!name || !email || !phone) {
+    alert('Please fill in all required fields.');
+    return;
+  }
 
-  const nameErr = validateParticipantName(name) || (!name ? 'Full Name is required' : '');
-  document.getElementById('pf-name-error').textContent = nameErr;
-  document.getElementById('pf-name').classList.toggle('error', !!nameErr);
-  if (nameErr) hasError = true;
-
-  const emailErr = validateParticipantEmail(email);
-  document.getElementById('pf-email-error').textContent = emailErr;
-  document.getElementById('pf-email').classList.toggle('error', !!emailErr);
-  if (emailErr) hasError = true;
+  const nameErr = validateParticipantName(name);
+  if (nameErr) {
+    document.getElementById('pf-name-error').textContent = nameErr;
+    document.getElementById('pf-name').classList.add('error');
+    return;
+  }
 
   const phoneErr = validateParticipantContact(phone);
-  document.getElementById('pf-phone-error').textContent = phoneErr;
-  document.getElementById('pf-phone').classList.toggle('error', !!phoneErr);
-  if (phoneErr) hasError = true;
-
-  if (hasError) return;
+  if (phoneErr) {
+    document.getElementById('pf-phone-error').textContent = phoneErr;
+    document.getElementById('pf-phone').classList.add('error');
+    return;
+  }
 
   AppState.userProfile.fullName   = name;
   AppState.userProfile.email      = email;
   AppState.userProfile.phone      = phone;
   AppState.userProfile.department = dept;
   AppState.userProfile.location   = location;
-  localStorage.setItem('userProfile', JSON.stringify(AppState.userProfile));
+  localStorage.setItem(AppState.userProfileStorageKey || 'userProfile', JSON.stringify(AppState.userProfile));
 
   updateHeaderUsername();
   renderProfile();
@@ -202,7 +195,7 @@ function changePassword(currentPwd, newPwd, confirmPwd) {
   }
 
   AppState.userProfile.password = newPwd;
-  localStorage.setItem('userProfile', JSON.stringify(AppState.userProfile));
+  localStorage.setItem(AppState.userProfileStorageKey || 'userProfile', JSON.stringify(AppState.userProfile));
 
   closeModal('change-password-modal');
   alert('✅ Password updated successfully.');

@@ -3,68 +3,105 @@
    ============================================================ */
 
 const COMPLAINT_STATUS_LABELS = {
-  completed:          'Completed',
-  ongoing:            'Ongoing',
-  'to-be-resolved':   'To Be Resolved',
-  'estimate-approval':'Estimate Approval',
+  pending: "Pending",
+  approved: "Approved",
+  assigned: "Assigned",
+  billed: "Billed",
+  paid: "Paid",
+  closed: "Closed",
+  rejected: "Rejected",
+  completed: "Completed",
+  ongoing: "Ongoing",
+  "to-be-resolved": "To Be Resolved",
+  "estimate-approval": "Estimate Approval",
 };
 
 const COMPLAINT_STATUS_BADGES = {
-  completed:          'badge badge-green',
-  ongoing:            'badge badge-blue',
-  'to-be-resolved':   'badge badge-red',
-  'estimate-approval':'badge badge-yellow',
+  pending: "badge badge-yellow",
+  approved: "badge badge-green",
+  assigned: "badge badge-blue",
+  billed: "badge badge-yellow",
+  paid: "badge badge-green",
+  closed: "badge badge-green",
+  rejected: "badge badge-red",
+  completed: "badge badge-green",
+  ongoing: "badge badge-blue",
+  "to-be-resolved": "badge badge-red",
+  "estimate-approval": "badge badge-yellow",
 };
 
 const COMPLAINT_PRIORITY_BADGES = {
-  high:   'badge badge-red',
-  medium: 'badge badge-orange',
-  low:    'badge badge-blue',
+  high: "badge badge-red",
+  medium: "badge badge-orange",
+  low: "badge badge-blue",
 };
 
 function renderComplaints() {
-  let list   = getComplaints();
+  let list = getComplaints();
   const filter = AppState.complaintsFilter;
   const search = AppState.complaintsSearch.toLowerCase();
 
-  list = list.filter(c => {
-    const matchFilter = filter === 'all' || c.status === filter;
-    const matchSearch = !search ||
+  list = list.filter((c) => {
+    const matchFilter = filter === "all" || c.status === filter;
+    const matchSearch =
+      !search ||
       c.title.toLowerCase().includes(search) ||
-      c.serviceProvider.toLowerCase().includes(search) ||
-      c.providerType.toLowerCase().includes(search) ||
-      c.property.toLowerCase().includes(search);
+      String(c.serviceProvider || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(c.providerType || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(c.property || "")
+        .toLowerCase()
+        .includes(search) ||
+      String(c.reportedBy || "")
+        .toLowerCase()
+        .includes(search);
     return matchFilter && matchSearch;
   });
 
   // Update count
-  const countEl = document.getElementById('complaints-count');
-  if (countEl) countEl.textContent = `${list.length} ${list.length === 1 ? 'Complaint' : 'Complaints'}`;
+  const countEl = document.getElementById("complaints-count");
+  if (countEl)
+    countEl.textContent = `${list.length} ${list.length === 1 ? "Complaint" : "Complaints"}`;
 
   // Render filter dropdown options
-  const filterMenu = document.getElementById('complaints-filter-menu');
+  const filterMenu = document.getElementById("complaints-filter-menu");
   if (filterMenu) {
     const filterOptions = [
-      { value: 'all',               label: 'All Complaints' },
-      { value: 'completed',         label: 'Completed' },
-      { value: 'ongoing',           label: 'Ongoing' },
-      { value: 'to-be-resolved',    label: 'To Be Resolved' },
-      { value: 'estimate-approval', label: 'Maintenance Estimate Approval' },
+      { value: "all", label: "All Complaints" },
+      { value: "pending", label: "Pending" },
+      { value: "approved", label: "Approved" },
+      { value: "assigned", label: "Assigned" },
+      { value: "completed", label: "Completed" },
+      { value: "ongoing", label: "Ongoing" },
+      { value: "billed", label: "Billed" },
+      { value: "paid", label: "Paid" },
+      { value: "closed", label: "Closed" },
+      { value: "rejected", label: "Rejected" },
+      { value: "to-be-resolved", label: "To Be Resolved" },
+      { value: "estimate-approval", label: "Maintenance Estimate Approval" },
     ];
-    filterMenu.innerHTML = filterOptions.map(opt => `
-      <button class="filter-option-btn ${filter === opt.value ? 'active' : ''}" data-cfilter="${opt.value}">${opt.label}</button>
-    `).join('');
-    filterMenu.querySelectorAll('[data-cfilter]').forEach(btn => {
-      btn.addEventListener('click', () => {
+    filterMenu.innerHTML = filterOptions
+      .map(
+        (opt) => `
+      <button class="filter-option-btn ${filter === opt.value ? "active" : ""}" data-cfilter="${opt.value}">${opt.label}</button>
+    `,
+      )
+      .join("");
+    filterMenu.querySelectorAll("[data-cfilter]").forEach((btn) => {
+      btn.addEventListener("click", () => {
         AppState.complaintsFilter = btn.dataset.cfilter;
-        document.getElementById('complaints-filter-label').textContent = btn.textContent;
-        filterMenu.classList.remove('open');
+        document.getElementById("complaints-filter-label").textContent =
+          btn.textContent;
+        filterMenu.classList.remove("open");
         renderComplaints();
       });
     });
   }
 
-  const listEl = document.getElementById('complaints-list');
+  const listEl = document.getElementById("complaints-list");
   if (!listEl) return;
 
   if (list.length === 0) {
@@ -72,12 +109,14 @@ function renderComplaints() {
       <div class="card empty-state">
         ${ICONS.alert}
         <h3>No Complaints Found</h3>
-        <p>${search ? 'Try adjusting your search terms or filters' : 'No complaints match the selected filter'}</p>
+        <p>${search ? "Try adjusting your search terms or filters" : "No complaints match the selected filter"}</p>
       </div>`;
     return;
   }
 
-  listEl.innerHTML = list.map(c => `
+  listEl.innerHTML = list
+    .map(
+      (c) => `
     <div class="complaint-card">
       <div class="complaint-inner">
         <div class="complaint-left">
@@ -96,8 +135,8 @@ function renderComplaints() {
             </div>
             <div class="complaint-meta">
               <div class="complaint-meta-left">
-                <span style="display:flex;align-items:center;gap:4px;">${ICONS.clock}${new Date(c.reportedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                ${c.estimatedCost ? `<span class="complaint-cost">${ICONS['file-text']}Estimated Cost: ${escHtml(c.estimatedCost)}</span>` : ''}
+                <span style="display:flex;align-items:center;gap:4px;">${ICONS.clock}${new Date(c.reportedDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                ${c.estimatedCost ? `<span class="complaint-cost">${ICONS["file-text"]}Estimated Cost: ${escHtml(c.estimatedCost)}</span>` : ""}
               </div>
               <div class="action-btns">
                 <button class="action-btn view"   data-action="view-c"   data-id="${c.id}" title="View">${ICONS.eye}</button>
@@ -108,23 +147,26 @@ function renderComplaints() {
           </div>
         </div>
         <div class="complaint-right">
-          <span class="${COMPLAINT_STATUS_BADGES[c.status] || 'badge badge-gray'}">${COMPLAINT_STATUS_LABELS[c.status] || c.status}</span>
-          <span class="${COMPLAINT_PRIORITY_BADGES[c.priority] || 'badge badge-gray'}">${c.priority.toUpperCase()} PRIORITY</span>
-          ${c.status === 'estimate-approval' ? `<button class="review-btn" data-action="review-c" data-id="${c.id}">Review Estimate</button>` : ''}
+          <span class="${COMPLAINT_STATUS_BADGES[c.status] || "badge badge-gray"}">${COMPLAINT_STATUS_LABELS[c.status] || c.status}</span>
+          <span class="${COMPLAINT_PRIORITY_BADGES[c.priority] || "badge badge-gray"}">${c.priority.toUpperCase()} PRIORITY</span>
+          ${c.status === "estimate-approval" ? `<button class="review-btn" data-action="review-c" data-id="${c.id}">Review Estimate</button>` : ""}
         </div>
       </div>
     </div>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 /* ---- View Complaint Modal ---- */
 function openViewComplaintModal(id) {
-  const c = getComplaints().find(x => x.id === id);
+  const c = getComplaints().find((x) => x.id === id);
   if (!c) return;
-  const statusBadge   = COMPLAINT_STATUS_BADGES[c.status]   || 'badge badge-gray';
-  const priorityBadge = COMPLAINT_PRIORITY_BADGES[c.priority] || 'badge badge-gray';
+  const statusBadge = COMPLAINT_STATUS_BADGES[c.status] || "badge badge-gray";
+  const priorityBadge =
+    COMPLAINT_PRIORITY_BADGES[c.priority] || "badge badge-gray";
 
-  document.getElementById('view-complaint-body').innerHTML = `
+  document.getElementById("view-complaint-body").innerHTML = `
     <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;">
       <div style="display:flex;align-items:flex-start;gap:16px;">
         <div style="background:#dbeafe;padding:16px;border-radius:8px;">${ICONS.wrench}</div>
@@ -160,48 +202,52 @@ function openViewComplaintModal(id) {
       </div>
       <div class="view-detail-box" style="background:#fff7ed;border-color:#fed7aa;">
         <div class="vd-label" style="color:#ea580c;">${ICONS.calendar}<span>Reported Date</span></div>
-        <p class="vd-val">${new Date(c.reportedDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+        <p class="vd-val">${new Date(c.reportedDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</p>
       </div>
     </div>
 
-    ${c.estimatedCost ? `
+    ${
+      c.estimatedCost
+        ? `
       <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:16px;margin-bottom:20px;">
-        <div style="display:flex;align-items:center;gap:8px;color:#16a34a;margin-bottom:8px;">${ICONS['file-text']}<span style="font-weight:500;">Estimated Cost</span></div>
+        <div style="display:flex;align-items:center;gap:8px;color:#16a34a;margin-bottom:8px;">${ICONS["file-text"]}<span style="font-weight:500;">Estimated Cost</span></div>
         <p style="font-size:28px;font-weight:700;color:#166534;">${escHtml(c.estimatedCost)}</p>
-      </div>` : ''}
+      </div>`
+        : ""
+    }
 
     <div style="display:flex;justify-content:flex-end;">
       <button class="btn" style="background:#4b5563;color:#fff;" data-close="view-complaint-modal">Close</button>
     </div>
   `;
-  openModal('view-complaint-modal');
+  openModal("view-complaint-modal");
 }
 
 /* ---- Edit Complaint Modal ---- */
 function openEditComplaintModal(id) {
-  const c = getComplaints().find(x => x.id === id);
+  const c = getComplaints().find((x) => x.id === id);
   if (!c) return;
-  document.getElementById('ec-id').value            = c.id;
-  document.getElementById('ec-title').value          = c.title;
-  document.getElementById('ec-desc').value           = c.description;
-  document.getElementById('ec-provider').value       = c.serviceProvider;
-  document.getElementById('ec-provider-type').value  = c.providerType;
-  document.getElementById('ec-property').value       = c.property;
-  document.getElementById('ec-reported-by').value    = c.reportedBy;
-  document.getElementById('ec-date').value           = c.reportedDate;
-  document.getElementById('ec-status').value         = c.status;
-  document.getElementById('ec-priority').value       = c.priority;
-  document.getElementById('ec-cost').value           = c.estimatedCost || '';
-  openModal('edit-complaint-modal');
+  document.getElementById("ec-id").value = c.id;
+  document.getElementById("ec-title").value = c.title;
+  document.getElementById("ec-desc").value = c.description;
+  document.getElementById("ec-provider").value = c.serviceProvider;
+  document.getElementById("ec-provider-type").value = c.providerType;
+  document.getElementById("ec-property").value = c.property;
+  document.getElementById("ec-reported-by").value = c.reportedBy;
+  document.getElementById("ec-date").value = c.reportedDate;
+  document.getElementById("ec-status").value = c.status;
+  document.getElementById("ec-priority").value = c.priority;
+  document.getElementById("ec-cost").value = c.estimatedCost || "";
+  openModal("edit-complaint-modal");
 }
 
 /* ---- Review Estimate Modal ---- */
 function openReviewEstimateModal(id) {
-  const c = getComplaints().find(x => x.id === id);
+  const c = getComplaints().find((x) => x.id === id);
   if (!c) return;
   AppState.selectedComplaint = c;
 
-  document.getElementById('review-estimate-body').innerHTML = `
+  document.getElementById("review-estimate-body").innerHTML = `
     <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin-bottom:20px;">
       <h3 style="font-size:18px;font-weight:700;color:#111827;margin-bottom:8px;">${escHtml(c.title)}</h3>
       <p style="font-size:14px;color:#4b5563;margin-bottom:12px;">${escHtml(c.description)}</p>
@@ -214,8 +260,8 @@ function openReviewEstimateModal(id) {
     </div>
 
     <div class="estimate-cost-box" style="margin-bottom:20px;">
-      <div class="cost-label">${ICONS['file-text']}<span>Estimated Maintenance Cost</span></div>
-      <p class="cost-value">${escHtml(c.estimatedCost || 'N/A')}</p>
+      <div class="cost-label">${ICONS["file-text"]}<span>Estimated Maintenance Cost</span></div>
+      <p class="cost-value">${escHtml(c.estimatedCost || "N/A")}</p>
       <p class="cost-by">Submitted by ${escHtml(c.serviceProvider)}</p>
     </div>
 
@@ -224,26 +270,33 @@ function openReviewEstimateModal(id) {
     </div>
 
     <div class="review-action-btns">
-      <button class="btn btn-red"   id="reject-estimate-btn">${ICONS['x-circle']}<span>Reject Estimate</span></button>
-      <button class="btn btn-green" id="approve-estimate-btn">${ICONS['check-circle']}<span>Approve Estimate</span></button>
+      <button class="btn btn-red"   id="reject-estimate-btn">${ICONS["x-circle"]}<span>Reject Estimate</span></button>
+      <button class="btn btn-green" id="approve-estimate-btn">${ICONS["check-circle"]}<span>Approve Estimate</span></button>
     </div>
     <div style="display:flex;justify-content:center;margin-top:16px;">
       <button style="background:none;border:none;color:#6b7280;cursor:pointer;font-size:14px;" data-close="review-estimate-modal">Cancel Review</button>
     </div>
   `;
 
-  document.getElementById('approve-estimate-btn').addEventListener('click', () => reviewEstimate(c.id, 'approve'));
-  document.getElementById('reject-estimate-btn').addEventListener('click',  () => reviewEstimate(c.id, 'reject'));
+  document
+    .getElementById("approve-estimate-btn")
+    .addEventListener("click", () => reviewEstimate(c.id, "approve"));
+  document
+    .getElementById("reject-estimate-btn")
+    .addEventListener("click", () => reviewEstimate(c.id, "reject"));
 
-  openModal('review-estimate-modal');
+  openModal("review-estimate-modal");
 }
 
 function reviewEstimate(id, action) {
-  const list = getComplaints().map(c => {
+  const list = getComplaints().map((c) => {
     if (c.id !== id) return c;
-    return { ...c, status: action === 'approve' ? 'ongoing' : 'to-be-resolved' };
+    return {
+      ...c,
+      status: action === "approve" ? "ongoing" : "to-be-resolved",
+    };
   });
   saveComplaints(list);
   renderComplaints();
-  closeModal('review-estimate-modal');
+  closeModal("review-estimate-modal");
 }
