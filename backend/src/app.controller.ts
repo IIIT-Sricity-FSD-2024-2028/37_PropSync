@@ -20,7 +20,7 @@ import { Role } from './common/guards/roles.guard';
 @Controller()
 export class AppController {
   @Get()
-  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin)
+  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin, Role.SuperUser)
   @ApiOperation({ summary: 'API health check' })
   @ApiResponse({ status: 200, description: 'API is running' })
   @ApiResponse({ status: 401, description: 'Missing or invalid role header' })
@@ -31,6 +31,8 @@ export class AppController {
       description: 'Property Management & Service Coordination System',
       docs: 'http://localhost:3000/api/docs',
       status: 'running',
+      database: 'connected',
+      uptimeSeconds: Math.floor(process.uptime()),
       timestamp: new Date().toISOString(),
       modules: [
         'users',

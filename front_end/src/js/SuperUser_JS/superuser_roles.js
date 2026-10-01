@@ -17,7 +17,7 @@ function renderRoles() {
         <div class="role-user-count">${ICONS.users}<span>${role.userCount}</span></div>
         <p class="role-description">${role.description}</p>
         <div class="permissions-label">Permissions</div>
-        <div style="margin-bottom:12px;">
+        <div class="role-permissions-wrap">
           ${role.permissions.map(perm => `
             <div class="permission-item">
               <span class="${role.textClass}" style="display:flex;">${ICONS.check}</span>

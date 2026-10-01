@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -9,6 +10,8 @@ import {
   Post,
   Query,
   UseGuards,
+  UploadedFiles,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiHeader,
@@ -23,6 +26,13 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role, RolesGuard } from '../../common/guards/roles.guard';
 import { CreateBillDto } from './dto/bill.dto';
 import { BillsService } from './bills.service';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { existsSync, mkdirSync } from 'fs';
+import { extname, join } from 'path';
+import { appConfig } from '../../config/app.config';
+
+const billUploadPath = join(process.cwd(), 'uploads', 'bills');
 
 @ApiTags('Service Bills')
 @ApiSecurity('role')
@@ -57,9 +67,27 @@ export class BillsController {
 
   @Post()
   @Roles(Role.ServiceProvider)
+  @UseInterceptors(FilesInterceptor('attachments', 5, {
+    storage: diskStorage({
+      destination: (_req, _file, callback) => {
+        try { if (!existsSync(billUploadPath)) mkdirSync(billUploadPath, { recursive: true }); callback(null, billUploadPath); }
+        catch (error) { callback(error as Error, billUploadPath); }
+      },
+      filename: (_req, file, callback) => callback(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`),
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, callback) => callback(null, file.mimetype === 'application/pdf' || file.mimetype.startsWith('image/')),
+  }))
   @ApiOperation({ summary: 'Submit a service bill after completing work (Service Provider only)' })
   @ApiResponse({ status: 201, description: 'Bill created' })
-  create(@Body() dto: CreateBillDto) {
+  create(@Body() dto: CreateBillDto, @UploadedFiles() files: Express.Multer.File[] = []) {
+    if (!files.length) {
+      throw new BadRequestException('At least one bill attachment is required. Upload a PDF or work photo.');
+    }
+    if (files.length) {
+      dto.attachmentNames = files.map(file => file.originalname);
+      dto.attachmentUrls = files.map(file => `http://localhost:${appConfig.port}/uploads/bills/${file.filename}`);
+    }
     return this.billsService.create(dto);
   }
 

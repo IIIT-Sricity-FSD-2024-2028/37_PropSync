@@ -6,14 +6,15 @@
   <title>PropSync — Super User</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
- <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_base.css" />
-<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_layout.css" />
-<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_components.css" />
-<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_dashboard.css" />
-<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_participants.css" />
-<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_roles.css" />
-<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_complaints.css" />
-<link rel="stylesheet" href="../css/SuperUser_CSS/superuser_config.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_base.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_layout.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_components.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_dashboard.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_participants.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_roles.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_complaints.css" />
+  <link rel="stylesheet" href="../css/SuperUser_CSS/superuser_config.css" />
+  <script src="../js/route_guard.js"></script>
 </head>
 <body>
 
@@ -23,10 +24,16 @@
 <template id="tpl-sidebar">
   <div id="sidebar-overlay"></div>
   <aside id="sidebar">
+    <div class="sidebar-header" style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e5e7eb;">
+      <img src="../../public/image.png" alt="PropSync Logo" style="height: 40px; width: auto; object-fit: contain;" />
+      <button class="menu-toggle" id="sidebar-close" aria-label="Close sidebar" style="padding: 4px; display: none;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" style="width: 20px; height: 20px;"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" /></svg>
+      </button>
+    </div>
     <nav class="sidebar-nav" id="sidebar-nav"></nav>
     <div class="sidebar-footer">
       <button class="nav-link" id="logout-btn">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-9A2.25 2.25 0 002.25 5.25v13.5A2.25 2.25 0 004.5 21h9a2.25 2.25 0 002.25-2.25V15M18 15l3-3m0 0l-3-3m3 3H9"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-9A2.25 2.25 0 002.25 5.25v13.5A2.25 2.25 0 004.5 21h9a2.25 2.25 0 002.25-2.25V15M18 15l3-3m0 0l-3-3m3 3H9"/></svg>
         <span>Logout</span>
       </button>
     </div>
@@ -53,7 +60,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z"/></svg>
           </div>
           <div class="user-info">
-            <p class="user-name" id="header-username">Sarah Mitchell</p>
+            <p class="user-name" id="header-username">Super User</p>
             <svg class="chevron-icon" id="user-chevron" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5"/></svg>
           </div>
         </button>
@@ -82,7 +89,7 @@
   <div id="page-participants" class="page">
     <div class="mb-6">
       <h1 style="font-size:24px;font-weight:700;color:#111827;margin-bottom:4px;">Manage Participants</h1>
-      <p style="font-size:14px;color:#6b7280;">Control panel for managing system users</p>
+      <p style="font-size:14px;color:#6b7280;">Control panel for managing system users across all roles</p>
     </div>
     <div class="card" style="padding:16px;margin-bottom:16px;">
       <div class="filter-bar">
@@ -100,8 +107,9 @@
             <div class="dropdown-menu" id="role-filter-menu">
               <button data-role="All Roles">All Roles</button>
               <button data-role="Property Owner">Property Owner</button>
-              <button data-role="Service Provider">Service Provider</button>
               <button data-role="Maintenance Manager">Maintenance Manager</button>
+              <button data-role="Service Provider">Service Provider</button>
+              <button data-role="Administrator">Administrator</button>
             </div>
           </div>
           <div class="relative">
@@ -139,6 +147,11 @@
   </div>
 </template>
 
+<!-- PAGE: REVENUE -->
+<template id="tpl-page-revenue">
+  <div id="page-revenue" class="page"></div>
+</template>
+
 <!-- PAGE: ROLES -->
 <template id="tpl-page-roles">
   <div id="page-roles" class="page">
@@ -155,7 +168,7 @@
   <div id="page-configuration" class="page">
     <div style="margin-bottom:12px;">
       <h1 style="font-size:20px;font-weight:700;color:#111827;margin-bottom:2px;">System Configuration</h1>
-      <p style="font-size:12px;color:#6b7280;">Manage system-wide settings and preferences</p>
+      <p style="font-size:12px;color:#6b7280;">Manage system-wide settings, revenue policies, and preferences</p>
     </div>
     <div id="config-content"></div>
   </div>
@@ -166,7 +179,7 @@
   <div id="page-complaints" class="page">
     <div style="margin-bottom:20px;">
       <h1 style="font-size:24px;font-weight:700;color:#111827;margin-bottom:4px;">Complaints</h1>
-      <p style="font-size:14px;color:#6b7280;">Manage maintenance complaints and service requests</p>
+      <p style="font-size:14px;color:#6b7280;">Review maintenance complaints and service requests across all properties</p>
     </div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;flex-wrap:wrap;">
       <div class="relative">
@@ -182,10 +195,6 @@
         <input type="text" id="complaints-search" class="search-input" placeholder="Search by title, service provider, type, or property..." />
       </div>
       <div class="results-count" id="complaints-count">0 Complaints</div>
-      <button class="btn btn-green" id="add-complaint-btn">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" style="width:16px;height:16px;stroke:#fff;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
-        Add Complaint
-      </button>
     </div>
     <div id="complaints-list"></div>
   </div>
@@ -199,7 +208,7 @@
         <div class="notif-page-header-top">
           <div>
             <h1>Notifications</h1>
-            <p>View alerts and updates related to system activities and user management.</p>
+            <p>View alerts and updates related to system activities and administrator registrations.</p>
           </div>
           <span class="unread-pill hidden" id="notif-unread-pill">0 Unread</span>
         </div>
@@ -256,8 +265,8 @@
       <div class="modal-header"><div><h2>Add New Participant</h2><p class="modal-subtitle">Fill in the details to create a new participant account</p></div><button class="modal-close" data-close="add-participant-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
       <div class="modal-body">
         <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ap-name" class="form-control" placeholder="John Doe" /><p class="form-error" id="ap-name-error"></p></div>
-        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ap-email" class="form-control" placeholder="email@example.com" /><p class="form-error" id="ap-email-error"></p></div>
-        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ap-contact" class="form-control" placeholder="+91 9876543210" /><p class="form-error" id="ap-contact-error"></p></div>
+        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ap-email" class="form-control" placeholder="email@example.com" /></div>
+        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ap-contact" class="form-control" placeholder="+91 9734298517" /><p class="form-error" id="ap-contact-error"></p></div>
         <div class="form-group"><label>Password <span class="req">*</span></label><div class="pass-wrap"><input type="password" id="ap-password" class="form-control" placeholder="••••••••" /><button type="button" class="pass-toggle" data-target="ap-password"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" class="eye-icon"><path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.964-7.178z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button></div><p class="form-error" id="ap-password-error"></p></div>
         <div class="form-group"><label>Role Selection <span class="req">*</span></label><select id="ap-role" class="form-control"><option>Property Owner</option><option>Service Provider</option><option>Maintenance Manager</option><option>Administrator</option></select></div>
       </div>
@@ -271,9 +280,9 @@
       <div class="modal-header"><div><h2>Edit Participant</h2><p class="modal-subtitle">Update participant details</p></div><button class="modal-close" data-close="edit-participant-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
       <div class="modal-body">
         <input type="hidden" id="ep-id" />
-        <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ep-name" class="form-control" placeholder="John Doe" /><p class="form-error" id="ep-name-error"></p></div>
-        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ep-email" class="form-control" placeholder="email@example.com" /><p class="form-error" id="ep-email-error"></p></div>
-        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ep-contact" class="form-control" placeholder="+91 9876543210" /><p class="form-error" id="ep-contact-error"></p></div>
+        <div class="form-group"><label>Full Name <span class="req">*</span></label><input type="text" id="ep-name" class="form-control" /><p class="form-error" id="ep-name-error"></p></div>
+        <div class="form-group"><label>Email <span class="req">*</span></label><input type="email" id="ep-email" class="form-control" /></div>
+        <div class="form-group"><label>Contact Number <span class="req">*</span></label><input type="tel" id="ep-contact" class="form-control" /><p class="form-error" id="ep-contact-error"></p></div>
         <div class="form-group"><label>Role Selection <span class="req">*</span></label><select id="ep-role" class="form-control"><option>Property Owner</option><option>Service Provider</option><option>Maintenance Manager</option><option>Administrator</option></select></div>
       </div>
       <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="edit-participant-modal">Cancel</button><button class="btn btn-green" id="ep-save-btn">Save Changes</button></div>
@@ -298,72 +307,11 @@
     </div>
   </div>
 
-  <!-- ADD COMPLAINT -->
-  <div class="modal-overlay hidden" id="add-complaint-modal">
-    <div class="modal modal-lg" style="max-height:90vh;">
-      <div class="modal-header"><h2>Add New Complaint</h2><button class="modal-close" data-close="add-complaint-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
-      <div class="modal-body">
-        <div class="form-group"><label>Complaint Title <span class="req">*</span></label><input type="text" id="ac-title" class="form-control" placeholder="Enter complaint title" /></div>
-        <div class="form-group"><label>Description <span class="req">*</span></label><textarea id="ac-desc" class="form-control" rows="3" placeholder="Describe the issue..."></textarea></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group"><label>Service Provider <span class="req">*</span></label><input type="text" id="ac-provider" class="form-control" placeholder="Provider name" /></div>
-          <div class="form-group"><label>Provider Type</label><select id="ac-provider-type" class="form-control"><option>Plumber</option><option>Electrician</option><option>HVAC Technician</option><option>Locksmith</option><option>Carpenter</option><option>Painter</option><option>Other</option></select></div>
-        </div>
-        <div class="form-group"><label>Property <span class="req">*</span></label><input type="text" id="ac-property" class="form-control" placeholder="Building - Unit" /></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group"><label>Reported By <span class="req">*</span></label><input type="text" id="ac-reported-by" class="form-control" placeholder="Reporter name" /></div>
-          <div class="form-group"><label>Reported Date</label><input type="date" id="ac-date" class="form-control" /></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group"><label>Status</label><select id="ac-status" class="form-control"><option value="to-be-resolved">To Be Resolved</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="estimate-approval">Estimate Approval</option></select></div>
-          <div class="form-group"><label>Priority</label><select id="ac-priority" class="form-control"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
-        </div>
-        <div class="form-group"><label>Estimated Cost (optional)</label><input type="text" id="ac-cost" class="form-control" placeholder="e.g. $450" /></div>
-      </div>
-      <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="add-complaint-modal">Cancel</button><button class="btn btn-green" id="ac-save-btn">Save Complaint</button></div>
-    </div>
-  </div>
-
-  <!-- EDIT COMPLAINT -->
-  <div class="modal-overlay hidden" id="edit-complaint-modal">
-    <div class="modal modal-lg" style="max-height:90vh;">
-      <div class="modal-header"><h2>Edit Complaint</h2><button class="modal-close" data-close="edit-complaint-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
-      <div class="modal-body">
-        <input type="hidden" id="ec-id" />
-        <div class="form-group"><label>Complaint Title</label><input type="text" id="ec-title" class="form-control" /></div>
-        <div class="form-group"><label>Description</label><textarea id="ec-desc" class="form-control" rows="3"></textarea></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group"><label>Service Provider</label><input type="text" id="ec-provider" class="form-control" /></div>
-          <div class="form-group"><label>Provider Type</label><select id="ec-provider-type" class="form-control"><option>Plumber</option><option>Electrician</option><option>HVAC Technician</option><option>Locksmith</option><option>Carpenter</option><option>Painter</option><option>Other</option></select></div>
-        </div>
-        <div class="form-group"><label>Property</label><input type="text" id="ec-property" class="form-control" /></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group"><label>Reported By</label><input type="text" id="ec-reported-by" class="form-control" /></div>
-          <div class="form-group"><label>Reported Date</label><input type="date" id="ec-date" class="form-control" /></div>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-          <div class="form-group"><label>Status</label><select id="ec-status" class="form-control"><option value="to-be-resolved">To Be Resolved</option><option value="ongoing">Ongoing</option><option value="completed">Completed</option><option value="estimate-approval">Estimate Approval</option></select></div>
-          <div class="form-group"><label>Priority</label><select id="ec-priority" class="form-control"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></div>
-        </div>
-        <div class="form-group"><label>Estimated Cost</label><input type="text" id="ec-cost" class="form-control" placeholder="e.g. $450" /></div>
-      </div>
-      <div class="modal-footer" style="justify-content:space-between;"><button class="btn btn-outline" data-close="edit-complaint-modal">Cancel</button><button class="btn btn-green" id="ec-save-btn">Save Changes</button></div>
-    </div>
-  </div>
-
   <!-- VIEW COMPLAINT -->
   <div class="modal-overlay hidden" id="view-complaint-modal">
     <div class="modal modal-lg" style="max-height:90vh;">
       <div class="modal-header"><h2>View Complaint Details</h2><button class="modal-close" data-close="view-complaint-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
       <div class="modal-body" id="view-complaint-body"></div>
-    </div>
-  </div>
-
-  <!-- REVIEW ESTIMATE -->
-  <div class="modal-overlay hidden" id="review-estimate-modal">
-    <div class="modal modal-lg">
-      <div class="modal-header"><h2>Review Maintenance Estimate</h2><button class="modal-close" data-close="review-estimate-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
-      <div class="modal-body" id="review-estimate-body"></div>
     </div>
   </div>
 
@@ -386,10 +334,8 @@
     <div class="modal modal-sm">
       <div class="modal-header"><h2>Update Contact Information</h2><button class="modal-close" data-close="contact-modal"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button></div>
       <div class="modal-body">
-        <div class="form-group"><label>Phone Number</label><input type="tel" id="ct-phone" class="form-control" />
-              <p class="form-error" id="ct-phone-error"></p></div>
-        <div class="form-group"><label>Email Address</label><input type="email" id="ct-email" class="form-control" />
-              <p class="form-error" id="ct-email-error"></p></div>
+        <div class="form-group"><label>Phone Number</label><input type="tel" id="ct-phone" class="form-control" /></div>
+        <div class="form-group"><label>Email Address</label><input type="email" id="ct-email" class="form-control" /></div>
         <div class="form-group"><label>Emergency Contact Name</label><input type="text" id="ct-ename" class="form-control" placeholder="John Doe" /></div>
         <div class="form-group"><label>Emergency Contact Number</label><input type="tel" id="ct-ephone" class="form-control" placeholder="+1 9876543210" /></div>
       </div>
@@ -421,6 +367,7 @@
 <script src="../js/SuperUser_JS/superuser_loader.js"></script>
 <script src="../js/SuperUser_JS/superuser_router.js"></script>
 <script src="../js/SuperUser_JS/superuser_dashboard.js"></script>
+<script src="../js/SuperUser_JS/superuser_revenue.js"></script>
 <script src="../js/SuperUser_JS/superuser_participants.js"></script>
 <script src="../js/SuperUser_JS/superuser_roles.js"></script>
 <script src="../js/SuperUser_JS/superuser_config.js"></script>

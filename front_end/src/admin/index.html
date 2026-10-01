@@ -32,7 +32,8 @@
       href="../css/Administrator_CSS/admin_notifications.css"
     />
     <link rel="stylesheet" href="../css/Administrator_CSS/admin_profile.css" />
-  </head>
+    <script src="../js/route_guard.js"></script>
+</head>
   <body>
     <div id="app"></div>
 
@@ -40,9 +41,17 @@
     <template id="tpl-sidebar">
       <div id="sidebar-overlay"></div>
       <aside id="sidebar">
+        <div class="sidebar-header">
+          <img src="../../public/image.png" alt="PropSync Logo" class="sidebar-logo" />
+          <button class="sidebar-close-btn" id="sidebar-close" aria-label="Close sidebar">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
         <nav class="sidebar-nav" id="sidebar-nav"></nav>
         <div class="sidebar-footer">
-          <button class="nav-link" id="logout-btn">
+          <button class="nav-link sidebar-logout" id="logout-btn">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -258,6 +267,7 @@
                   <button data-role="Maintenance Manager">
                     Maintenance Manager
                   </button>
+                  <button data-role="Administrator">Administrator</button>
                 </div>
               </div>
               <div class="relative">
@@ -1341,6 +1351,20 @@
           </div>
         </div>
       </div>
+      <!-- VIEW COMPLAINT -->
+      <div class="modal-overlay hidden" id="view-complaint-modal">
+        <div class="modal modal-lg" style="max-height: 90vh; overflow-y: auto;">
+          <div class="modal-header">
+            <h2>Complaint Details</h2>
+            <button class="modal-close" data-close="view-complaint-modal">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="modal-body" id="view-complaint-body"></div>
+        </div>
+      </div>
     </template>
 
     <!-- JS Modules -->
@@ -1359,3 +1383,5 @@
     <script src="../js/Administrator_JS/admin_main.js"></script>
   </body>
 </html>
+
+

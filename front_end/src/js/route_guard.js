@@ -6,13 +6,14 @@
     maintenance_manager: "../maintenance_manager/dashboard.html",
     manager: "../maintenance_manager/dashboard.html",
     admin: "../admin/index.html",
+    super_user: "../super_user/index.html",
   };
   const FOLDER_ROLES = {
     owner: ["owner"],
     service_provider: ["service_provider"],
     maintenance_manager: ["maintenance_manager", "manager"],
     admin: ["admin"],
-    super_user: ["admin"],
+    super_user: ["super_user"],
   };
 
   const pathParts = window.location.pathname
@@ -31,9 +32,7 @@
   }
 
   function normalizeRole(role) {
-    return String(role || "")
-      .trim()
-      .toLowerCase();
+    return String(role || "").trim().toLowerCase();
   }
 
   let user = null;
@@ -53,15 +52,12 @@
 
   window.PS_CURRENT_USER = user;
   window.PS_CURRENT_ROLE = role;
-  window.PS_ROLE_HEADER =
-    role === "maintenance_manager" ? "maintenance_manager" : role;
+  window.PS_ROLE_HEADER = role === "maintenance_manager" ? "maintenance_manager" : role;
 
   document.addEventListener("DOMContentLoaded", function () {
     document.documentElement.style.visibility = "";
     document
-      .querySelectorAll(
-        'a[href*="login_signup.html"], button[id*="logout"], button[class*="logout"]',
-      )
+      .querySelectorAll('a[href*="login_signup.html"], button[id*="logout"], button[class*="logout"]')
       .forEach(function (el) {
         el.addEventListener("click", function () {
           localStorage.removeItem("currentUser");

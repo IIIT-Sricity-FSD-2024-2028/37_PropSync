@@ -1,42 +1,61 @@
 [
   {
     "id": 1,
-    "title": "New Complaint Available",
-    "message": "A new plumbing complaint has been posted in your category. Complaint C-2405: Burst Pipe in Basement.",
+    "title": "New Complaint Submitted",
+    "message": "Raj Kumar submitted complaint C-1: Water Leakage in Block A.",
     "type": "New Complaint",
-    "time": "2 hours ago",
-    "status": "unread"
+    "time": "2024-03-08T09:01:00Z",
+    "status": "unread",
+    "userEmail": "vijay.manager@propsync.com",
+    "complaintId": 1
   },
   {
     "id": 2,
-    "title": "Deadline Approaching",
-    "message": "The deadline for complaint C-2402 is approaching. Due date: Mar 9, 2026.",
-    "type": "Deadline",
-    "time": "4 hours ago",
-    "status": "unread"
+    "title": "Complaint Approved",
+    "message": "Your complaint C-2: Street Light Not Working has been approved.",
+    "type": "Complaint Approved",
+    "time": "2024-03-09T10:30:00Z",
+    "status": "read",
+    "userEmail": "anita.owner@propsync.com",
+    "complaintId": 2
   },
   {
     "id": 3,
-    "title": "Your Complaint Approved",
-    "message": "The recent complaint that you have registered is approved by maintennace manager",
-    "type": "Complaint Approved",
-    "time": "4 hours ago",
-    "status": "unread"
+    "title": "Provider Assigned",
+    "message": "BrightSpark Electricals has been assigned to complaint C-4: Lift Not Working.",
+    "type": "Provider Assigned",
+    "time": "2024-03-10T11:00:00Z",
+    "status": "unread",
+    "userEmail": "brightspark.electrical@propsync.com",
+    "complaintId": 4
   },
   {
     "id": 4,
-    "title": "Monthly Electrical check",
-    "message": "On Mar 9, 2026, monthly electrical check is going on.",
-    "type": "Routine Check",
-    "time": "4 hours ago",
-    "status": "unread"
+    "title": "Estimate Submitted",
+    "message": "CleanSweep Facility Care submitted an estimate for complaint C-3.",
+    "type": "Estimate Submitted",
+    "time": "2024-03-10T14:00:00Z",
+    "status": "unread",
+    "userEmail": "meera.manager@propsync.com",
+    "complaintId": 3
   },
   {
     "id": 5,
-    "title": "Power Shutdown",
-    "message": "Due to breakdown and repair, power will shutdon for 5hours today.",
-    "type": "Alert",
-    "time": "1 hours ago",
-    "status": "read"
+    "title": "Payment Due",
+    "message": "A service bill of Rs. 4700 is due for complaint C-5: AC Not Cooling.",
+    "type": "Payment Due",
+    "time": "2024-03-13T12:00:00Z",
+    "status": "unread",
+    "userEmail": "raj.owner@propsync.com",
+    "complaintId": 5
+  },
+  {
+    "id": 6,
+    "title": "Mock Data Check",
+    "message": "All 16 demo actor accounts are active for testing.",
+    "type": "Admin",
+    "time": "2024-03-14T09:00:00Z",
+    "status": "unread",
+    "userEmail": "admin.primary@propsync.com"
   }
 ]

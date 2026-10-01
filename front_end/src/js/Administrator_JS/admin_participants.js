@@ -49,6 +49,59 @@ function renderParticipants() {
   `).join('') || `<tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">No participants found</td></tr>`;
 }
 
+let adminParticipantsRefreshInProgress = false;
+
+async function refreshAdminParticipantsFromBackend() {
+  if (adminParticipantsRefreshInProgress) return false;
+  adminParticipantsRefreshInProgress = true;
+
+  try {
+    const response = await fetch('http://localhost:3000/users', {
+      headers: { role: 'admin', 'x-user-id': String(getCurrentAdminUserId()) },
+    });
+    if (!response.ok) return false;
+
+    const users = await response.json();
+    if (!Array.isArray(users)) return false;
+
+    // The endpoint is already scoped to the authenticated administrator's
+    // community. Replace, rather than merge, cached browser data so a prior
+    // administrator session cannot leak participants into this view.
+    const participants = users
+      .filter((user) => user.approvalStatus === 'approved')
+      .map((user, index) => ({
+        id: `P${String(index + 1).padStart(3, '0')}`,
+        backendUserId: user.id,
+        name: user.name,
+        email: user.email,
+        role: adminParticipantRoleLabel(user.role),
+        status: 'Active',
+      }));
+
+    saveParticipants(participants);
+    if (AppState.currentPage === 'participants') {
+      renderParticipants();
+    }
+    return true;
+  } catch (error) {
+    console.error('Failed to refresh Administrator participants', error);
+    return false;
+  } finally {
+    adminParticipantsRefreshInProgress = false;
+  }
+}
+
+function adminParticipantRoleLabel(role) {
+  const labels = {
+    owner: 'Property Owner',
+    service_provider: 'Service Provider',
+    maintenance_manager: 'Maintenance Manager',
+    admin: 'Administrator',
+    super_user: 'Super User',
+  };
+  return labels[role] || role;
+}
+
 function handleParticipantSort(field) {
   if (AppState.participantSortBy === field) {
     AppState.participantSortOrder = AppState.participantSortOrder === 'asc' ? 'desc' : 'asc';

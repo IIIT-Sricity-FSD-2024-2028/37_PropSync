@@ -15,16 +15,36 @@ function removeActive(element) {
 
 role.forEach((ele) => {
   ele.addEventListener("click", () => {
-    removeActive(role);
-    ele.classList.add("active");
-    selectedRoleLogin = ele.querySelector("p").innerText.trim();
+    selectLoginRole(ele.querySelector("p").innerText.trim());
   });
+});
+
+function selectLoginRole(roleName) {
+  role.forEach((ele) => {
+    const isSelected = ele.querySelector("p").innerText.trim() === roleName;
+    ele.classList.toggle("active", isSelected);
+  });
+  selectedRoleLogin = roleName;
+}
+
+// Super User is intentionally separate from Administrator. This product's
+// dedicated Super User entry point does not use the Administrator login form.
+const superUserButton = document.querySelector("#superUser");
+superUserButton?.addEventListener("click", () => {
+  localStorage.setItem("currentUser", JSON.stringify({
+    id: 0,
+    name: "Super User",
+    email: "superuser@propsync.com",
+    role: "super_user",
+  }));
+  window.location.href = "./super_user/index.html";
 });
 
 const signup_form = document.querySelector("#signup_form");
 const owner_form = document.querySelector("#Owner_form");
 const sp_form = document.querySelector("#SP_form");
 const mma_form = document.querySelector("#MMA_form");
+const admin_form = document.querySelector("#Admin_form");
 const signUpBtn = document.querySelector("#signupBtn");
 const signupBack = document.querySelector(".signupBack");
 
@@ -34,16 +54,18 @@ signupRoles.forEach((role) => {
     role.classList.add("active");
     selectedRoleSignUp = role.querySelector("p").innerText.trim();
     signup_form.classList.add("hidden");
+    [owner_form, sp_form, mma_form, admin_form].forEach((form) =>
+      form.classList.add("hidden"),
+    );
 
     if (selectedRoleSignUp === "Owner") {
       owner_form.classList.remove("hidden");
     } else if (selectedRoleSignUp === "Service Provider") {
       sp_form.classList.remove("hidden");
-    } else if (
-      selectedRoleSignUp === "Maintenance Manager" ||
-      selectedRoleSignUp === "Administrator"
-    ) {
+    } else if (selectedRoleSignUp === "Maintenance Manager") {
       mma_form.classList.remove("hidden");
+    } else if (selectedRoleSignUp === "Administrator") {
+      admin_form.classList.remove("hidden");
     }
 
     signUpBtn.classList.remove("hidden");
@@ -56,6 +78,7 @@ signupBack.addEventListener("click", () => {
   owner_form.classList.add("hidden");
   sp_form.classList.add("hidden");
   mma_form.classList.add("hidden");
+  admin_form.classList.add("hidden");
   signUpBtn.classList.add("hidden");
   signupBack.classList.add("hidden");
 });
@@ -73,11 +96,7 @@ function isValidEmail(email) {
 const FALLBACK_USERS = [
   { email: "johndoe@gmail.com", password: "123456", role: "Owner" },
   { email: "johndoe@gmail.com", password: "123456", role: "Service Provider" },
-  {
-    email: "johndoe@gmail.com",
-    password: "123456",
-    role: "Maintenance Manager",
-  },
+  { email: "johndoe@gmail.com", password: "123456", role: "Maintenance Manager" },
   { email: "johndoe@gmail.com", password: "123456", role: "Administrator" },
 ];
 
@@ -110,12 +129,13 @@ const usersFetchPromise = (async () => {
 // ─────────────────────────────────────────────────────────────
 // LOGIN
 // ─────────────────────────────────────────────────────────────
-const loginBtn = document.querySelector(".btn");
+const loginBtn = document.querySelector("#loginBtn");
 loginBtn.addEventListener("click", searchUser);
 
-async function searchUser() {
+async function searchUser(event) {
+  event?.preventDefault();
   const errorBox = document.getElementById("loginError");
-  const email = document.querySelector("#log_email").value.trim();
+  const email    = document.querySelector("#log_email").value.trim();
   const password = document.querySelector("#log_pass").value.trim();
 
   errorBox.classList.remove("show");
@@ -138,10 +158,10 @@ async function searchUser() {
 
   try {
     const roleFormatMap = {
-      Owner: "owner",
+      "Owner": "owner",
       "Maintenance Manager": "maintenance_manager",
       "Service Provider": "service_provider",
-      Administrator: "admin",
+      "Administrator": "admin"
     };
     const roleKey = roleFormatMap[selectedRoleLogin];
 
@@ -149,30 +169,40 @@ async function searchUser() {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        role: roleKey,
+        "role": roleKey
       },
       body: JSON.stringify({
         email: email,
         password: password,
-        role: roleKey,
-      }),
+        role: roleKey
+      })
     });
 
     if (response.ok) {
       const user = await response.json();
       errorBox.classList.remove("show");
-      alert("Login Successful");
 
       // Save to localStorage for persistence across pages
       localStorage.setItem("currentUser", JSON.stringify(user));
 
-      if (selectedRoleLogin === "Owner")
-        window.location.href = "./owner/dashboard.html";
-      else if (selectedRoleLogin === "Service Provider")
-        window.location.href = "./service_provider/index.html";
-      else if (selectedRoleLogin === "Maintenance Manager")
-        window.location.href = "./maintenance_manager/dashboard.html";
-      else window.location.href = "./admin/index.html";
+      // The API response is the authenticated source of truth.  Display text in
+      // the role picker is only for the UI and must not decide the destination.
+      const dashboardByRole = {
+        owner: "./owner/dashboard.html",
+        service_provider: "./service_provider/index.html",
+        maintenance_manager: "./maintenance_manager/dashboard.html",
+        admin: "./admin/index.html",
+      };
+      const dashboard = dashboardByRole[user.role];
+
+      if (dashboard) {
+        // Use the same direct navigation mechanism that works from the browser
+        // console. Do not show a blocking alert before navigation.
+        window.location.href = dashboard;
+      } else {
+        errorBox.textContent = "Login succeeded, but your role is not recognized.";
+        errorBox.classList.add("show");
+      }
     } else {
       const errorData = await response.json().catch(() => ({}));
       errorBox.textContent =
@@ -203,14 +233,26 @@ signUpBtn.addEventListener("click", async function (e) {
   let activeForm;
   if (selectedRoleSignUp === "Owner") activeForm = owner_form;
   else if (selectedRoleSignUp === "Service Provider") activeForm = sp_form;
-  else activeForm = mma_form;
+  else if (selectedRoleSignUp === "Maintenance Manager") activeForm = mma_form;
+  else activeForm = admin_form;
 
-  const inputs = activeForm.querySelectorAll("input");
-  const email = inputs[0].value.trim();
-  const password = inputs[1].value.trim();
-  let propertyUnit = "";
-  let communityName = "";
+  // Read named inputs so Full Name is always index 0
+  const fullNameInput = activeForm.querySelector('input[type="text"]:first-child');
+  const emailInput    = activeForm.querySelector('input[type="email"]');
+  const passwordInput = activeForm.querySelector('input[type="password"]');
 
+  const fullName = fullNameInput ? fullNameInput.value.trim() : "";
+  const email    = emailInput    ? emailInput.value.trim()    : "";
+  const password = passwordInput ? passwordInput.value.trim() : "";
+  let propertyUnit   = "";
+  let communityName  = "";
+  let block = "";
+
+  if (!fullName) {
+    errorBox.textContent = "Please enter your full name.";
+    errorBox.classList.add("show");
+    return;
+  }
   if (!email || !password) {
     errorBox.textContent = "Please enter both email and password.";
     errorBox.classList.add("show");
@@ -228,19 +270,28 @@ signUpBtn.addEventListener("click", async function (e) {
   }
 
   if (selectedRoleSignUp === "Owner") {
-    propertyUnit = inputs[2].value.trim();
-    communityName = inputs[3].value.trim();
+    propertyUnit  = document.getElementById('propertyUnit').value.trim();
+    communityName = document.getElementById('communityName').value.trim();
     if (!propertyUnit || !communityName) {
-      errorBox.textContent =
-        "Please enter your Property Unit and Community Name.";
+      errorBox.textContent = "Please enter your Property Unit and Community Name.";
       errorBox.classList.add("show");
       return;
     }
-  } else if (
-    selectedRoleSignUp === "Maintenance Manager" ||
-    selectedRoleSignUp === "Administrator"
-  ) {
-    communityName = inputs[2].value.trim();
+  } else if (selectedRoleSignUp === "Maintenance Manager") {
+    communityName = document.getElementById('mma-community').value.trim();
+    if (!communityName) {
+      errorBox.textContent = "Please enter your Community Name.";
+      errorBox.classList.add("show");
+      return;
+    }
+    block = document.getElementById('mma-block').value.trim().toUpperCase();
+    if (!block) {
+      errorBox.textContent = "Please enter the block you will manage.";
+      errorBox.classList.add("show");
+      return;
+    }
+  } else if (selectedRoleSignUp === "Administrator") {
+    communityName = document.getElementById('admin-community').value.trim();
     if (!communityName) {
       errorBox.textContent = "Please enter your Community Name.";
       errorBox.classList.add("show");
@@ -250,37 +301,39 @@ signUpBtn.addEventListener("click", async function (e) {
 
   try {
     const roleFormatMap = {
-      Owner: "owner",
+      "Owner": "owner",
       "Maintenance Manager": "maintenance_manager",
       "Service Provider": "service_provider",
-      Administrator: "admin",
+      "Administrator": "admin"
     };
     const roleKey = roleFormatMap[selectedRoleSignUp];
 
     const newUser = {
-      name: email.split("@")[0], // Fallback name since form might not have it
+      name: fullName || email.split('@')[0],
       email: email,
       password: password,
       role: roleKey,
     };
     if (propertyUnit) newUser.propertyUnit = propertyUnit;
     if (communityName) newUser.communityName = communityName;
-    if (selectedRoleSignUp === "Service Provider") newUser.category = "General"; // Default category since it's missing in UI
+    if (block) newUser.block = block;
+    if (selectedRoleSignUp === "Service Provider") newUser.category = "General";
 
     const response = await fetch("http://localhost:3000/users", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        role: "admin", // Create user usually requires admin role in our backend, let's pass it for signup
+        "role": "owner"
       },
-      body: JSON.stringify(newUser),
+      body: JSON.stringify(newUser)
     });
 
     if (response.ok) {
-      alert(
-        "Account request submitted. Please wait for admin approval before logging in.",
-      );
-      inputs.forEach((input) => (input.value = ""));
+      alert(selectedRoleSignUp === "Administrator"
+        ? "Administrator request submitted. Please wait for Super User approval before logging in."
+        : "Account request submitted. Please wait for community Administrator approval before logging in.");
+      // Clear all inputs in the active sub-form
+      activeForm.querySelectorAll("input").forEach((input) => (input.value = ""));
       document.querySelectorAll(".toggleBtn")[1].click();
     } else {
       const errorData = await response.json();
@@ -296,11 +349,11 @@ signUpBtn.addEventListener("click", async function (e) {
 // ─────────────────────────────────────────────────────────────
 // SLIDING ANIMATION
 // ─────────────────────────────────────────────────────────────
-const toggleBtn = document.querySelectorAll(".toggleBtn");
-let toggle = 0;
+const toggleBtn  = document.querySelectorAll(".toggleBtn");
+let toggle       = 0;
 const center_box = document.querySelector(".center_box");
-const box = document.querySelectorAll(".box");
-const content = document.querySelectorAll(".content");
+const box        = document.querySelectorAll(".box");
+const content    = document.querySelectorAll(".content");
 
 toggleBtn.forEach((btn) => {
   btn.addEventListener("click", () => {

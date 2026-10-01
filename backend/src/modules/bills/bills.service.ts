@@ -6,6 +6,8 @@ import {
 import { ComplaintsService } from '../complaints/complaints.service';
 import { CreateBillDto } from './dto/bill.dto';
 import { BillsRepository } from './bills.repository';
+import { NotificationsService } from '../notifications/notifications.service';
+import { NotificationRecipient, NotificationType } from '../notifications/dto/notification.dto';
 
 export interface ServiceBill {
   id: number;
@@ -14,6 +16,8 @@ export interface ServiceBill {
   penalty: number;
   totalAmount: number;
   description?: string;
+  attachmentUrls?: string[];
+  attachmentNames?: string[];
   isPaid: boolean;
   status: 'submitted' | 'paid';
   generatedAt: string;
@@ -25,6 +29,7 @@ export class BillsService {
   constructor(
     private readonly complaintsService: ComplaintsService,
     private readonly billsRepository: BillsRepository,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   findAll(complaintId?: number): ServiceBill[] {
@@ -59,12 +64,22 @@ export class BillsService {
       penalty,
       totalAmount: dto.amount + penalty,
       description: dto.description,
+      attachmentUrls: dto.attachmentUrls,
+      attachmentNames: dto.attachmentNames,
       isPaid: false,
       status: 'submitted',
       generatedAt: new Date().toISOString().split('T')[0],
     });
 
     this.complaintsService.markCompletedAndBilled(dto.complaintId);
+    const complaint = this.complaintsService.findById(dto.complaintId);
+    this.notificationsService.create({
+      userId: complaint.ownerId,
+      complaintId: complaint.id,
+      type: NotificationType.PaymentDue,
+      recipient: NotificationRecipient.Owner,
+      message: `A service bill of ${bill.totalAmount} is ready for complaint #${complaint.id}.`,
+    });
     return bill;
   }
 
@@ -76,6 +91,16 @@ export class BillsService {
     bill.status = 'paid';
     bill.paidAt = new Date().toISOString().split('T')[0];
     this.complaintsService.markPaidAndClosed(bill.complaintId);
+    const complaint = this.complaintsService.findById(bill.complaintId);
+    if (complaint.assignedProviderId) {
+      this.notificationsService.create({
+        userId: complaint.assignedProviderId,
+        complaintId: complaint.id,
+        type: NotificationType.PaymentDue,
+        recipient: NotificationRecipient.ServiceProvider,
+        message: `Payment for complaint #${complaint.id} has been processed.`,
+      });
+    }
     return bill;
   }
 

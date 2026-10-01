@@ -4,10 +4,11 @@
     "title": "Water Leakage in Block A",
     "caption": "Continuous water leakage in corridor room 203 causing wet floors and damage.",
     "status": "Pending",
-    "serviceProviderQueue": ["plumber1@service.com", "maintenance@service.com"],
+    "serviceProviderQueue": [],
     "assignedTo": null,
-    "category": "Maintenance",
-    "issuedBy": "resident1@gmail.com",
+    "category": "Plumbing",
+    "issuedBy": "raj.owner@propsync.com",
+    "manager": "vijay.manager@propsync.com",
     "image": "images/water_leakage.jpg"
   },
   {
@@ -15,35 +16,83 @@
     "title": "Street Light Not Working",
     "caption": "Street light near the main gate has not been working for the past three days.",
     "status": "Approved",
-    "serviceProviderQueue": ["electrician@service.com", "lighting@service.com"],
+    "serviceProviderQueue": ["brightspark.electrical@propsync.com"],
     "assignedTo": null,
     "category": "Electrical",
-    "issuedBy": "resident2@gmail.com",
+    "issuedBy": "anita.owner@propsync.com",
+    "manager": "vijay.manager@propsync.com",
     "image": "images/street_light.jpg"
   },
   {
     "id": 3,
-    "title": "Garbage Not Collected",
+    "title": "Garbage Not Collected - Block C",
     "caption": "Garbage bins in Block C are overflowing and need immediate collection.",
     "status": "Estimating Cost",
-    "serviceProviderQueue": ["sanitation@service.com"],
-    "assignedTo": null,
+    "serviceProviderQueue": ["cleansweep.sanitation@propsync.com"],
+    "assignedTo": "cleansweep.sanitation@propsync.com",
     "category": "Sanitation",
-    "issuedBy": "resident3@gmail.com",
+    "issuedBy": "karan.owner@propsync.com",
+    "manager": "meera.manager@propsync.com",
     "image": "images/garbage_issue.jpg"
   },
   {
     "id": 4,
     "title": "Lift Not Working",
-    "caption": "Lift is not working since 2 days causing trouble to old and disable residents.",
+    "caption": "Lift is not working since two days, causing trouble for senior residents.",
     "status": "Assigned",
-    "serviceProviderQueue": [
-      "itsElectrics@gmail.com",
-      "rahul_electrics@gmail.com"
-    ],
-    "assignedTo": "itsElectrics@gmail.com",
-    "category": "Maintenance",
-    "issuedBy": "resident4@gmail.com",
-    "image": "images/wifi_issue.jpg"
+    "serviceProviderQueue": ["brightspark.electrical@propsync.com"],
+    "assignedTo": "brightspark.electrical@propsync.com",
+    "category": "Elevator",
+    "issuedBy": "anita.owner@propsync.com",
+    "manager": "meera.manager@propsync.com",
+    "image": "images/lift_issue.jpg"
+  },
+  {
+    "id": 5,
+    "title": "AC Not Cooling - Tower B, Apt 305",
+    "caption": "Air conditioning unit has stopped cooling. Residents are facing discomfort.",
+    "status": "Billed",
+    "serviceProviderQueue": ["coolair.hvac@propsync.com"],
+    "assignedTo": "coolair.hvac@propsync.com",
+    "category": "HVAC",
+    "issuedBy": "raj.owner@propsync.com",
+    "manager": "arjun.manager@propsync.com",
+    "image": "images/ac_issue.jpg"
+  },
+  {
+    "id": 6,
+    "title": "Electrical Wiring Issue - Tower B",
+    "caption": "Sparks from electrical wiring in common area corridor.",
+    "status": "Closed",
+    "serviceProviderQueue": ["brightspark.electrical@propsync.com"],
+    "assignedTo": "brightspark.electrical@propsync.com",
+    "category": "Electrical",
+    "issuedBy": "anita.owner@propsync.com",
+    "manager": "arjun.manager@propsync.com",
+    "image": "images/electrical_issue.jpg"
+  },
+  {
+    "id": 7,
+    "title": "Paint Work Needed - Tower C",
+    "caption": "Peeling paint on walls of Tower C common area needs repainting.",
+    "status": "Rejected",
+    "serviceProviderQueue": [],
+    "assignedTo": null,
+    "category": "Painting",
+    "issuedBy": "raj.owner@propsync.com",
+    "manager": "neha.manager@propsync.com",
+    "image": "images/paint_issue.jpg"
+  },
+  {
+    "id": 8,
+    "title": "Door Lock Broken - Apt 401",
+    "caption": "Main door lock is broken and cannot secure the apartment.",
+    "status": "Approved",
+    "serviceProviderQueue": ["quickfix.plumbing@propsync.com"],
+    "assignedTo": null,
+    "category": "Carpentry",
+    "issuedBy": "priya.owner@propsync.com",
+    "manager": "neha.manager@propsync.com",
+    "image": "images/door_lock.jpg"
   }
 ]

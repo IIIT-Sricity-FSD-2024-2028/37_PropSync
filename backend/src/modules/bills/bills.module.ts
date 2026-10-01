@@ -3,9 +3,10 @@ import { ComplaintsModule } from '../complaints/complaints.module';
 import { BillsController } from './bills.controller';
 import { BillsService } from './bills.service';
 import { BillsRepository } from './bills.repository';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [ComplaintsModule],
+  imports: [ComplaintsModule, NotificationsModule],
   controllers: [BillsController],
   providers: [BillsService, BillsRepository],
   exports: [BillsService],

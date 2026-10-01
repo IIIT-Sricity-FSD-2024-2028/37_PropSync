@@ -7,6 +7,7 @@ import {
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 
 export enum ComplaintStatus {
   Pending = 'pending',
@@ -62,12 +63,14 @@ export class CreateComplaintDto {
   priority: ComplaintPriority;
 
   @ApiProperty({ example: 1, description: 'ID of the owner submitting the complaint' })
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   ownerId: number;
 
   @ApiPropertyOptional({ example: 5, description: 'ID of the maintenance manager. If omitted, it is selected from the owner block.' })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   @Min(1)
   managerId?: number;
@@ -77,10 +80,13 @@ export class CreateComplaintDto {
   @IsString()
   location?: string;
 
-  @ApiPropertyOptional({ example: 'base64-encoded-image-string' })
-  @IsOptional()
-  @IsString()
-  photo?: string;
+  @ApiPropertyOptional({
+  example: '/uploads/complaints/example.jpg',
+  description: 'Path of the uploaded complaint photo',
+})
+@IsOptional()
+@IsString()
+photo?: string;
 }
 
 export class UpdateComplaintStatusDto {

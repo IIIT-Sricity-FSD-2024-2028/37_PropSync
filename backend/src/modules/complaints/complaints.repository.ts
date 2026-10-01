@@ -23,6 +23,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-08',
       updatedAt: '2024-03-08',
       interestedProviders: [],
+      rejectedProviders: [],
     },
     {
       id: 2,
@@ -39,6 +40,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-07',
       updatedAt: '2024-03-09',
       interestedProviders: [10],
+      rejectedProviders: [],
     },
     {
       id: 3,
@@ -58,6 +60,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-06',
       updatedAt: '2024-03-10',
       interestedProviders: [12],
+      rejectedProviders: [],
     },
     {
       id: 4,
@@ -75,6 +78,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-05',
       updatedAt: '2024-03-11',
       interestedProviders: [10],
+      rejectedProviders: [],
     },
     {
       id: 5,
@@ -94,6 +98,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-04',
       updatedAt: '2024-03-12',
       interestedProviders: [11],
+      rejectedProviders: [],
     },
     {
       id: 6,
@@ -112,6 +117,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-02',
       updatedAt: '2024-03-09',
       interestedProviders: [10],
+      rejectedProviders: [],
     },
     {
       id: 7,
@@ -128,6 +134,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-01',
       updatedAt: '2024-03-03',
       interestedProviders: [],
+      rejectedProviders: [],
     },
     {
       id: 8,
@@ -143,6 +150,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-09',
       updatedAt: '2024-03-11',
       interestedProviders: [9],
+      rejectedProviders: [],
     },
     {
       id: 9,
@@ -162,6 +170,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-10',
       updatedAt: '2024-03-12',
       interestedProviders: [9],
+      rejectedProviders: [],
     },
     {
       id: 10,
@@ -181,6 +190,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-11',
       updatedAt: '2024-03-13',
       interestedProviders: [10],
+      rejectedProviders: [],
     },
     {
       id: 11,
@@ -200,6 +210,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-01',
       updatedAt: '2024-03-08',
       interestedProviders: [11],
+      rejectedProviders: [],
     },
     {
       id: 12,
@@ -219,6 +230,7 @@ export class ComplaintsRepository {
       submittedAt: '2024-03-01',
       updatedAt: '2024-03-07',
       interestedProviders: [12],
+      rejectedProviders: [],
     },
   ];
 
@@ -233,7 +245,12 @@ export class ComplaintsRepository {
   }
 
   create(complaint: Omit<Complaint, 'id'>): Complaint {
-    const newComplaint = { ...complaint, id: this.idCounter++ };
+    const newComplaint = {
+      ...complaint,
+      id: this.idCounter++,
+      interestedProviders: complaint.interestedProviders || [],
+      rejectedProviders: complaint.rejectedProviders || [],
+    };
     this.complaints.push(newComplaint);
     return newComplaint;
   }

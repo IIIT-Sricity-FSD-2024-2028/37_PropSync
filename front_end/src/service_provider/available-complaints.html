@@ -1,98 +1,88 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Available Complaints — PropSync</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../css/styles.css" />
-    <script src="../js/route_guard.js"></script>
-  </head>
-  <body>
-    <script src="../js/complaint_bridge.js"></script>
-    <script src="../js/taskData.js"></script>
-    <script>
-      const API = "http://localhost:3000";
-      const SP_HEADERS = {
-        role: "service_provider",
-        "Content-Type": "application/json",
-      };
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Available Complaints — PropSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/route_guard.js"></script>
+</head>
+<body>
+<script src="../js/complaint_bridge.js"></script>
+<script src="../js/taskData.js"></script>
+<script>
+const API = 'http://localhost:3000';
+const toApiImageUrl = (photo) => !photo || /^(https?:|data:)/i.test(photo)
+  ? photo
+  : `${API}${photo.startsWith('/') ? '' : '/'}${photo}`;
+const SP_HEADERS = { 'role': 'service_provider', 'Content-Type': 'application/json' };
 
-      let currentProviderId = 4;
-      try {
-        const cu = JSON.parse(localStorage.getItem("currentUser"));
-        if (cu && cu.id) currentProviderId = cu.id;
-      } catch (e) {}
+let currentProviderId = 9;
+try {
+  const cu = JSON.parse(localStorage.getItem('currentUser'));
+  if (cu && cu.id) currentProviderId = Number(cu.id);
+} catch(e) {}
 
-      let allComplaints = [];
-      let selectedComplaint = null;
+let allComplaints = [];
+let selectedComplaint = null;
 
-      document.addEventListener("DOMContentLoaded", async () => {
-        try {
-          const res = await fetch(`${API}/complaints`, { headers: SP_HEADERS });
-          if (res.ok) {
-            const data = await res.json();
-            // Available = approved and NOT yet assigned to anyone
-            allComplaints = data.filter(
-              (c) => c.status === "approved" && !c.assignedProviderId,
-            );
-          }
-        } catch (e) {
-          console.error("Failed to fetch complaints:", e);
-        }
-        buildPage();
-      });
+async function loadComplaintsData() {
+  try {
+    const res = await fetch(`${API}/complaints`, {
+      headers: { ...SP_HEADERS, 'x-user-id': String(currentProviderId) }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // Available = approved and NOT yet assigned to anyone (visible to all providers)
+      allComplaints = data.filter(c => c.status === 'approved' && !c.assignedProviderId);
+    }
+  } catch(e) {
+    console.error("Failed to fetch complaints:", e);
+  }
+}
 
-      function urgencyClass(u) {
-        const p = u ? u.toLowerCase() : "";
-        if (p === "high") return "urgency-high";
-        if (p === "medium") return "urgency-medium";
-        return "urgency-low";
-      }
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadComplaintsData();
+  buildPage();
+});
 
-      function getFiltered() {
-        const search = (
-          document.getElementById("search-input")?.value || ""
-        ).toLowerCase();
-        const location =
-          document.getElementById("location-filter")?.value || "All";
-        return allComplaints.filter((c) => {
-          const mSearch =
-            String(c.id).toLowerCase().includes(search) ||
-            (c.title || "").toLowerCase().includes(search);
-          const mLocation =
-            location === "All" || (c.location || "").startsWith(location);
-          return mSearch && mLocation;
-        });
-      }
+function urgencyClass(u) {
+  const p = u ? u.toLowerCase() : '';
+  if (p === 'high') return 'urgency-high';
+  if (p === 'medium') return 'urgency-medium';
+  return 'urgency-low';
+}
 
-      function renderGrid() {
-        const filtered = getFiltered();
-        const grid = document.getElementById("complaints-grid");
-        if (!grid) return;
+function getFiltered() {
+  const search = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const location = document.getElementById('location-filter')?.value || 'All';
+  return allComplaints.filter(c => {
+    const mSearch = String(c.id).toLowerCase().includes(search) || (c.title||'').toLowerCase().includes(search);
+    const mLocation = location === 'All' || (c.location||'').startsWith(location);
+    return mSearch && mLocation;
+  });
+}
 
-        if (filtered.length === 0) {
-          grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+function renderGrid() {
+  const filtered = getFiltered();
+  const grid = document.getElementById('complaints-grid');
+  if (!grid) return;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
       <svg viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
       <h3>No Complaints Found</h3><p>No complaints match your current filters.</p>
     </div>`;
-          return;
-        }
+    return;
+  }
 
-        grid.innerHTML = filtered
-          .map((c) => {
-            const prioLabel = c.priority
-              ? c.priority.charAt(0).toUpperCase() + c.priority.slice(1)
-              : "Low";
-            const imageSrc =
-              c.photo ||
-              "https://placehold.co/400x180/e5e7eb/6b7280?text=No+Image";
-
-            return `
+  grid.innerHTML = filtered.map(c => {
+    const prioLabel = c.priority ? c.priority.charAt(0).toUpperCase() + c.priority.slice(1) : 'Low';
+    const imageSrc = toApiImageUrl(c.photo) || 'https://placehold.co/400x180/e5e7eb/6b7280?text=No+Image';
+    
+    return `
     <div class="complaint-grid-card" onclick="openModal('${c.id}')">
       <div class="complaint-grid-img-wrap">
         <img src="${imageSrc}" alt="${c.title}" class="complaint-grid-img"
@@ -102,18 +92,18 @@
       <div class="complaint-grid-body">
         <div class="complaint-grid-id-row">
           <span class="complaint-grid-id">C-${c.id}</span>
-          <span class="badge badge-yellow">${c.category || "General"}</span>
+          <span class="badge badge-yellow">${c.category || 'General'}</span>
         </div>
         <h3 class="complaint-grid-title">${c.title}</h3>
-        <p class="complaint-grid-desc" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.description || "No description provided."}</p>
+        <p class="complaint-grid-desc" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${c.description || 'No description provided.'}</p>
         <div class="complaint-grid-meta">
           <div class="complaint-grid-meta-row">
             <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            ${c.location || "Unknown Location"}
+            ${c.location || 'Unknown Location'}
           </div>
           <div class="complaint-grid-meta-row">
             <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            Deadline: ${c.deadline || "None"}
+            Deadline: ${c.deadline || 'None'}
           </div>
         </div>
         <button class="btn btn-accent btn-full" onclick="event.stopPropagation();openModal('${c.id}')">
@@ -121,122 +111,229 @@
         </button>
       </div>
     </div>
-  `;
-          })
-          .join("");
+  `}).join('');
 
-        const params = new URLSearchParams(window.location.search);
-        const openId = params.get("open");
-        if (openId) {
-          openModal(openId);
-          history.replaceState(null, "", "available-complaints.html");
+  const params = new URLSearchParams(window.location.search);
+  const openId = params.get('open');
+  if (openId) {
+    openModal(openId);
+    history.replaceState(null, '', 'available-complaints.html');
+  }
+}
+
+async function openModal(id) {
+  const numericId = String(id).replace(/^C-/i, '');
+  let c = allComplaints.find(item => String(item.id) === String(numericId));
+  try {
+    const res = await fetch(`${API}/complaints/${numericId}`, {
+      headers: { ...SP_HEADERS, 'x-user-id': String(currentProviderId) }
+    });
+    if (res.ok) {
+      const freshData = await res.json();
+      c = freshData;
+      const idx = allComplaints.findIndex(item => String(item.id) === String(numericId));
+      if (idx !== -1) allComplaints[idx] = freshData;
+    }
+  } catch (e) {
+    console.error('Failed to load complaint details:', e);
+  }
+  if (!c) return;
+  selectedComplaint = c;
+
+  const prioLabel = c.priority ? c.priority.charAt(0).toUpperCase() + c.priority.slice(1) : 'Low';
+  document.getElementById('modal-urgency').className = `badge urgency-badge ${urgencyClass(c.priority)}`;
+  document.getElementById('modal-urgency').textContent = `${prioLabel} Priority`;
+  
+  document.getElementById('modal-img').src = toApiImageUrl(c.photo) || 'https://placehold.co/400x260/e5e7eb/6b7280?text=No+Image';
+  document.getElementById('modal-id').textContent = `C-${c.id}`;
+  document.getElementById('modal-issue-type').textContent = c.category || 'General';
+  document.getElementById('modal-title').textContent = c.title;
+  document.getElementById('modal-desc').textContent = c.description || 'No description provided.';
+  document.getElementById('modal-location').textContent = c.location || 'Unknown Location';
+  document.getElementById('modal-deadline').textContent = c.deadline || 'None';
+
+  const hasInterested = c.interestedProviders && c.interestedProviders.includes(Number(currentProviderId));
+  const hasRejected = c.rejectedProviders && c.rejectedProviders.includes(Number(currentProviderId));
+
+  if (hasInterested) {
+    const queueCount = (c.interestedProviders && c.interestedProviders.length) || 1;
+    document.getElementById('modal-actions').innerHTML = `
+      <div class="modal-accepted">
+        <p class="main" style="color:#1a0dab;font-weight:700;">✓ Interest Registered!</p>
+        <p class="sub" style="margin-top:6px;">You have been added to the provider queue for this complaint.</p>
+        <p class="sub" style="margin-top:4px;color:#6B7280;">
+          ${queueCount} provider${queueCount !== 1 ? 's' : ''} in queue — the Maintenance Manager will select one.
+        </p>
+        <p class="sub" style="margin-top:8px;">You will see the task in 
+          <a href="assigned-tasks.html" style="color:#42a443;font-weight:700;">Assigned Tasks</a> 
+          once the Manager assigns you.
+        </p>
+      </div>`;
+  } else if (hasRejected) {
+    document.getElementById('modal-actions').innerHTML = `
+      <div class="modal-accepted" style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:12px;">
+        <p class="main" style="color:#dc2626;font-weight:700;">✕ Complaint Declined</p>
+        <p class="sub" style="margin-top:6px;color:#991b1b;">You have declined this complaint.</p>
+      </div>`;
+  } else {
+    document.getElementById('modal-actions').innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <button class="btn btn-accent btn-full" id="modal-accept-btn">Accept Complaint</button>
+          <button class="btn btn-red btn-full" id="modal-reject-btn">Reject Complaint</button>
+        </div>`;
+    document.getElementById('modal-accept-btn').addEventListener('click', () => handleAccept(c.id));
+    document.getElementById('modal-reject-btn').addEventListener('click', () => handleReject(c.id));
+  }
+
+  document.getElementById('complaint-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('complaint-modal').classList.remove('open');
+  selectedComplaint = null;
+}
+
+async function handleAccept(id) {
+  const numericId = String(id).replace(/^C-/i, '');
+  if (selectedComplaint?.interestedProviders?.includes(Number(currentProviderId))) {
+    return;
+  }
+  const acceptBtn = document.getElementById('modal-accept-btn');
+  if (acceptBtn) {
+    acceptBtn.disabled = true;
+    acceptBtn.textContent = 'Registering Interest...';
+  }
+
+  try {
+    const res = await fetch(`${API}/complaints/${numericId}/sp-interest`, {
+      method: 'PATCH',
+      headers: {
+        'role': 'service_provider',
+        'Content-Type': 'application/json',
+        'x-user-id': String(currentProviderId),
+      },
+      body: JSON.stringify({ providerId: Number(currentProviderId) }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      // Complaint remains in Available Complaints list — update its state in allComplaints & selectedComplaint
+      const compInList = allComplaints.find(c => String(c.id) === String(numericId));
+      if (compInList) {
+        if (!compInList.interestedProviders) compInList.interestedProviders = [];
+        if (!compInList.interestedProviders.includes(Number(currentProviderId))) {
+          compInList.interestedProviders.push(Number(currentProviderId));
+        }
+        if (compInList.rejectedProviders) {
+          compInList.rejectedProviders = compInList.rejectedProviders.filter(p => p !== Number(currentProviderId));
         }
       }
-
-      function openModal(id) {
-        selectedComplaint = allComplaints.find(
-          (c) => String(c.id) === String(id),
-        );
-        if (!selectedComplaint) return;
-        const c = selectedComplaint;
-
-        const prioLabel = c.priority
-          ? c.priority.charAt(0).toUpperCase() + c.priority.slice(1)
-          : "Low";
-        document.getElementById("modal-urgency").className =
-          `badge urgency-badge ${urgencyClass(c.priority)}`;
-        document.getElementById("modal-urgency").textContent =
-          `${prioLabel} Priority`;
-
-        document.getElementById("modal-img").src =
-          c.photo || "https://placehold.co/400x260/e5e7eb/6b7280?text=No+Image";
-        document.getElementById("modal-id").textContent = `C-${c.id}`;
-        document.getElementById("modal-issue-type").textContent =
-          c.category || "General";
-        document.getElementById("modal-title").textContent = c.title;
-        document.getElementById("modal-desc").textContent =
-          c.description || "No description provided.";
-        document.getElementById("modal-location").textContent =
-          c.location || "Unknown Location";
-        document.getElementById("modal-deadline").textContent =
-          c.deadline || "None";
-
-        document.getElementById("modal-actions").innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <button class="btn btn-accent btn-full" id="modal-accept-btn">Accept Complaint</button>
-        <button class="btn btn-red btn-full" id="modal-reject-btn">Reject Complaint</button>
-      </div>`;
-        document
-          .getElementById("modal-accept-btn")
-          .addEventListener("click", () => handleAccept(c.id));
-        document
-          .getElementById("modal-reject-btn")
-          .addEventListener("click", () => handleReject(c.id));
-
-        document.getElementById("complaint-modal").classList.add("open");
+      if (selectedComplaint) {
+        if (!selectedComplaint.interestedProviders) selectedComplaint.interestedProviders = [];
+        if (!selectedComplaint.interestedProviders.includes(Number(currentProviderId))) {
+          selectedComplaint.interestedProviders.push(Number(currentProviderId));
+        }
+        if (selectedComplaint.rejectedProviders) {
+          selectedComplaint.rejectedProviders = selectedComplaint.rejectedProviders.filter(p => p !== Number(currentProviderId));
+        }
       }
-
-      function closeModal() {
-        document.getElementById("complaint-modal").classList.remove("open");
-        selectedComplaint = null;
-      }
-
-      function handleAccept(id) {
-        const numericId = String(id).replace(/^C-/i, "");
-        const headers = {
-          role: "service_provider",
-          "Content-Type": "application/json",
-        };
-
-        fetch(`${API}/complaints/${numericId}/sp-interest`, {
-          method: "PATCH",
-          headers: headers,
-          body: JSON.stringify({ providerId: Number(currentProviderId) }),
-        })
-          .then((res) => res.json().then((data) => ({ ok: res.ok, data })))
-          .then(({ ok, data }) => {
-            if (ok) {
-              // Remove from available list — provider has joined the queue
-              allComplaints = allComplaints.filter(
-                (c) => String(c.id) !== String(numericId),
-              );
-              const queueCount = data.queue ? data.queue.length : 1;
-              document.getElementById("modal-actions").innerHTML = `
+      const queueCount = data.queue ? data.queue.length : (selectedComplaint?.interestedProviders?.length || 1);
+      document.getElementById('modal-actions').innerHTML = `
         <div class="modal-accepted">
-          <p class="main" style="color:#1a0dab;">✓ Interest Registered!</p>
+          <p class="main" style="color:#1a0dab;font-weight:700;">✓ Interest Registered!</p>
           <p class="sub" style="margin-top:6px;">You have been added to the provider queue for this complaint.</p>
           <p class="sub" style="margin-top:4px;color:#6B7280;">
-            ${queueCount} provider${queueCount !== 1 ? "s" : ""} in queue — the Maintenance Manager will select one.
+            ${queueCount} provider${queueCount !== 1 ? 's' : ''} in queue — the Maintenance Manager will select one.
           </p>
           <p class="sub" style="margin-top:8px;">You will see the task in 
             <a href="assigned-tasks.html" style="color:#42a443;font-weight:700;">Assigned Tasks</a> 
             once the Manager assigns you.
           </p>
         </div>`;
-              renderGrid();
-            } else {
-              alert(
-                "Could not register interest: " +
-                  (data.message || "Unknown error"),
-              );
-            }
-          })
-          .catch((e) => {
-            console.error("Fetch error:", e);
-            alert("Network error: " + e.message);
-          });
+      renderGrid();
+    } else {
+      alert('Could not register interest: ' + (data.message || 'Unknown error'));
+      if (acceptBtn) {
+        acceptBtn.disabled = false;
+        acceptBtn.textContent = 'Accept Complaint';
       }
+    }
+  } catch(e) {
+    console.error('Fetch error:', e);
+    alert('Network error: ' + e.message);
+    if (acceptBtn) {
+      acceptBtn.disabled = false;
+      acceptBtn.textContent = 'Accept Complaint';
+    }
+  }
+}
 
-      function handleReject(id) {
-        alert("Rejection recorded.");
-        closeModal();
+async function handleReject(id) {
+  const numericId = String(id).replace(/^C-/i, '');
+  const rejectBtn = document.getElementById('modal-reject-btn');
+  if (rejectBtn) {
+    rejectBtn.disabled = true;
+    rejectBtn.textContent = 'Recording Rejection...';
+  }
+
+  try {
+    const res = await fetch(`${API}/complaints/${numericId}/sp-reject`, {
+      method: 'PATCH',
+      headers: {
+        'role': 'service_provider',
+        'Content-Type': 'application/json',
+        'x-user-id': String(currentProviderId),
+      },
+      body: JSON.stringify({ providerId: Number(currentProviderId), reason: 'Declined by service provider' }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (res.ok) {
+      const compInList = allComplaints.find(c => String(c.id) === String(numericId));
+      if (compInList) {
+        if (!compInList.rejectedProviders) compInList.rejectedProviders = [];
+        if (!compInList.rejectedProviders.includes(Number(currentProviderId))) {
+          compInList.rejectedProviders.push(Number(currentProviderId));
+        }
+        if (compInList.interestedProviders) {
+          compInList.interestedProviders = compInList.interestedProviders.filter(p => p !== Number(currentProviderId));
+        }
       }
+      if (selectedComplaint) {
+        if (!selectedComplaint.rejectedProviders) selectedComplaint.rejectedProviders = [];
+        if (!selectedComplaint.rejectedProviders.includes(Number(currentProviderId))) {
+          selectedComplaint.rejectedProviders.push(Number(currentProviderId));
+        }
+        if (selectedComplaint.interestedProviders) {
+          selectedComplaint.interestedProviders = selectedComplaint.interestedProviders.filter(p => p !== Number(currentProviderId));
+        }
+      }
+      document.getElementById('modal-actions').innerHTML = `
+        <div class="modal-accepted" style="background:#fee2e2;border:1px solid #fecaca;border-radius:8px;padding:12px;">
+          <p class="main" style="color:#dc2626;font-weight:700;">✕ Complaint Declined</p>
+          <p class="sub" style="margin-top:6px;color:#991b1b;">You have declined this complaint.</p>
+        </div>`;
+      renderGrid();
+    } else {
+      alert('Could not record rejection: ' + (data.message || 'Unknown error'));
+      if (rejectBtn) {
+        rejectBtn.disabled = false;
+        rejectBtn.textContent = 'Reject Complaint';
+      }
+    }
+  } catch(e) {
+    console.error('Fetch error:', e);
+    alert('Network error: ' + e.message);
+    if (rejectBtn) {
+      rejectBtn.disabled = false;
+      rejectBtn.textContent = 'Reject Complaint';
+    }
+  }
+}
 
-      function buildPage() {
-        initShell("complaints");
-        const content = document.getElementById("page-content");
-        if (!content) return;
-        content.innerHTML = `
+function buildPage() {
+  initShell('complaints');
+  const content = document.getElementById('page-content');
+  if (!content) return;
+  content.innerHTML = `
     <div class="page-header">
       <h1>Available Complaints</h1>
       <p>View complaints related to your service category and choose to accept or reject them.</p>
@@ -339,14 +436,11 @@
     </div>
   `;
 
-        document
-          .getElementById("search-input")
-          ?.addEventListener("input", renderGrid);
-        document
-          .getElementById("location-filter")
-          ?.addEventListener("change", renderGrid);
-        renderGrid();
-      }
-    </script>
-  </body>
+  document.getElementById('search-input')?.addEventListener('input', renderGrid);
+  document.getElementById('location-filter')?.addEventListener('change', renderGrid);
+  renderGrid();
+}
+</script>
+</body>
 </html>
+

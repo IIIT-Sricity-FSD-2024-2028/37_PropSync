@@ -41,7 +41,12 @@ function navigate(pageId) {
 function renderPage(pageId) {
   switch (pageId) {
     case 'dashboard':     renderDashboard();     break;
-    case 'participants':  renderParticipants();  break;
+    case 'participants':
+      renderParticipants();
+      if (typeof refreshAdminParticipantsFromBackend === 'function') {
+        refreshAdminParticipantsFromBackend();
+      }
+      break;
     case 'complaints':    renderComplaints();    break;
     case 'notifications': renderNotifications(); break;
     case 'profile':       renderProfile();       break;
@@ -230,23 +235,44 @@ function initNotificationPageEvents() {
         try {
           const res = await fetch(`http://localhost:3000/users/${userId}/approve`, {
             method: 'PATCH',
-            headers: { role: 'admin' },
+            headers: { role: 'admin', 'x-user-id': String(getCurrentAdminUserId()) },
           });
           if (!res.ok) {
             const errorBody = await res.json().catch(() => ({}));
             throw new Error(errorBody.message || 'Could not approve user');
           }
           const approvedUser = await res.json();
+
+          // 1. Immediately add to the local participants list
           addApprovedUserToParticipants(approvedUser);
+
+          // 2. Remove this user from the pending users cache so the Accept
+          //    button disappears on the next poll and the badge updates.
+          try {
+            const cached = JSON.parse(localStorage.getItem('admin:pendingUsersCache')) || [];
+            const filtered = cached.filter(u => String(u.id) !== String(userId));
+            localStorage.setItem('admin:pendingUsersCache', JSON.stringify(filtered));
+          } catch { /* ignore cache errors */ }
+
           acceptBackendNotification(backendId);
           updateCachedBackendNotification(backendId, { isRead: true, isNew: false, accepted: true });
           await fetch(`http://localhost:3000/notifications/${backendId}/read`, {
             method: 'PATCH',
-            headers: { role: 'admin' },
+            headers: { role: 'admin', 'x-user-id': String(getCurrentAdminUserId()) },
           }).catch(() => {});
-          renderNotifications(true);
+
+          // 3. Rebuild notifications from the backend (removes pending-signup card)
+          await refreshBackendNotifications();
+          renderNotifications();
           updateNotifBadge();
-          alert(`${approvedUser.name} approved and added to Manage Participants.`);
+
+          // 4. Sync participants from backend and re-render the participants page
+          //    if it happens to be active, so the new user appears immediately.
+          if (typeof refreshAdminParticipantsFromBackend === 'function') {
+            await refreshAdminParticipantsFromBackend();
+          }
+
+          alert(`✅ ${approvedUser.name} has been approved and added to Manage Participants.`);
         } catch (error) {
           alert(error.message || 'Could not approve user');
         }
@@ -263,13 +289,13 @@ function initNotificationPageEvents() {
           updateCachedBackendNotification(n.backendId, { isRead: true, isNew: false });
           await fetch(`http://localhost:3000/notifications/${n.backendId}/read`, {
             method: 'PATCH',
-            headers: { role: 'admin' },
+            headers: { role: 'admin', 'x-user-id': String(getCurrentAdminUserId()) },
           }).catch(() => {});
         }
 
         notifs = notifs.map(x => x.id === id ? { ...x, isRead: true, isNew: false } : x);
         saveNotifications(notifs);
-        renderNotifications(true);
+        renderNotifications();
         updateNotifBadge();
         return;
       }
@@ -283,7 +309,7 @@ function initNotificationPageEvents() {
           try {
             const res = await fetch(`http://localhost:3000/users/${notification.requestedUserId}/reject`, {
               method: 'PATCH',
-              headers: { role: 'admin' },
+              headers: { role: 'admin', 'x-user-id': String(getCurrentAdminUserId()) },
             });
             if (!res.ok) {
               const errorBody = await res.json().catch(() => ({}));
@@ -296,22 +322,11 @@ function initNotificationPageEvents() {
         }
         if (notification && notification.backendId) hideBackendNotification(notification.backendId);
         saveNotifications(getNotifications().filter(n => n.id !== id));
-        renderNotifications(true);
+        renderNotifications();
         updateNotifBadge();
       }
     });
   }
-}
-
-function roleLabelFromApi(role) {
-  const labels = {
-    owner: 'Property Owner',
-    service_provider: 'Service Provider',
-    maintenance_manager: 'Maintenance Manager',
-    manager: 'Maintenance Manager',
-    admin: 'Administrator',
-  };
-  return labels[role] || role;
 }
 
 function addApprovedUserToParticipants(user) {

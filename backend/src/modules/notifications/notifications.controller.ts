@@ -1,8 +1,10 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
+  Headers,
   Param,
   ParseIntPipe,
   Patch,
@@ -28,7 +30,7 @@ import { NotificationsService } from './notifications.service';
 @ApiSecurity('role')
 @ApiHeader({
   name: 'role',
-  description: 'User role: owner | maintenance_manager | service_provider | admin',
+  description: 'User role: owner | maintenance_manager | service_provider | admin | super_user',
   required: true,
 })
 @UseGuards(RolesGuard)
@@ -37,20 +39,20 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin)
+  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin, Role.SuperUser)
   @ApiOperation({ summary: 'Get notifications for a user' })
   @ApiQuery({ name: 'userId', type: Number, required: false })
   @ApiQuery({ name: 'status', enum: ['read', 'unread'], required: false })
   @ApiResponse({ status: 200, description: 'Notification list' })
   findAll(
-    @Query('userId') userId?: number,
+    @Headers('x-user-id') userId: string,
     @Query('status') status?: 'read' | 'unread',
   ) {
-    return this.notificationsService.findAll(userId ? +userId : undefined, status);
+    return this.notificationsService.findAll(this.userId(userId), status);
   }
 
   @Get(':id')
-  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin)
+  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin, Role.SuperUser)
   @ApiOperation({ summary: 'Get notification by ID' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Notification details' })
@@ -67,12 +69,12 @@ export class NotificationsController {
   }
 
   @Patch(':id/read')
-  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin)
+  @Roles(Role.Owner, Role.MaintenanceManager, Role.ServiceProvider, Role.Admin, Role.SuperUser)
   @ApiOperation({ summary: 'Mark a notification as read' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'Marked as read' })
-  markRead(@Param('id', ParseIntPipe) id: number) {
-    return this.notificationsService.markRead(id);
+  markRead(@Headers('x-user-id') userId: string, @Param('id', ParseIntPipe) id: number) {
+    return this.notificationsService.markReadForUser(this.userId(userId), id);
   }
 
   @Patch('user/:userId/mark-all-read')
@@ -100,5 +102,11 @@ export class NotificationsController {
   @ApiResponse({ status: 200, description: 'All notifications cleared' })
   clearAll(@Param('userId', ParseIntPipe) userId: number) {
     return this.notificationsService.clearAll(userId);
+  }
+
+  private userId(value: string): number {
+    const id = Number(value);
+    if (!Number.isInteger(id) || id < 0) throw new BadRequestException('x-user-id header is required');
+    return id;
   }
 }

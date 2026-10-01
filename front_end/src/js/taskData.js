@@ -26,11 +26,7 @@ function getInitialProfile() {
   return {
     name,
     initials:
-      parts
-        .map((part) => part[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2) || "SP",
+      parts.map((part) => part[0]).join("").toUpperCase().slice(0, 2) || "SP",
     email: user.email || "quickfix.plumbing@propsync.com",
     phone: user.phone || "+91-9876543230",
     category: user.category || "Plumbing",
@@ -408,9 +404,7 @@ function updateTask(taskId, updates) {
   // If valid → update
   tasks[taskId] = { ...currentTask, ...updates };
 
-  console.warn(
-    "Deprecated local task update ignored; backend complaints API owns task state.",
-  );
+  console.warn('Deprecated local task update ignored; backend complaints API owns task state.');
 }
 function submitEstimate(taskId, estimate) {
   const tasks = getAllTasks();
@@ -422,9 +416,7 @@ function submitEstimate(taskId, estimate) {
       estimate,
       progress: { ...tasks[taskId].progress, estimateSent: true },
     };
-    console.warn(
-      "Deprecated local estimate update ignored; backend estimates API owns estimate state.",
-    );
+    console.warn('Deprecated local estimate update ignored; backend estimates API owns estimate state.');
     addNotification({
       type: "assignment",
       title: "Estimate Submitted",
@@ -436,10 +428,7 @@ function submitEstimate(taskId, estimate) {
     try {
       const mmNotifsRaw = localStorage.getItem("ps_notifications");
       const mmNotifs = mmNotifsRaw ? JSON.parse(mmNotifsRaw) : [];
-      const time = new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      });
+      const time = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
       mmNotifs.unshift({
         id: Date.now(),
         icon: "clipboard",
@@ -452,7 +441,7 @@ function submitEstimate(taskId, estimate) {
         userCreated: false,
       });
       localStorage.setItem("ps_notifications", JSON.stringify(mmNotifs));
-    } catch (e) {}
+    } catch(e) {}
   }
 }
 function getTasksArray() {
@@ -488,9 +477,7 @@ function addTask(complaint) {
       completed: false,
     },
   };
-  console.warn(
-    "Deprecated local assigned task add ignored; backend complaints API owns provider assignments.",
-  );
+  console.warn('Deprecated local assigned task add ignored; backend complaints API owns provider assignments.');
 }
 
 /* ─────────────────────────────────────────────
@@ -500,24 +487,20 @@ function getAllComplaints() {
   const stored = [];
 
   // 🔗 Bridge: merge in manager-approved owner complaints
-  if (typeof bridgeGetAll === "function") {
-    const bridgeApproved = bridgeGetAll().filter(
-      (c) => c.status === "approved",
-    );
-    const existingIds = new Set(stored.map((x) => x.id));
-    bridgeApproved.forEach((bc) => {
+  if (typeof bridgeGetAll === 'function') {
+    const bridgeApproved = bridgeGetAll().filter(c => c.status === 'approved');
+    const existingIds = new Set(stored.map(x => x.id));
+    bridgeApproved.forEach(bc => {
       if (!existingIds.has(bc.id)) {
         stored.push({
           id: bc.id,
           issueType: bc.category,
           title: bc.title,
           description: bc.caption,
-          imageUrl:
-            bc.image ||
-            "https://placehold.co/400x180/e5e7eb/6b7280?text=No+Image",
-          location: bc.location || "Property",
-          deadline: bc.deadline || "TBD",
-          urgency: bc.urgency || "Medium",
+          imageUrl: bc.image || 'https://placehold.co/400x180/e5e7eb/6b7280?text=No+Image',
+          location: bc.location || 'Property',
+          deadline: bc.deadline || 'TBD',
+          urgency: bc.urgency || 'Medium',
           accepted: false,
           rejected: false,
           fromOwner: true,
@@ -530,10 +513,7 @@ function getAllComplaints() {
   return stored;
 }
 function saveComplaints(list) {
-  console.warn(
-    "Deprecated local complaint save ignored; backend complaints API owns complaints.",
-    list,
-  );
+  console.warn('Deprecated local complaint save ignored; backend complaints API owns complaints.', list);
 }
 function acceptComplaint(id) {
   const list = getAllComplaints();
@@ -575,7 +555,46 @@ function saveProfile(data) {
    NOTIFICATIONS API
 ───────────────────────────────────────────── */
 function getNotifications() {
-  return JSON.parse(localStorage.getItem(NOTIFS_KEY));
+  const local = JSON.parse(localStorage.getItem(NOTIFS_KEY)) || [];
+  let backend = [];
+  try { backend = JSON.parse(localStorage.getItem('propSyncBackendNotifications')) || []; } catch {}
+  const localIds = new Set(local.map(n => String(n.id)));
+  return [...backend.filter(n => !localIds.has(String(n.id))), ...local];
+}
+
+async function refreshBackendNotifications() {
+  try {
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const providerId = currentUser.id || 9;
+    const response = await fetch(`http://localhost:3000/notifications?userId=${providerId}`, {
+      headers: { role: 'service_provider' },
+    });
+    if (!response.ok) return [];
+    const notifications = await response.json();
+    const typeMap = {
+      provider_assigned: 'assignment',
+      estimate_approved: 'approval',
+      work_completed: 'completion',
+      payment_due: 'completion',
+      overdue: 'deadline',
+      complaint_submitted: 'new_complaint',
+    };
+    const mapped = notifications.map(n => ({
+      id: `backend-${n.id}`,
+      backendId: n.id,
+      type: typeMap[n.type] || 'assignment',
+      title: n.title || 'Notification',
+      message: n.message || 'A new update is available.',
+      timestamp: n.time || n.createdAt || 'Just now',
+      read: n.status === 'read',
+      complaintId: n.complaintId || null,
+    }));
+    localStorage.setItem('propSyncBackendNotifications', JSON.stringify(mapped));
+    return mapped;
+  } catch (error) {
+    console.error('Failed to refresh service-provider notifications:', error);
+    return [];
+  }
 }
 function saveNotifications(list) {
   localStorage.setItem(NOTIFS_KEY, JSON.stringify(list));
@@ -599,13 +618,24 @@ function markNotifRead(id) {
   if (n) {
     n.read = true;
     saveNotifications(list);
+    if (n.backendId) {
+      fetch(`http://localhost:3000/notifications/${n.backendId}/read`, {
+        method: 'PATCH', headers: { role: 'service_provider' },
+      }).catch(() => {});
+    }
   }
 }
 function markAllNotifsRead() {
   saveNotifications(getNotifications().map((n) => ({ ...n, read: true })));
 }
 function deleteNotification(id) {
+  const notification = getNotifications().find(n => n.id === id);
   saveNotifications(getNotifications().filter((n) => n.id !== id));
+  if (notification?.backendId) {
+    fetch(`http://localhost:3000/notifications/${notification.backendId}`, {
+      method: 'DELETE', headers: { role: 'service_provider' },
+    }).catch(() => {});
+  }
 }
 function getUnreadCount() {
   return getNotifications().filter((n) => !n.read).length;

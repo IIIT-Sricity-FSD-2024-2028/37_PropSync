@@ -1,22 +1,114 @@
 [
   {
-    "email": "johndoe@gmail.com",
-    "password": "123456",
-    "role": "Owner"
+    "id": 1,
+    "name": "Raj Kumar",
+    "email": "raj.owner@propsync.com",
+    "password": "password123",
+    "role": "Owner",
+    "propertyUnit": "A-101",
+    "communityName": "Green Valley Society"
   },
   {
-    "email": "johndoe@gmail.com",
-    "password": "123456",
+    "id": 2,
+    "name": "Anita Sharma",
+    "email": "anita.owner@propsync.com",
+    "password": "password123",
+    "role": "Owner",
+    "propertyUnit": "B-202",
+    "communityName": "Green Valley Society"
+  },
+  {
+    "id": 3,
+    "name": "Karan Mehta",
+    "email": "karan.owner@propsync.com",
+    "password": "password123",
+    "role": "Owner",
+    "propertyUnit": "C-303",
+    "communityName": "Green Valley Society"
+  },
+  {
+    "id": 4,
+    "name": "Priya Nair",
+    "email": "priya.owner@propsync.com",
+    "password": "password123",
+    "role": "Owner",
+    "propertyUnit": "D-404",
+    "communityName": "Green Valley Society"
+  },
+  {
+    "id": 5,
+    "name": "Vijay Singh",
+    "email": "vijay.manager@propsync.com",
+    "password": "password123",
+    "role": "Maintenance Manager",
+    "block": "A",
+    "communityName": "Green Valley Society"
+  },
+  {
+    "id": 6,
+    "name": "Meera Joshi",
+    "email": "meera.manager@propsync.com",
+    "password": "password123",
+    "role": "Maintenance Manager",
+    "block": "B",
+    "communityName": "Green Valley Society"
+  },
+  {
+    "id": 7,
+    "name": "Arjun Reddy",
+    "email": "arjun.manager@propsync.com",
+    "password": "password123",
+    "role": "Maintenance Manager",
+    "block": "C",
+    "communityName": "Green Valley Society"
+  },
+  {
+    "id": 8,
+    "name": "Neha Kapoor",
+    "email": "neha.manager@propsync.com",
+    "password": "password123",
+    "role": "Maintenance Manager",
+    "block": "D",
+    "communityName": "Green Valley Society"
+  },
+  {
+    "email": "quickfix.plumbing@propsync.com",
+    "password": "password123",
     "role": "Service Provider"
   },
   {
-    "email": "johndoe@gmail.com",
-    "password": "123456",
-    "role": "Maintenance Manager"
+    "email": "brightspark.electrical@propsync.com",
+    "password": "password123",
+    "role": "Service Provider"
   },
   {
-    "email": "johndoe@gmail.com",
-    "password": "123456",
+    "email": "coolair.hvac@propsync.com",
+    "password": "password123",
+    "role": "Service Provider"
+  },
+  {
+    "email": "cleansweep.sanitation@propsync.com",
+    "password": "password123",
+    "role": "Service Provider"
+  },
+  {
+    "email": "admin.primary@propsync.com",
+    "password": "admin123",
+    "role": "Administrator"
+  },
+  {
+    "email": "admin.system@propsync.com",
+    "password": "admin123",
+    "role": "Administrator"
+  },
+  {
+    "email": "admin.finance@propsync.com",
+    "password": "admin123",
+    "role": "Administrator"
+  },
+  {
+    "email": "admin.operations@propsync.com",
+    "password": "admin123",
     "role": "Administrator"
   }
 ]

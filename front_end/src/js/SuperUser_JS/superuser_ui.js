@@ -4,21 +4,24 @@
 
 /* ---- Modal ---- */
 function openModal(id) {
-  document.getElementById(id).classList.remove("hidden");
+  const el = document.getElementById(id);
+  if (el) el.classList.remove("hidden");
 }
 
 function closeModal(id) {
-  document.getElementById(id).classList.add("hidden");
+  const el = document.getElementById(id);
+  if (el) el.classList.add("hidden");
 }
 
 /* ---- Sidebar ---- */
 function setSidebar(open) {
   AppState.sidebarOpen = open;
-  document.getElementById("sidebar").classList.toggle("open", open);
-  document.getElementById("sidebar-overlay").classList.toggle("open", open);
-  document
-    .getElementById("main-content")
-    .classList.toggle("sidebar-open", open);
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  const main = document.getElementById("main-content");
+  if (sidebar) sidebar.classList.toggle("open", open);
+  if (overlay) overlay.classList.toggle("open", open);
+  if (main) main.classList.toggle("sidebar-open", open);
 }
 
 /* ---- Header ---- */
@@ -43,6 +46,7 @@ function updateNotifBadge() {
   const notifs = getNotifications();
   const count = notifs.filter((n) => !n.isRead).length;
   const badge = document.getElementById("notif-badge");
+  if (!badge) return;
   if (count > 0) {
     badge.textContent = count;
     badge.classList.remove("hidden");
@@ -52,6 +56,6 @@ function updateNotifBadge() {
 }
 
 function handleLogout() {
-  alert("Logging out...");
+  localStorage.removeItem('currentUser');
   window.location.href = ".././login_signup.html";
 }

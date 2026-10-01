@@ -4,17 +4,23 @@
    COMPLAINTS
    ============================================================ */
 let complaintsData = [];
+const API_BASE_URL = "http://localhost:3000";
+
+function toApiImageUrl(photo) {
+  if (!photo || /^(https?:|data:)/i.test(photo)) return photo;
+  return `${API_BASE_URL}${photo.startsWith("/") ? "" : "/"}${photo}`;
+}
 
 const PS_OWNER_DIRECTORY = {
-  1: { name: "Raj Kumar", email: "raj.owner@propsync.com", unit: "A-101" },
-  2: { name: "Anita Sharma", email: "anita.owner@propsync.com", unit: "B-202" },
-  3: { name: "Karan Mehta", email: "karan.owner@propsync.com", unit: "C-303" },
-  4: { name: "Priya Nair", email: "priya.owner@propsync.com", unit: "D-404" },
+  1: { name: 'Raj Kumar', email: 'raj.owner@propsync.com', unit: 'A-101' },
+  2: { name: 'Anita Sharma', email: 'anita.owner@propsync.com', unit: 'B-202' },
+  3: { name: 'Karan Mehta', email: 'karan.owner@propsync.com', unit: 'C-303' },
+  4: { name: 'Priya Nair', email: 'priya.owner@propsync.com', unit: 'D-404' },
 };
 
 function getOwnerDisplay(ownerId) {
   const owner = PS_OWNER_DIRECTORY[Number(ownerId)];
-  if (!owner) return { name: `Owner #${ownerId || "-"}`, email: "", unit: "-" };
+  if (!owner) return { name: `Owner #${ownerId || '-'}`, email: '', unit: '-' };
   return owner;
 }
 
@@ -39,16 +45,13 @@ function updateMaintenanceManagerIdentityChrome() {
   const user = getMaintenanceManagerIdentity();
   const profile = getMaintenanceManagerProfile(user) || {};
   const fullName = profile.name || user.name || "Maintenance Manager";
-  const community =
-    profile.community || user.communityName || "Green Valley Society";
+  const community = profile.community || user.communityName || "Green Valley Society";
   const block = profile.block || user.block;
 
   document.querySelectorAll(".topbar-right span, .user-role").forEach((el) => {
     if (/Maintenance Manager/i.test(el.textContent)) {
       el.textContent = fullName;
-      el.title = block
-        ? `${fullName} - Block ${block} Maintenance Manager`
-        : `${fullName} · Maintenance Manager`;
+      el.title = block ? `${fullName} - Block ${block} Maintenance Manager` : `${fullName} · Maintenance Manager`;
     }
   });
 
@@ -63,89 +66,73 @@ function updateMaintenanceManagerIdentityChrome() {
   }
 }
 
-document.addEventListener(
-  "DOMContentLoaded",
-  updateMaintenanceManagerIdentityChrome,
-);
+document.addEventListener("DOMContentLoaded", updateMaintenanceManagerIdentityChrome);
 
 async function fetchComplaintsFromBackend() {
   try {
     const currentManager = getMaintenanceManagerIdentity();
     const managerId = currentManager.id || 5;
-    const res = await fetch(
-      `http://localhost:3000/complaints?managerId=${managerId}`,
-      { headers: { role: "maintenance_manager" } },
-    );
+    const res = await fetch(`http://localhost:3000/complaints?managerId=${managerId}`, { headers: { "role": "maintenance_manager" }});
     if (res.ok) {
       const data = await res.json();
       const STATUS_LABEL = {
-        pending: "Pending",
-        approved: "Approved",
-        assigned: "Assigned",
-        estimating_cost: "Estimating Cost",
-        in_progress: "In Progress",
-        completed: "Completed",
-        billed: "Billed",
-        paid: "Paid",
-        closed: "Closed",
-        rejected: "Rejected",
+        pending: 'Pending',
+        approved: 'Approved',
+        assigned: 'Assigned',
+        estimating_cost: 'Estimating Cost',
+        in_progress: 'In Progress',
+        completed: 'Completed',
+        billed: 'Billed',
+        paid: 'Paid',
+        closed: 'Closed',
+        rejected: 'Rejected'
       };
       const PRIORITY_LABEL = {
-        low: "Low",
-        medium: "Medium",
-        high: "High",
+        low: 'Low',
+        medium: 'Medium',
+        high: 'High',
       };
 
       // map backend data to frontend format expected by maintenance manager
-      complaintsData = data.map((c) => {
+      complaintsData = data.map(c => {
         const owner = getOwnerDisplay(c.ownerId);
         return {
           id: c.id,
           issue: c.title,
           description: c.description || "",
-          photo: c.photo || "",
+          photo: toApiImageUrl(c.photo) || "",
           location: c.location || "Property",
-          priority:
-            PRIORITY_LABEL[String(c.priority || "").toLowerCase()] ||
-            c.priority ||
-            "Medium",
+          priority: PRIORITY_LABEL[String(c.priority || '').toLowerCase()] || c.priority || "Medium",
           status: STATUS_LABEL[c.status] || c.status,
           // subStatus drives the action shown in the Approved tab.
-          subStatus:
-            c.status === "approved" &&
-            c.interestedProviders &&
-            c.interestedProviders.length > 0
-              ? "Waiting Provider Response"
-              : "",
-          interestedProviders: c.interestedProviders || [],
-          submitted: c.submittedAt ? c.submittedAt.split("T")[0] : "2024-03-01",
-          deadline: c.deadline || "",
-          provider: c.assignedProviderId
-            ? "Provider " + c.assignedProviderId
+          subStatus: (c.status === "approved" && c.interestedProviders && c.interestedProviders.length > 0)
+            ? "Waiting Provider Response"
             : "",
+          interestedProviders: c.interestedProviders || [],
+          submitted: c.submittedAt ? c.submittedAt.split('T')[0] : "2024-03-01",
+          deadline: c.deadline || "",
+          provider: c.assignedProviderId ? "Provider " + c.assignedProviderId : "",
           ownerId: c.ownerId,
           ownerName: owner.name,
           ownerEmail: owner.email,
           ownerUnit: owner.unit,
           submittedBy: `${owner.name} (${owner.unit})`,
-          rejectionReason: c.rejectionReason || "",
+          rejectionReason: c.rejectionReason || ""
         };
       });
-
+      
       // Update global complaints array which some code might still use directly
       complaints = complaintsData;
 
       // Trigger re-renders
       if (typeof renderTable === "function") renderTable();
-      if (typeof renderPendingComplaints === "function")
-        renderPendingComplaints();
-      if (typeof renderDashboardComplaints === "function")
-        renderDashboardComplaints();
+      if (typeof renderPendingComplaints === "function") renderPendingComplaints();
+      if (typeof renderDashboardComplaints === "function") renderDashboardComplaints();
       if (typeof renderKPIs === "function") renderKPIs();
       if (typeof renderDashNotifs === "function") renderDashNotifs();
       if (typeof updateNotifDot === "function") updateNotifDot();
     }
-  } catch (e) {
+  } catch(e) {
     console.error("Error fetching complaints", e);
   }
 }
@@ -172,19 +159,12 @@ async function approveComplaintById(id) {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        role: "maintenance_manager",
+        "role": "maintenance_manager"
       },
-      body: JSON.stringify({ status: "approved", deadline }),
+      body: JSON.stringify({ status: "approved", deadline })
     });
     if (res.ok) {
-      addNotification(
-        "checkmark",
-        "#DCFCE7",
-        "Complaint Approved",
-        `Complaint ${id} approved`,
-        "all",
-        false,
-      );
+      addNotification("checkmark", "#DCFCE7", "Complaint Approved", `Complaint ${id} approved`, "all", false);
       fetchComplaintsFromBackend();
       return true;
     }
@@ -218,19 +198,12 @@ async function rejectComplaintById(id, reason) {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        role: "maintenance_manager",
+        "role": "maintenance_manager"
       },
-      body: JSON.stringify({ status: "rejected", rejectionReason: reason }),
+      body: JSON.stringify({ status: "rejected", rejectionReason: reason })
     });
     if (res.ok) {
-      addNotification(
-        "cross",
-        "#FEE2E2",
-        "Complaint Rejected",
-        `Complaint ${id} rejected`,
-        "all",
-        false,
-      );
+      addNotification("cross", "#FEE2E2", "Complaint Rejected", `Complaint ${id} rejected`, "all", false);
       fetchComplaintsFromBackend();
     }
   } catch (e) {
@@ -245,13 +218,13 @@ let providers = [];
 
 async function fetchProvidersFromBackend() {
   try {
-    const res = await fetch(
-      "http://localhost:3000/users?role=service_provider",
-      { headers: { role: "maintenance_manager" } },
-    );
+    const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    const res = await fetch("http://localhost:3000/users?role=service_provider", {
+      headers: { "role": "maintenance_manager", "x-user-id": String(currentUser.id || '') },
+    });
     if (res.ok) {
       const data = await res.json();
-      providers = data.map((u) => ({
+      providers = data.map(u => ({
         id: u.id,
         name: u.name,
         specialty: u.category || "General",
@@ -259,11 +232,11 @@ async function fetchProvidersFromBackend() {
         jobs: Math.floor(Math.random() * 100) + 10,
         onTime: 80 + Math.floor(Math.random() * 20),
         avgCost: 1000 + Math.floor(Math.random() * 3000),
-        trend: Math.random() > 0.5 ? "up" : "down",
+        trend: Math.random() > 0.5 ? "up" : "down"
       }));
       if (typeof renderPerformance === "function") renderPerformance();
     }
-  } catch (e) {
+  } catch(e) {
     console.error("Error fetching providers", e);
   }
 }

@@ -18,15 +18,20 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface NotificationView extends Notification {
+  title: string;
+  time: string;
+}
+
 @Injectable()
 export class NotificationsService {
   constructor(
     private readonly notificationsRepository: NotificationsRepository,
   ) {}
 
-  findAll(userId?: number, status?: 'read' | 'unread'): Notification[] {
+  findAll(userId?: number, status?: 'read' | 'unread'): NotificationView[] {
     let result = this.notificationsRepository.findAll();
-    if (userId) {
+    if (userId !== undefined && !Number.isNaN(userId)) {
       result = result.filter((notification) => notification.userId === userId);
     }
     if (status) {
@@ -35,15 +40,15 @@ export class NotificationsService {
     return result.sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-    );
+    ).map((notification) => this.toView(notification));
   }
 
-  findById(id: number): Notification {
+  findById(id: number): NotificationView {
     const notification = this.notificationsRepository.findById(id);
     if (!notification) {
       throw new NotFoundException(`Notification ${id} not found`);
     }
-    return notification;
+    return this.toView(notification);
   }
 
   create(dto: CreateNotificationDto): Notification {
@@ -66,6 +71,7 @@ export class NotificationsService {
     userEmail: string,
     requestedRole: string,
     details?: string,
+    recipient: NotificationRecipient = NotificationRecipient.Admin,
   ): Notification {
     return this.create({
       userId: adminUserId,
@@ -77,12 +83,21 @@ export class NotificationsService {
         .filter(Boolean)
         .join(' '),
       type: NotificationType.Custom,
-      recipient: NotificationRecipient.Admin,
+      recipient,
     });
   }
 
   markRead(id: number): Notification {
     const notification = this.findById(id);
+    notification.status = 'read';
+    return notification;
+  }
+
+  markReadForUser(userId: number, id: number): Notification {
+    const notification = this.notificationsRepository.findById(id);
+    if (!notification || notification.userId !== userId) {
+      throw new NotFoundException(`Notification ${id} not found`);
+    }
     notification.status = 'read';
     return notification;
   }
@@ -98,6 +113,23 @@ export class NotificationsService {
     return { updated: count };
   }
 
+  /**
+   * A signup request is actionable only while its related account is pending.
+   * Once an administrator has made a decision, close every matching request
+   * notification so another browser session cannot present it as actionable.
+   */
+  markSignupRequestsRead(relatedUserId: number): void {
+    this.notificationsRepository.findAll().forEach((notification) => {
+      if (
+        notification.relatedUserId === relatedUserId &&
+        [NotificationRecipient.Admin, NotificationRecipient.SuperUser].includes(notification.recipient) &&
+        notification.status === 'unread'
+      ) {
+        notification.status = 'read';
+      }
+    });
+  }
+
   remove(id: number): { message: string } {
     if (!this.notificationsRepository.remove(id)) {
       throw new NotFoundException(`Notification ${id} not found`);
@@ -108,5 +140,25 @@ export class NotificationsService {
   clearAll(userId: number): { message: string } {
     const removed = this.notificationsRepository.removeByUser(userId);
     return { message: `Cleared ${removed} notifications for user ${userId}` };
+  }
+
+  private toView(notification: Notification): NotificationView {
+    const titles: Record<NotificationType, string> = {
+      [NotificationType.ComplaintSubmitted]: 'New Complaint Submitted',
+      [NotificationType.ComplaintApproved]: 'Complaint Approved',
+      [NotificationType.ComplaintRejected]: 'Complaint Rejected',
+      [NotificationType.ProviderAssigned]: 'Service Provider Assigned',
+      [NotificationType.EstimateSubmitted]: 'Estimate Submitted',
+      [NotificationType.EstimateApproved]: 'Estimate Reviewed',
+      [NotificationType.WorkCompleted]: 'Complaint Status Updated',
+      [NotificationType.PaymentDue]: 'Payment Update',
+      [NotificationType.Overdue]: 'Deadline Alert',
+      [NotificationType.Custom]: 'System Update',
+    };
+    return {
+      ...notification,
+      title: titles[notification.type],
+      time: new Date(notification.createdAt).toLocaleString(),
+    };
   }
 }

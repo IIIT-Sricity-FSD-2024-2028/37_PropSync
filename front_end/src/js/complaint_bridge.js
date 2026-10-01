@@ -14,25 +14,15 @@ function bridgeGetAll() {
 function bridgeSaveAll() {}
 
 function bridgeAddComplaint(complaint) {
-  console.warn(
-    "bridgeAddComplaint is deprecated. Use POST /complaints instead.",
-    complaint,
-  );
+  console.warn('bridgeAddComplaint is deprecated. Use POST /complaints instead.', complaint);
 }
 
 function bridgeApproveComplaint(id) {
-  console.warn(
-    "bridgeApproveComplaint is deprecated. Use PATCH /complaints/:id/status instead.",
-    id,
-  );
+  console.warn('bridgeApproveComplaint is deprecated. Use PATCH /complaints/:id/status instead.', id);
 }
 
 function bridgeRejectComplaint(id, reason) {
-  console.warn(
-    "bridgeRejectComplaint is deprecated. Use PATCH /complaints/:id/status instead.",
-    id,
-    reason,
-  );
+  console.warn('bridgeRejectComplaint is deprecated. Use PATCH /complaints/:id/status instead.', id, reason);
 }
 
 function bridgeGetOwnerComplaints() {

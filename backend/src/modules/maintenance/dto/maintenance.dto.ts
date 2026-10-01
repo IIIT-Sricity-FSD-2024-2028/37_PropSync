@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNumber, IsOptional, IsPositive, IsString, Matches, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsPositive, IsString, Matches, Min } from 'class-validator';
 
 export class CreateMaintenanceDto {
   @ApiProperty({
@@ -27,3 +27,36 @@ export class CreateMaintenanceDto {
   @Min(1)
   managerId?: number;
 }
+
+export class SubmitTransactionDto {
+  @ApiProperty({
+    example: '23464263626256',
+    description: 'Transaction ID entered by owner',
+  })
+  @IsString()
+  @IsNotEmpty({ message: 'transactionId is required' })
+  transactionId: string;
+}
+
+export class SettleFeeDto {
+  @ApiProperty({
+    example: 5,
+    description: 'Manager ID whose collected platform fees are being settled',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  managerId?: number;
+
+  @ApiProperty({
+    example: 1,
+    description: 'Specific payment ID to settle fee for',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  paymentId?: number;
+}
+

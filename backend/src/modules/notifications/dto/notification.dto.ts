@@ -20,6 +20,7 @@ export enum NotificationRecipient {
   ServiceProvider = 'service_provider',
   MaintenanceManager = 'maintenance_manager',
   Admin = 'admin',
+  SuperUser = 'super_user',
 }
 
 export class CreateNotificationDto {

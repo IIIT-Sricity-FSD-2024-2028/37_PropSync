@@ -1,6 +1,7 @@
 [
   {
     "id": 1,
+    "ownerEmail": "raj.owner@propsync.com",
     "month": "March 2026",
     "amount": 350,
     "status": "pending",
@@ -9,26 +10,29 @@
   },
   {
     "id": 2,
-    "month": "February 2026",
+    "ownerEmail": "anita.owner@propsync.com",
+    "month": "March 2026",
     "amount": 350,
-    "status": "paid",
-    "paidOn": "2026-02-10",
-    "receipt": "sample_receipt.png"
+    "status": "pending",
+    "paidOn": null,
+    "receipt": null
   },
   {
     "id": 3,
-    "month": "January 2026",
+    "ownerEmail": "karan.owner@propsync.com",
+    "month": "March 2026",
     "amount": 350,
     "status": "paid",
-    "paidOn": "2026-02-10",
+    "paidOn": "2026-03-10",
     "receipt": "sample_receipt.png"
   },
   {
     "id": 4,
-    "month": "December 2025",
+    "ownerEmail": "priya.owner@propsync.com",
+    "month": "March 2026",
     "amount": 350,
     "status": "paid",
-    "paidOn": "2026-02-10",
+    "paidOn": "2026-03-11",
     "receipt": "sample_receipt.png"
   }
 ]

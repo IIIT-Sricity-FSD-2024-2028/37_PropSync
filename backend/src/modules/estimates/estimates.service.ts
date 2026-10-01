@@ -13,6 +13,8 @@ export interface ServiceEstimate {
   providerId: number;
   estimatedCost: number;
   notes?: string;
+  documentUrl?: string;
+  documentName?: string;
   approved: boolean | null;
   managerNote?: string;
   submittedAt: string;
@@ -68,14 +70,17 @@ export class EstimatesService {
       dto.providerId,
     );
 
-    return this.estimatesRepository.create({
+    const estimate = this.estimatesRepository.create({
       complaintId: dto.complaintId,
       providerId: dto.providerId,
       estimatedCost: dto.estimatedCost,
       notes: dto.notes,
+      documentUrl: dto.documentUrl,
+      documentName: dto.documentName,
       approved: null,
       submittedAt: new Date().toISOString().split('T')[0],
     });
+    return estimate;
   }
 
   review(id: number, dto: ApproveEstimateDto): ServiceEstimate {

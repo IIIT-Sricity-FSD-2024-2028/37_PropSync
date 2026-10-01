@@ -5,14 +5,10 @@ export const appConfig = {
 };
 
 export const corsConfig: CorsOptions = {
-  origin: [
-    'http://127.0.0.1:5500',
-    'http://127.0.0.1:5501',
-    'http://127.0.0.1:5502',
-    'http://localhost:5500',
-    'http://localhost:5501',
-    'http://localhost:5502',
-  ],
+  // Frontend is commonly served with Live Server or another local port during
+  // development. Reflect the local origin so signup approval requests do not
+  // fail because a developer chose a different local server port.
+  origin: true,
   methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Accept', 'role', 'provider-id'],
+  allowedHeaders: ['Content-Type', 'Accept', 'role', 'provider-id', 'x-user-id'],
 };

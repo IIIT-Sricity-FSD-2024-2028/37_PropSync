@@ -6,6 +6,7 @@
 
 const PAGE_TEMPLATE_IDS = [
   'tpl-page-dashboard',
+  'tpl-page-revenue',
   'tpl-page-participants',
   'tpl-page-roles',
   'tpl-page-configuration',

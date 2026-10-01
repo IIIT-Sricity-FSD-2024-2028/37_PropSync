@@ -11,10 +11,10 @@
     />
     <link rel="stylesheet" href="../css/styles.css" />
     <script src="../js/route_guard.js"></script>
-  </head>
+</head>
   <body>
     <script src="../js/complaint_bridge.js"></script>
-    <script src="../js/taskData.js"></script>
+<script src="../js/taskData.js"></script>
     <script>
       let typeFilter = "All";
 
@@ -120,7 +120,8 @@
         renderNotifications();
       }
 
-      function buildPage() {
+      async function buildPage() {
+        await refreshBackendNotifications();
         initShell("notifications");
         const content = document.getElementById("page-content");
         content.innerHTML = `
@@ -165,3 +166,5 @@
     </script>
   </body>
 </html>
+
+

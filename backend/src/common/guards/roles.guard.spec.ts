@@ -51,4 +51,12 @@ describe('RolesGuard', () => {
 
     expect(guard.canActivate(mockContext(Role.Admin))).toBe(true);
   });
+
+  it('includes x-user-id and role in corsConfig allowedHeaders', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { corsConfig } = require('../../config/app.config');
+    expect(corsConfig.allowedHeaders).toContain('x-user-id');
+    expect(corsConfig.allowedHeaders).toContain('role');
+    expect(corsConfig.allowedHeaders).toContain('Content-Type');
+  });
 });

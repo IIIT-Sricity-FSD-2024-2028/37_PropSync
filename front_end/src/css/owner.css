@@ -370,6 +370,7 @@ body {
   margin-bottom: 16px;
 
   display: flex;
+  gap: 14px;
   justify-content: space-between;
   align-items: flex-start;
 
@@ -379,7 +380,18 @@ body {
 /* Left */
 
 .card-left {
+  flex: 1;
   max-width: 85%;
+}
+
+.complaint-thumb {
+  width: 96px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  flex-shrink: 0;
+  background: #f3f4f6;
 }
 
 .card-title-row {
@@ -481,7 +493,8 @@ body {
 }
 #complaintForm input,
 #complaintForm textarea,
-#complaint_cat {
+#complaint_cat,
+#complaint_priority {
   width: 100%;
   padding: 12px;
   border-radius: 8px;
@@ -498,7 +511,8 @@ body {
 }
 #complaintForm input:focus,
 #complaintForm textarea:focus,
-#complaint_cat:focus {
+#complaint_cat:focus,
+#complaint_priority:focus {
   outline: none;
   border-color: #16a34a;
   box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);

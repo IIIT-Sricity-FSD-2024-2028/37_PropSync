@@ -19,7 +19,7 @@
 </div>
   <nav class="sidebar-nav">
     <a class="nav-link" href="dashboard.html"><span class="nav-icon">🏠</span> Dashboard</a>
-    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> New Complaint <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
+    <a class="nav-link" href="complaints.html"><span class="nav-icon">📋</span> Complaints <span class="nav-badge notif-complaints-count" style="display:none;"></span></a>
     <div class="nav-divider"></div>
     <a class="nav-link" href="service-estimate.html"><span class="nav-icon">📄</span> Service Estimate</a>
     <a class="nav-link" href="service-bills.html"><span class="nav-icon">💰</span> Payment History</a>
@@ -133,7 +133,9 @@ async function fetchAllData() {
             provider: `Provider #${e.providerId}`,
             cost: `₹${e.estimatedCost}`,
             completionTime: '—', // Not in DTO anymore, use notes instead if needed
-            desc: e.notes || '—'
+            desc: e.notes || '—',
+            documentName: e.documentName,
+            documentUrl: e.documentUrl
           };
         });
 
@@ -201,6 +203,11 @@ function renderPending() {
         <div style="text-align:right;"><div class="estimate-cost">${e.cost}<small>Estimated cost</small></div></div>
       </div>
       <div class="estimate-desc">${e.desc}</div>
+      <div style="margin:0 0 14px;font-size:13px;">
+        ${e.documentUrl
+          ? `<a href="${e.documentUrl}" target="_blank" rel="noopener" style="color:#16A34A;font-weight:700;text-decoration:none;">📎 View submitted estimate: ${e.documentName || 'Document'}</a>`
+          : '<span style="color:#DC2626;">No estimate document attached.</span>'}
+      </div>
       <div class="estimate-actions">
         <button class="btn btn-success" onclick="approveEst(${e.id}, ${e.complaintId})">Approve Estimate</button>
         <button class="btn btn-danger" onclick="rejectEst(${e.id}, ${e.complaintId})">Reject Estimate</button>

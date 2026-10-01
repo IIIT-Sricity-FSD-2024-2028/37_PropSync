@@ -13,6 +13,7 @@ export enum UserRole {
   MaintenanceManager = 'maintenance_manager',
   ServiceProvider = 'service_provider',
   Admin = 'admin',
+  SuperUser = 'super_user',
 }
 
 export class CreateUserDto {
@@ -44,7 +45,7 @@ export class CreateUserDto {
   @IsString()
   propertyUnit?: string;
 
-  @ApiPropertyOptional({ example: 'Green Valley Society' })
+  @ApiPropertyOptional({ example: 'Green Valley Society', description: 'Required for Owner, Maintenance Manager and Community Administrator' })
   @IsOptional()
   @IsString()
   communityName?: string;
@@ -54,7 +55,7 @@ export class CreateUserDto {
   @IsString()
   category?: string;
 
-  @ApiPropertyOptional({ example: 'A', description: 'Block handled by a Maintenance Manager' })
+  @ApiPropertyOptional({ example: 'A', description: 'Required block handled by a Maintenance Manager' })
   @IsOptional()
   @IsString()
   block?: string;

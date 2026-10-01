@@ -1,13 +1,13 @@
 /* ============================================================
-   MAIN — Bootstrap: load shell, then bind all events
-   ============================================================
-
-   Flow:
-   1. DOMContentLoaded fires
-   2. loadAppShell() fetches all HTML fragments (loader.js)
-   3. Once the DOM is fully assembled, bind ALL event listeners
-   4. Kick off initial navigation (hash-based routing)
+   MAIN — Bootstrap: load shell, then bind all events safely
    ============================================================ */
+
+function safeOn(elementOrId, event, handler) {
+  const el = typeof elementOrId === 'string' ? document.getElementById(elementOrId) : elementOrId;
+  if (el) {
+    el.addEventListener(event, handler);
+  }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
 
@@ -46,25 +46,29 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ────────────────────────────────────────────────────────
        HEADER interactions
        ──────────────────────────────────────────────────────── */
-    document.getElementById('menu-toggle').addEventListener('click', () => setSidebar(!AppState.sidebarOpen));
-    document.getElementById('sidebar-overlay').addEventListener('click', () => setSidebar(false));
+    safeOn('menu-toggle', 'click', () => setSidebar(!AppState.sidebarOpen));
+    safeOn('sidebar-overlay', 'click', () => setSidebar(false));
+    safeOn('sidebar-close', 'click', () => setSidebar(false));
 
-    document.getElementById('user-btn').addEventListener('click', () => {
+    safeOn('user-btn', 'click', () => {
       AppState.userDropdownOpen = !AppState.userDropdownOpen;
-      document.getElementById('user-dropdown').classList.toggle('open', AppState.userDropdownOpen);
-      document.getElementById('user-chevron').classList.toggle('rotated', AppState.userDropdownOpen);
+      const dd = document.getElementById('user-dropdown');
+      const ch = document.getElementById('user-chevron');
+      if (dd) dd.classList.toggle('open', AppState.userDropdownOpen);
+      if (ch) ch.classList.toggle('rotated', AppState.userDropdownOpen);
     });
 
-    document.getElementById('notif-bell-btn').addEventListener('click', () => navigate('notifications'));
+    safeOn('notif-bell-btn', 'click', () => navigate('notifications'));
 
-    document.getElementById('profile-dropdown-btn').addEventListener('click', () => {
+    safeOn('profile-dropdown-btn', 'click', () => {
       AppState.userDropdownOpen = false;
-      document.getElementById('user-dropdown').classList.remove('open');
+      const dd = document.getElementById('user-dropdown');
+      if (dd) dd.classList.remove('open');
       navigate('profile');
     });
 
-    document.getElementById('logout-btn').addEventListener('click', handleLogout);
-    document.getElementById('logout-dropdown-btn').addEventListener('click', handleLogout);
+    safeOn('logout-btn', 'click', handleLogout);
+    safeOn('logout-dropdown-btn', 'click', handleLogout);
 
     // Close dropdowns when clicking outside
     document.addEventListener('click', e => {
@@ -91,57 +95,51 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ────────────────────────────────────────────────────────
        MODAL — Add Participant
        ──────────────────────────────────────────────────────── */
-    document.getElementById('ap-name').addEventListener('input', function () {
+    safeOn('ap-name', 'input', function () {
       const err = validateParticipantName(this.value);
-      document.getElementById('ap-name-error').textContent = err;
+      const errEl = document.getElementById('ap-name-error');
+      if (errEl) errEl.textContent = err;
       this.classList.toggle('error', !!err);
     });
-    document.getElementById('ap-email').addEventListener('input', function () {
-      const err = validateParticipantEmail(this.value);
-      document.getElementById('ap-email-error').textContent = err;
-      this.classList.toggle('error', !!err);
-    });
-    document.getElementById('ap-contact').addEventListener('input', function () {
+    safeOn('ap-contact', 'input', function () {
       const err = validateParticipantContact(this.value);
-      document.getElementById('ap-contact-error').textContent = err;
+      const errEl = document.getElementById('ap-contact-error');
+      if (errEl) errEl.textContent = err;
       this.classList.toggle('error', !!err);
     });
-    document.getElementById('ap-password').addEventListener('input', function () {
+    safeOn('ap-password', 'input', function () {
       const err = validateParticipantPassword(this.value);
-      document.getElementById('ap-password-error').textContent = err;
+      const errEl = document.getElementById('ap-password-error');
+      if (errEl) errEl.textContent = err;
       this.classList.toggle('error', !!err);
     });
 
-    document.getElementById('ap-save-btn').addEventListener('click', () => {
-      const name     = document.getElementById('ap-name').value.trim();
-      const email    = document.getElementById('ap-email').value.trim();
-      const contact  = document.getElementById('ap-contact').value.trim();
-      const password = document.getElementById('ap-password').value;
-      const role     = document.getElementById('ap-role').value;
+    safeOn('ap-save-btn', 'click', () => {
+      const nameEl = document.getElementById('ap-name');
+      const emailEl = document.getElementById('ap-email');
+      const contactEl = document.getElementById('ap-contact');
+      const passEl = document.getElementById('ap-password');
+      const roleEl = document.getElementById('ap-role');
 
-      let hasError = false;
+      if (!nameEl || !emailEl || !contactEl || !passEl) return;
 
-      const nameErr = validateParticipantName(name) || (!name ? 'Full Name is required' : '');
-      document.getElementById('ap-name-error').textContent = nameErr;
-      document.getElementById('ap-name').classList.toggle('error', !!nameErr);
-      if (nameErr) hasError = true;
+      const name     = nameEl.value.trim();
+      const email    = emailEl.value.trim();
+      const contact  = contactEl.value.trim();
+      const password = passEl.value;
+      const role     = roleEl ? roleEl.value : 'Property Owner';
 
-      const emailErr = validateParticipantEmail(email);
-      document.getElementById('ap-email-error').textContent = emailErr;
-      document.getElementById('ap-email').classList.toggle('error', !!emailErr);
-      if (emailErr) hasError = true;
-
+      if (!name || !email || !contact || !password) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      const nameErr    = validateParticipantName(name);
       const contactErr = validateParticipantContact(contact);
-      document.getElementById('ap-contact-error').textContent = contactErr;
-      document.getElementById('ap-contact').classList.toggle('error', !!contactErr);
-      if (contactErr) hasError = true;
-
-      const passErr = validateParticipantPassword(password) || (!password ? 'Password is required' : '');
-      document.getElementById('ap-password-error').textContent = passErr;
-      document.getElementById('ap-password').classList.toggle('error', !!passErr);
-      if (passErr) hasError = true;
-
-      if (hasError) return;
+      const passErr    = validateParticipantPassword(password);
+      if (nameErr || contactErr || passErr) {
+        alert('Please fix the validation errors before submitting');
+        return;
+      }
 
       const list = getParticipants();
       list.push({ id: generateParticipantId(list), name, email, role, status: 'Active' });
@@ -149,57 +147,42 @@ document.addEventListener('DOMContentLoaded', () => {
       renderParticipants();
       closeModal('add-participant-modal');
 
-      ['ap-name', 'ap-email', 'ap-contact', 'ap-password'].forEach(id => document.getElementById(id).value = '');
-      document.getElementById('ap-role').value = 'Property Owner';
-      ['ap-name-error', 'ap-email-error', 'ap-contact-error', 'ap-password-error'].forEach(id => document.getElementById(id).textContent = '');
-      ['ap-name', 'ap-email', 'ap-contact', 'ap-password'].forEach(id => document.getElementById(id).classList.remove('error'));
+      ['ap-name', 'ap-email', 'ap-contact', 'ap-password'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      if (roleEl) roleEl.value = 'Property Owner';
+      ['ap-name-error', 'ap-contact-error', 'ap-password-error'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+      });
     });
 
     /* ────────────────────────────────────────────────────────
        MODAL — Edit Participant
        ──────────────────────────────────────────────────────── */
-    document.getElementById('ep-name').addEventListener('input', function () {
-      const err = validateParticipantName(this.value);
-      document.getElementById('ep-name-error').textContent = err;
-      this.classList.toggle('error', !!err);
+    safeOn('ep-name', 'input', function () {
+      const errEl = document.getElementById('ep-name-error');
+      if (errEl) errEl.textContent = validateParticipantName(this.value);
     });
-    document.getElementById('ep-email').addEventListener('input', function () {
-      const err = validateParticipantEmail(this.value);
-      document.getElementById('ep-email-error').textContent = err;
-      this.classList.toggle('error', !!err);
-    });
-    document.getElementById('ep-contact').addEventListener('input', function () {
-      const err = validateParticipantContact(this.value);
-      document.getElementById('ep-contact-error').textContent = err;
-      this.classList.toggle('error', !!err);
+    safeOn('ep-contact', 'input', function () {
+      const errEl = document.getElementById('ep-contact-error');
+      if (errEl) errEl.textContent = validateParticipantContact(this.value);
     });
 
-    document.getElementById('ep-save-btn').addEventListener('click', () => {
-      const id      = document.getElementById('ep-id').value;
-      const name    = document.getElementById('ep-name').value.trim();
-      const email   = document.getElementById('ep-email').value.trim();
-      const contact = document.getElementById('ep-contact').value.trim();
-      const role    = document.getElementById('ep-role').value;
+    safeOn('ep-save-btn', 'click', () => {
+      const idEl = document.getElementById('ep-id');
+      const nameEl = document.getElementById('ep-name');
+      const emailEl = document.getElementById('ep-email');
+      const roleEl = document.getElementById('ep-role');
 
-      let hasError = false;
+      if (!idEl || !nameEl || !emailEl) return;
 
-      const nameErr = validateParticipantName(name) || (!name ? 'Full Name is required' : '');
-      document.getElementById('ep-name-error').textContent = nameErr;
-      document.getElementById('ep-name').classList.toggle('error', !!nameErr);
-      if (nameErr) hasError = true;
-
-      const emailErr = validateParticipantEmail(email);
-      document.getElementById('ep-email-error').textContent = emailErr;
-      document.getElementById('ep-email').classList.toggle('error', !!emailErr);
-      if (emailErr) hasError = true;
-
-      const contactErr = validateParticipantContact(contact);
-      document.getElementById('ep-contact-error').textContent = contactErr;
-      document.getElementById('ep-contact').classList.toggle('error', !!contactErr);
-      if (contactErr) hasError = true;
-
-      if (hasError) return;
-
+      const id    = idEl.value;
+      const name  = nameEl.value.trim();
+      const email = emailEl.value.trim();
+      const role  = roleEl ? roleEl.value : 'Property Owner';
+      if (!name || !email) { alert('Please fill in all required fields'); return; }
       const list = getParticipants().map(p => p.id === id ? { ...p, name, email, role } : p);
       saveParticipants(list);
       renderParticipants();
@@ -207,150 +190,71 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /* ────────────────────────────────────────────────────────
-       MODAL — Add Complaint
-       ──────────────────────────────────────────────────────── */
-    document.getElementById('ac-save-btn').addEventListener('click', () => {
-      const title      = document.getElementById('ac-title').value.trim();
-      const desc       = document.getElementById('ac-desc').value.trim();
-      const provider   = document.getElementById('ac-provider').value.trim();
-      const provType   = document.getElementById('ac-provider-type').value;
-      const property   = document.getElementById('ac-property').value.trim();
-      const reportedBy = document.getElementById('ac-reported-by').value.trim();
-      const date       = document.getElementById('ac-date').value;
-      const status     = document.getElementById('ac-status').value;
-      const priority   = document.getElementById('ac-priority').value;
-      const cost       = document.getElementById('ac-cost').value.trim();
-
-      if (!title || !desc || !provider || !property || !reportedBy) {
-        alert('Please fill in all required fields');
-        return;
-      }
-      const list  = getComplaints();
-      const newId = `CPL${String(list.length + 1).padStart(3, '0')}`;
-      list.push({ id: newId, title, description: desc, serviceProvider: provider, providerType: provType, property, reportedBy, reportedDate: date, status, priority, estimatedCost: cost || undefined });
-      saveComplaints(list);
-      renderComplaints();
-      closeModal('add-complaint-modal');
-      ['ac-title', 'ac-desc', 'ac-provider', 'ac-property', 'ac-reported-by', 'ac-cost'].forEach(id => document.getElementById(id).value = '');
-    });
-
-    /* ────────────────────────────────────────────────────────
-       MODAL — Edit Complaint
-       ──────────────────────────────────────────────────────── */
-    document.getElementById('ec-save-btn').addEventListener('click', () => {
-      const id   = document.getElementById('ec-id').value;
-      const list = getComplaints().map(c => {
-        if (c.id !== id) return c;
-        return {
-          ...c,
-          title:           document.getElementById('ec-title').value,
-          description:     document.getElementById('ec-desc').value,
-          serviceProvider: document.getElementById('ec-provider').value,
-          providerType:    document.getElementById('ec-provider-type').value,
-          property:        document.getElementById('ec-property').value,
-          reportedBy:      document.getElementById('ec-reported-by').value,
-          reportedDate:    document.getElementById('ec-date').value,
-          status:          document.getElementById('ec-status').value,
-          priority:        document.getElementById('ec-priority').value,
-          estimatedCost:   document.getElementById('ec-cost').value || undefined,
-        };
-      });
-      saveComplaints(list);
-      renderComplaints();
-      closeModal('edit-complaint-modal');
-    });
-
-    /* ────────────────────────────────────────────────────────
        MODAL — Change Password
        ──────────────────────────────────────────────────────── */
-    document.getElementById('cp-save-btn').addEventListener('click', () => {
+    safeOn('cp-save-btn', 'click', () => {
+      const curEl = document.getElementById('cp-current');
+      const newEl = document.getElementById('cp-new');
+      const confEl = document.getElementById('cp-confirm');
       changePassword(
-        document.getElementById('cp-current').value,
-        document.getElementById('cp-new').value,
-        document.getElementById('cp-confirm').value
+        curEl ? curEl.value : '',
+        newEl ? newEl.value : '',
+        confEl ? confEl.value : ''
       );
     });
 
     /* ────────────────────────────────────────────────────────
        MODAL — Update Contact
        ──────────────────────────────────────────────────────── */
-    document.getElementById('ct-save-btn').addEventListener('click', () => {
-      const ctPhone = document.getElementById('ct-phone').value.trim();
-      const ctEmail = document.getElementById('ct-email').value.trim();
-
-      let hasError = false;
-
-      const ctEmailErr = validateParticipantEmail(ctEmail);
-      const ctEmailErrEl = document.getElementById('ct-email-error');
-      if (ctEmailErrEl) { ctEmailErrEl.textContent = ctEmailErr; document.getElementById('ct-email').classList.toggle('error', !!ctEmailErr); }
-      if (ctEmailErr) hasError = true;
-
-      const ctPhoneErr = validateParticipantContact(ctPhone);
-      const ctPhoneErrEl = document.getElementById('ct-phone-error');
-      if (ctPhoneErrEl) { ctPhoneErrEl.textContent = ctPhoneErr; document.getElementById('ct-phone').classList.toggle('error', !!ctPhoneErr); }
-      if (ctPhoneErr) hasError = true;
-
-      if (hasError) return;
-
-      AppState.userProfile.phone = ctPhone;
-      AppState.userProfile.email = ctEmail;
-      localStorage.setItem('userProfile', JSON.stringify(AppState.userProfile));
+    safeOn('ct-save-btn', 'click', () => {
+      const phoneEl = document.getElementById('ct-phone');
+      const emailEl = document.getElementById('ct-email');
+      if (phoneEl) AppState.userProfile.phone = phoneEl.value;
+      if (emailEl) AppState.userProfile.email = emailEl.value;
       alert('Contact information updated successfully!');
       closeModal('contact-modal');
       renderProfile();
     });
 
     /* ────────────────────────────────────────────────────────
-       MODAL — Notification Preferences
-       ──────────────────────────────────────────────────────── */
-    document.getElementById('np-save-btn').addEventListener('click', () => {
-      localStorage.setItem('emailNotifications', document.getElementById('np-email').checked);
-      localStorage.setItem('smsNotifications',   document.getElementById('np-sms').checked);
-      localStorage.setItem('pushNotifications',  document.getElementById('np-push').checked);
-      localStorage.setItem('weeklyReports',      document.getElementById('np-weekly').checked);
-      alert('Notification preferences updated successfully!');
-      closeModal('notif-pref-modal');
-    });
-
-    /* ────────────────────────────────────────────────────────
        GLOBAL DELEGATION — Page-content action buttons
-       (edit/view/delete for participants & complaints)
+       (view/delete for participants & complaints)
        ──────────────────────────────────────────────────────── */
-    document.getElementById('page-content').addEventListener('click', e => {
-      const btn = e.target.closest('[data-action]');
-      if (!btn) return;
-      const action = btn.dataset.action;
-      const id     = btn.dataset.id;
+    const pageContentEl = document.getElementById('page-content');
+    if (pageContentEl) {
+      pageContentEl.addEventListener('click', e => {
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+        const action = btn.dataset.action;
+        const id     = btn.dataset.id;
 
-      switch (action) {
-        case 'edit-p':   openEditParticipantModal(id); break;
-        case 'view-p':   openViewParticipantModal(id); break;
-        case 'delete-p': {
-          if (confirm(`Are you sure you want to delete ${btn.dataset.name}? This action cannot be undone.`)) {
-            saveParticipants(getParticipants().filter(p => p.id !== id));
-            renderParticipants();
+        switch (action) {
+          case 'edit-p':   openEditParticipantModal(id); break;
+          case 'view-p':   openViewParticipantModal(id); break;
+          case 'delete-p': {
+            if (confirm(`Are you sure you want to delete ${btn.dataset.name}? This action cannot be undone.`)) {
+              saveParticipants(getParticipants().filter(p => p.id !== id));
+              renderParticipants();
+            }
+            break;
           }
-          break;
+          case 'view-c':   openViewComplaintModal(id);   break;
         }
-        case 'view-c':   openViewComplaintModal(id);   break;
-        case 'edit-c':   openEditComplaintModal(id);   break;
-        case 'delete-c': {
-          if (confirm('Are you sure you want to delete this complaint?')) {
-            saveComplaints(getComplaints().filter(c => c.id !== id));
-            renderComplaints();
-          }
-          break;
-        }
-        case 'review-c': openReviewEstimateModal(id); break;
-      }
-    });
+      });
+    }
 
     /* ────────────────────────────────────────────────────────
        INIT — Build sidebar, header, and navigate to first page
        ──────────────────────────────────────────────────────── */
     buildSidebar();
     updateHeaderUsername();
-    updateNotifBadge();
+
+    const refreshAdminNotifications = async () => {
+      await refreshBackendNotifications();
+      updateNotifBadge();
+      if (AppState.currentPage === 'notifications') renderNotifications(true);
+    };
+    refreshAdminNotifications();
 
     // Hash-based routing
     const hash       = location.hash.replace('#', '') || 'dashboard';
@@ -361,23 +265,16 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateNotifBadge, 2000);
 
   }).catch(err => {
-    // If fetch fails (e.g. opened as file:// without a server), show a helpful error
-    document.getElementById('app').innerHTML = `
-      <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;flex-direction:column;gap:16px;color:#374151;">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="#ef4444" style="width:48px;height:48px;">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
-        </svg>
-        <h2 style="font-size:20px;font-weight:700;color:#111827;">Server Required</h2>
-        <p style="font-size:14px;max-width:400px;text-align:center;color:#6b7280;">
-          This project uses <strong>fetch()</strong> to load HTML fragments and requires a local HTTP server.<br><br>
-          Run one of these in the project folder:
-        </p>
-        <code style="background:#f3f4f6;padding:10px 20px;border-radius:8px;font-size:13px;">npx serve .</code>
-        <span style="color:#9ca3af;font-size:13px;">or</span>
-        <code style="background:#f3f4f6;padding:10px 20px;border-radius:8px;font-size:13px;">python -m http.server 8080</code>
-        <p style="font-size:12px;color:#9ca3af;margin-top:8px;">Then open <strong>http://localhost:PORT</strong> in your browser.</p>
-        <details style="font-size:12px;color:#ef4444;max-width:500px;"><summary>Error details</summary><pre style="margin-top:8px;">${err.message}</pre></details>
-      </div>
-    `;
+    console.error('Administrator AppShell Initialization Error:', err);
+    const appEl = document.getElementById('app');
+    if (appEl) {
+      appEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;flex-direction:column;gap:16px;color:#374151;">
+          <h2 style="font-size:20px;font-weight:700;color:#111827;">Administrator Interface Error</h2>
+          <p style="font-size:14px;max-width:400px;text-align:center;color:#6b7280;">An error occurred while initializing the Administrator view.</p>
+          <details style="font-size:12px;color:#ef4444;max-width:500px;"><summary>Error details</summary><pre style="margin-top:8px;">${err.message}</pre></details>
+        </div>
+      `;
+    }
   });
 });

@@ -1,149 +1,108 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Update Status — PropSync</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="../css/styles.css" />
-    <script src="../js/route_guard.js"></script>
-  </head>
-  <body>
-    <script src="../js/complaint_bridge.js"></script>
-    <script src="../js/taskData.js"></script>
-    <script>
-      const API = "http://localhost:3000";
-      const SP_HEADERS = {
-        role: "service_provider",
-        "Content-Type": "application/json",
-      };
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Update Status — PropSync</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/styles.css">
+  <script src="../js/route_guard.js"></script>
+</head>
+<body>
+<script src="../js/complaint_bridge.js"></script>
+<script src="../js/taskData.js"></script>
+<script>
+const API = 'http://localhost:3000';
+const SP_HEADERS = { 'role': 'service_provider', 'Content-Type': 'application/json' };
 
-      function statusLabel(status) {
-        const labels = {
-          assigned: "Assigned",
-          estimating_cost: "Estimating Cost",
-          in_progress: "In Progress",
-          completed: "Completed",
-          billed: "Billed",
-          paid: "Paid",
-          closed: "Closed",
-        };
-        return labels[status] || status;
-      }
+function statusLabel(status) {
+  const labels = {
+    'assigned': 'Assigned',
+    'estimating_cost': 'Estimating Cost',
+    'in_progress': 'In Progress',
+    'completed': 'Completed',
+    'billed': 'Billed',
+    'paid': 'Paid',
+    'closed': 'Closed',
+  };
+  return labels[status] || status;
+}
 
-      function toTask(c, estimate) {
-        const estimateApproved =
-          c.estimateApproved || estimate?.approved === true;
-        return {
-          id: String(c.id),
-          issueType: c.category || "General",
-          location: c.location || "Unknown",
-          deadline: c.deadline || "None",
-          status: statusLabel(c.status),
-          estimateApproved,
-          progress: {
-            assigned: [
-              "assigned",
-              "estimating_cost",
-              "in_progress",
-              "completed",
-              "billed",
-              "paid",
-              "closed",
-            ].includes(c.status),
-            estimateSent: [
-              "estimating_cost",
-              "in_progress",
-              "completed",
-              "billed",
-              "paid",
-              "closed",
-            ].includes(c.status),
-            approved:
-              estimateApproved ||
-              ["in_progress", "completed", "billed", "paid", "closed"].includes(
-                c.status,
-              ),
-            inProgress: [
-              "in_progress",
-              "completed",
-              "billed",
-              "paid",
-              "closed",
-            ].includes(c.status),
-            completed: ["completed", "billed", "paid", "closed"].includes(
-              c.status,
-            ),
-          },
-        };
-      }
+function toTask(c, estimate) {
+  const estimateApproved = c.estimateApproved || estimate?.approved === true;
+  return {
+    id: String(c.id),
+    issueType: c.category || 'General',
+    location: c.location || 'Unknown',
+    deadline: c.deadline || 'None',
+    status: statusLabel(c.status),
+    estimateApproved,
+    progress: {
+      assigned: ['assigned', 'estimating_cost', 'in_progress', 'completed', 'billed', 'paid', 'closed'].includes(c.status),
+      estimateSent: ['estimating_cost', 'in_progress', 'completed', 'billed', 'paid', 'closed'].includes(c.status),
+      approved: estimateApproved || ['in_progress', 'completed', 'billed', 'paid', 'closed'].includes(c.status),
+      inProgress: ['in_progress', 'completed', 'billed', 'paid', 'closed'].includes(c.status),
+      completed: ['completed', 'billed', 'paid', 'closed'].includes(c.status),
+    },
+  };
+}
 
-      async function fetchTask(taskId) {
-        const numericId = String(taskId).replace(/^C-/i, "");
-        try {
-          const res = await fetch(`${API}/complaints/${numericId}`, {
-            headers: SP_HEADERS,
-          });
-          if (!res.ok) return null;
-          const complaint = await res.json();
-          let latestEstimate = null;
-          const estimateRes = await fetch(
-            `${API}/estimates?complaintId=${numericId}`,
-            { headers: SP_HEADERS },
-          );
-          if (estimateRes.ok) {
-            const estimates = await estimateRes.json();
-            latestEstimate = estimates.length
-              ? estimates[estimates.length - 1]
-              : null;
-          }
-          return toTask(complaint, latestEstimate);
-        } catch (e) {
-          console.error("Failed to load task for status update:", e);
-          return null;
-        }
-      }
+async function fetchTask(taskId) {
+  const numericId = String(taskId).replace(/^C-/i, '');
+  try {
+    const res = await fetch(`${API}/complaints/${numericId}`, { headers: SP_HEADERS });
+    if (!res.ok) return null;
+    const complaint = await res.json();
+    let latestEstimate = null;
+    const estimateRes = await fetch(`${API}/estimates?complaintId=${numericId}`, { headers: SP_HEADERS });
+    if (estimateRes.ok) {
+      const estimates = await estimateRes.json();
+      latestEstimate = estimates.length ? estimates[estimates.length - 1] : null;
+    }
+    return toTask(complaint, latestEstimate);
+  } catch (e) {
+    console.error('Failed to load task for status update:', e);
+    return null;
+  }
+}
 
-      function statusToBackend(status) {
-        return {
-          "Estimating Cost": "estimating_cost",
-          "In Progress": "in_progress",
-          Completed: "completed",
-        }[status];
-      }
+function statusToBackend(status) {
+  return {
+    'Estimating Cost': 'estimating_cost',
+    'In Progress': 'in_progress',
+    'Completed': 'completed',
+  }[status];
+}
 
-      async function buildPage() {
-        initShell("tasks");
-        const taskId = getParam("task");
-        const content = document.getElementById("page-content");
-        const task = taskId ? await fetchTask(taskId) : null;
+async function buildPage() {
+  initShell('tasks');
+  const taskId = getParam('task');
+  const content = document.getElementById('page-content');
+  const task = taskId ? await fetchTask(taskId) : null;
 
-        if (!task) {
-          content.innerHTML = `
+  if (!task) {
+    content.innerHTML = `
       <div class="empty-state">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <h3>Task Not Found</h3><p>The task you're looking for doesn't exist.</p>
         <div style="margin-top:20px;"><button class="btn btn-dark" onclick="location.href='assigned-tasks.html'">Back to Assigned Tasks</button></div>
       </div>`;
-          return;
-        }
+    return;
+  }
 
-        if (!task.estimateApproved && task.status !== "In Progress") {
-          content.innerHTML = `
+  if (!task.estimateApproved && task.status !== 'In Progress') {
+    content.innerHTML = `
       <div class="empty-state">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
         <h3>Estimate Approval Required</h3>
         <p>The maintenance manager must approve your estimate before work status can be updated.</p>
         <div style="margin-top:20px;"><button class="btn btn-dark" onclick="location.href='task-details.html?task=${task.id}'">Back to Task Details</button></div>
       </div>`;
-          return;
-        }
+    return;
+  }
 
-        content.innerHTML = `
+  content.innerHTML = `
     <div style="max-width:800px;margin-inline:auto;">
       <button class="back-btn" onclick="location.href='task-details.html?task=${task.id}'">
         <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
@@ -185,8 +144,8 @@
               Update Status *
             </label>
             <select id="status-select" class="form-select">
-              <option value="In Progress" ${task.status === "In Progress" ? "selected" : ""}>In Progress</option>
-              <option value="Completed" ${task.status === "Completed" ? "selected" : ""}>Completed</option>
+              <option value="In Progress" ${task.status==='In Progress'?'selected':''}>In Progress</option>
+              <option value="Completed" ${task.status==='Completed'?'selected':''}>Completed</option>
             </select>
           </div>
 
@@ -217,13 +176,13 @@
           <div class="form-field">
             <label class="form-label">
               <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-              Upload Progress Photos (Optional)
+              Upload Bill Attachment *
             </label>
             <div class="upload-zone" id="photo-zone" onclick="document.getElementById('photo-upload').click()">
               <svg viewBox="0 0 24 24"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
-              <input type="file" id="photo-upload" style="display:none;" accept="image/*" multiple>
-              <div class="upload-zone-label">Click to upload photos</div>
-              <p class="upload-zone-sub">JPG, PNG or HEIC (max 5MB each)</p>
+              <input type="file" id="photo-upload" style="display:none;" accept="image/*,.pdf" multiple>
+              <div class="upload-zone-label">Click to upload a bill PDF or work photos</div>
+              <p class="upload-zone-sub">At least one JPG, PNG, HEIC, or PDF is required (max 5MB each)</p>
               <div id="photo-list" class="upload-file-list" style="display:none;"></div>
             </div>
           </div>
@@ -248,139 +207,107 @@
     </div>
   `;
 
-        // Photo upload
-        document
-          .getElementById("photo-upload")
-          .addEventListener("change", function () {
-            const list = document.getElementById("photo-list");
-            const files = Array.from(this.files);
-            if (!files.length) {
-              list.style.display = "none";
-              return;
-            }
-            list.style.display = "block";
-            list.innerHTML =
-              "<p>Uploaded files:</p>" +
-              files
-                .map(
-                  (f) =>
-                    `<div class="upload-file-item"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>${f.name}</div>`,
-                )
-                .join("");
-          });
+  // Photo upload
+  document.getElementById('photo-upload').addEventListener('change', function() {
+    const list  = document.getElementById('photo-list');
+    const files = Array.from(this.files);
+    if (!files.length) { list.style.display = 'none'; return; }
+    list.style.display = 'block';
+    list.innerHTML = '<p>Uploaded files:</p>' + files.map(f =>
+      `<div class="upload-file-item"><svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>${f.name}</div>`
+    ).join('');
+  });
 
-        const zone = document.getElementById("photo-zone");
-        zone.addEventListener("dragover", (e) => {
-          e.preventDefault();
-          zone.style.borderColor = "#42a443";
+  const zone = document.getElementById('photo-zone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor='#42a443'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor=''; });
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.style.borderColor='';
+    const dt = new DataTransfer();
+    Array.from(e.dataTransfer.files).forEach(f => dt.items.add(f));
+    document.getElementById('photo-upload').files = dt.files;
+    document.getElementById('photo-upload').dispatchEvent(new Event('change'));
+  });
+
+  const statusSelect = document.getElementById('status-select');
+  const billFields = document.getElementById('bill-fields');
+  const syncBillFields = () => {
+    billFields.style.display = statusSelect.value === 'Completed' ? 'block' : 'none';
+  };
+  statusSelect.addEventListener('change', syncBillFields);
+  syncBillFields();
+
+  document.getElementById('submit-btn').addEventListener('click', async () => {
+    const notes  = document.getElementById('notes-input').value.trim();
+    const status = document.getElementById('status-select').value;
+    document.getElementById('notes-err').style.display = notes ? 'none' : 'block';
+    if (!notes) return;
+
+    const backendStatus = statusToBackend(status);
+    if (!backendStatus) {
+      alert('Invalid status selected.');
+      return;
+    }
+
+    try {
+      const numericId = String(taskId).replace(/^C-/i, '');
+      let res;
+      if (backendStatus === 'completed') {
+        const amount = parseFloat(document.getElementById('bill-amount').value);
+        const description = document.getElementById('bill-desc').value.trim();
+        document.getElementById('bill-amount-err').style.display = Number.isFinite(amount) && amount >= 0 ? 'none' : 'block';
+        document.getElementById('bill-desc-err').style.display = description ? 'none' : 'block';
+        if (!Number.isFinite(amount) || amount < 0 || !description) return;
+
+        const attachments = Array.from(document.getElementById('photo-upload').files);
+        if (!attachments.length) {
+          alert('Please upload at least one bill PDF or work photo.');
+          return;
+        }
+        const formData = new FormData();
+        formData.append('complaintId', numericId);
+        formData.append('amount', amount);
+        formData.append('description', `${description}\n\nProgress notes: ${notes}`);
+        attachments.forEach(file => formData.append('attachments', file));
+        res = await fetch(`${API}/bills`, {
+          method: 'POST',
+          headers: { role: 'service_provider' },
+          body: formData
         });
-        zone.addEventListener("dragleave", () => {
-          zone.style.borderColor = "";
+      } else {
+        res = await fetch(`${API}/complaints/${numericId}/status`, {
+          method: 'PATCH',
+          headers: SP_HEADERS,
+          body: JSON.stringify({ status: backendStatus })
         });
-        zone.addEventListener("drop", (e) => {
-          e.preventDefault();
-          zone.style.borderColor = "";
-          const dt = new DataTransfer();
-          Array.from(e.dataTransfer.files).forEach((f) => dt.items.add(f));
-          document.getElementById("photo-upload").files = dt.files;
-          document
-            .getElementById("photo-upload")
-            .dispatchEvent(new Event("change"));
-        });
-
-        const statusSelect = document.getElementById("status-select");
-        const billFields = document.getElementById("bill-fields");
-        const syncBillFields = () => {
-          billFields.style.display =
-            statusSelect.value === "Completed" ? "block" : "none";
-        };
-        statusSelect.addEventListener("change", syncBillFields);
-        syncBillFields();
-
-        document
-          .getElementById("submit-btn")
-          .addEventListener("click", async () => {
-            const notes = document.getElementById("notes-input").value.trim();
-            const status = document.getElementById("status-select").value;
-            document.getElementById("notes-err").style.display = notes
-              ? "none"
-              : "block";
-            if (!notes) return;
-
-            const backendStatus = statusToBackend(status);
-            if (!backendStatus) {
-              alert("Invalid status selected.");
-              return;
-            }
-
-            try {
-              const numericId = String(taskId).replace(/^C-/i, "");
-              let res;
-              if (backendStatus === "completed") {
-                const amount = parseFloat(
-                  document.getElementById("bill-amount").value,
-                );
-                const description = document
-                  .getElementById("bill-desc")
-                  .value.trim();
-                document.getElementById("bill-amount-err").style.display =
-                  Number.isFinite(amount) && amount >= 0 ? "none" : "block";
-                document.getElementById("bill-desc-err").style.display =
-                  description ? "none" : "block";
-                if (!Number.isFinite(amount) || amount < 0 || !description)
-                  return;
-
-                res = await fetch(`${API}/bills`, {
-                  method: "POST",
-                  headers: SP_HEADERS,
-                  body: JSON.stringify({
-                    complaintId: Number(numericId),
-                    amount,
-                    description: `${description}\n\nProgress notes: ${notes}`,
-                  }),
-                });
-              } else {
-                res = await fetch(`${API}/complaints/${numericId}/status`, {
-                  method: "PATCH",
-                  headers: SP_HEADERS,
-                  body: JSON.stringify({ status: backendStatus }),
-                });
-              }
-
-              if (!res.ok) {
-                const err = await res.json();
-                alert(
-                  "Could not update task: " + (err.message || "Unknown error"),
-                );
-                return;
-              }
-            } catch (e) {
-              alert("Network error while updating status.");
-              return;
-            }
-
-            showToast(
-              status === "Completed"
-                ? "Bill submitted for manager payment review!"
-                : "Status updated successfully!",
-            );
-            setTimeout(
-              () => (location.href = "task-details.html?task=" + taskId),
-              1200,
-            );
-          });
       }
 
-      function showToast(msg) {
-        const t = document.createElement("div");
-        t.textContent = msg;
-        t.style.cssText =
-          "position:fixed;bottom:24px;right:24px;background:#42a443;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.2);z-index:9999;animation:fadeIn 0.3s ease;";
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 1500);
+      if (!res.ok) {
+        const err = await res.json();
+        alert('Could not update task: ' + (err.message || 'Unknown error'));
+        return;
       }
+    } catch (e) {
+      alert('Network error while updating status.');
+      return;
+    }
 
-      document.addEventListener("DOMContentLoaded", buildPage);
-    </script>
-  </body>
+    showToast(status === 'Completed' ? 'Bill submitted for manager payment review!' : 'Status updated successfully!');
+    setTimeout(() => location.href = 'task-details.html?task=' + taskId, 1200);
+  });
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#42a443;color:#fff;padding:12px 24px;border-radius:10px;font-weight:600;box-shadow:0 4px 16px rgba(0,0,0,0.2);z-index:9999;animation:fadeIn 0.3s ease;';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 1500);
+}
+
+document.addEventListener('DOMContentLoaded', buildPage);
+</script>
+</body>
 </html>
+
+

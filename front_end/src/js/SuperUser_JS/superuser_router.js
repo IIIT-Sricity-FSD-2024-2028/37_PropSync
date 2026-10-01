@@ -4,9 +4,9 @@
 
 const NAV_ITEMS = [
   { id: 'dashboard',     label: 'Dashboard',           iconType: 'home' },
+  { id: 'revenue',       label: 'Platform Revenue',    iconType: 'trending-up' },
   { id: 'participants',  label: 'Manage Participants',  iconType: 'users' },
   { id: 'roles',         label: 'Role Management',      iconType: 'shield' },
-  { id: 'configuration', label: 'System Configuration', iconType: 'settings' },
   { id: 'complaints',    label: 'Complaints',           iconType: 'file-text' },
   { id: 'notifications', label: 'Notifications',        iconType: 'bell' },
 ];
@@ -43,6 +43,7 @@ function navigate(pageId) {
 function renderPage(pageId) {
   switch (pageId) {
     case 'dashboard':     renderDashboard();     break;
+    case 'revenue':       renderPlatformRevenue(); break;
     case 'participants':  renderParticipants();  break;
     case 'roles':         renderRoles();         break;
     case 'configuration': renderConfig();        break;
@@ -234,7 +235,7 @@ function initNotificationPageEvents() {
         try {
           const res = await fetch(`http://localhost:3000/users/${userId}/approve`, {
             method: 'PATCH',
-            headers: { role: 'admin' },
+            headers: { role: 'super_user', 'x-user-id': String(getCurrentAdminUserId()) },
           });
           if (!res.ok) {
             const errorBody = await res.json().catch(() => ({}));
@@ -246,7 +247,7 @@ function initNotificationPageEvents() {
           updateCachedBackendNotification(backendId, { isRead: true, isNew: false, accepted: true });
           await fetch(`http://localhost:3000/notifications/${backendId}/read`, {
             method: 'PATCH',
-            headers: { role: 'admin' },
+            headers: { role: 'super_user', 'x-user-id': String(getCurrentAdminUserId()) },
           }).catch(() => {});
           renderNotifications(true);
           updateNotifBadge();
@@ -267,7 +268,7 @@ function initNotificationPageEvents() {
           updateCachedBackendNotification(n.backendId, { isRead: true, isNew: false });
           await fetch(`http://localhost:3000/notifications/${n.backendId}/read`, {
             method: 'PATCH',
-            headers: { role: 'admin' },
+            headers: { role: 'super_user', 'x-user-id': String(getCurrentAdminUserId()) },
           }).catch(() => {});
         }
 
@@ -287,7 +288,7 @@ function initNotificationPageEvents() {
           try {
             const res = await fetch(`http://localhost:3000/users/${notification.requestedUserId}/reject`, {
               method: 'PATCH',
-              headers: { role: 'admin' },
+              headers: { role: 'super_user', 'x-user-id': String(getCurrentAdminUserId()) },
             });
             if (!res.ok) {
               const errorBody = await res.json().catch(() => ({}));

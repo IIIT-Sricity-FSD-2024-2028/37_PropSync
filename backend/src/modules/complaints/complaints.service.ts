@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Injectable,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import {
   ComplaintCategory,
@@ -13,6 +14,13 @@ import {
 import { ComplaintsRepository } from './complaints.repository';
 import { UsersService, type User } from '../users/users.service';
 import { UserRole } from '../users/dto/user.dto';
+import {
+  NotificationsService,
+} from '../notifications/notifications.service';
+import {
+  NotificationRecipient,
+  NotificationType,
+} from '../notifications/dto/notification.dto';
 
 export interface Complaint {
   id: number;
@@ -34,6 +42,7 @@ export interface Complaint {
   submittedAt: string;
   updatedAt: string;
   interestedProviders: number[];
+  rejectedProviders?: number[];
 }
 
 @Injectable()
@@ -41,24 +50,56 @@ export class ComplaintsService {
   constructor(
     private readonly complaintsRepository: ComplaintsRepository,
     private readonly usersService: UsersService,
+    @Optional() private readonly notificationsService?: NotificationsService,
   ) {}
 
   findAll(
     status?: ComplaintStatus,
     ownerId?: number,
     managerId?: number,
+    availableForProviderId?: number,
+    actor?: { role?: string; id?: number },
   ): Complaint[] {
     let result = this.complaintsRepository.findAll();
+    if (actor?.role === 'admin' && actor?.id) {
+      const admin = this.usersService.findRawById(actor.id);
+      if (admin && admin.communityName) {
+        const adminComm = admin.communityName.trim().toLowerCase();
+        result = result.filter((c) => {
+          const owner = this.usersService.findRawById(c.ownerId);
+          return owner && owner.communityName?.trim().toLowerCase() === adminComm;
+        });
+      }
+    }
     if (status) result = result.filter((c) => c.status === status);
     if (ownerId) result = result.filter((c) => c.ownerId === ownerId);
     if (managerId) result = result.filter((c) => c.managerId === managerId);
+    if (availableForProviderId) {
+      result = result.filter(
+        (c) =>
+          c.status === ComplaintStatus.Approved &&
+          !c.assignedProviderId &&
+          !(c.interestedProviders || []).includes(availableForProviderId) &&
+          !(c.rejectedProviders || []).includes(availableForProviderId),
+      );
+    }
     return result;
   }
 
-  findById(id: number): Complaint {
+  findById(id: number, actor?: { role?: string; id?: number }): Complaint {
     const complaint = this.complaintsRepository.findById(id);
     if (!complaint) {
       throw new NotFoundException(`Complaint with id ${id} not found`);
+    }
+    if (actor?.role === 'admin' && actor?.id) {
+      const admin = this.usersService.findRawById(actor.id);
+      if (admin && admin.communityName) {
+        const adminComm = admin.communityName.trim().toLowerCase();
+        const owner = this.usersService.findRawById(complaint.ownerId);
+        if (!owner || owner.communityName?.trim().toLowerCase() !== adminComm) {
+          throw new NotFoundException(`Complaint with id ${id} not found`);
+        }
+      }
     }
     return complaint;
   }
@@ -93,7 +134,7 @@ export class ComplaintsService {
     const managerId = dto.managerId || this.resolveManagerIdForOwner(owner);
     const location = owner.propertyUnit;
 
-    return this.complaintsRepository.create({
+    const complaint = this.complaintsRepository.create({
       title: dto.title,
       description: dto.description,
       category: dto.category,
@@ -106,7 +147,16 @@ export class ComplaintsService {
       submittedAt: today,
       updatedAt: today,
       interestedProviders: [],
+      rejectedProviders: [],
     });
+    this.notify(
+      managerId,
+      complaint.id,
+      NotificationType.ComplaintSubmitted,
+      NotificationRecipient.MaintenanceManager,
+      `New complaint #${complaint.id}, "${complaint.title}", requires your review.`,
+    );
+    return complaint;
   }
 
   private getOwnerForComplaint(ownerId: number) {
@@ -227,6 +277,36 @@ export class ComplaintsService {
     if (dto.rejectionReason) complaint.rejectionReason = dto.rejectionReason;
     if (dto.deadline) complaint.deadline = dto.deadline;
 
+    if (role === 'service_provider') {
+      this.notify(
+        complaint.managerId,
+        complaint.id,
+        NotificationType.WorkCompleted,
+        NotificationRecipient.MaintenanceManager,
+        `Service provider updated complaint #${complaint.id} to ${dto.status}.`,
+      );
+      this.notify(
+        complaint.ownerId,
+        complaint.id,
+        NotificationType.WorkCompleted,
+        NotificationRecipient.Owner,
+        `Your complaint #${complaint.id} is now ${dto.status}.`,
+      );
+    } else if (
+      dto.status === ComplaintStatus.Approved ||
+      dto.status === ComplaintStatus.Rejected
+    ) {
+      this.notify(
+        complaint.ownerId,
+        complaint.id,
+        dto.status === ComplaintStatus.Approved
+          ? NotificationType.ComplaintApproved
+          : NotificationType.ComplaintRejected,
+        NotificationRecipient.Owner,
+        `Your complaint #${complaint.id} has been ${dto.status}${dto.rejectionReason ? `: ${dto.rejectionReason}` : '.'}`,
+      );
+    }
+
     return complaint;
   }
 
@@ -255,6 +335,20 @@ export class ComplaintsService {
     complaint.spAccepted = true;
     complaint.interestedProviders = [providerId];
     complaint.updatedAt = new Date().toISOString().split('T')[0];
+    this.notify(
+      providerId,
+      complaint.id,
+      NotificationType.ProviderAssigned,
+      NotificationRecipient.ServiceProvider,
+      `You have been assigned complaint #${complaint.id}, "${complaint.title}".`,
+    );
+    this.notify(
+      complaint.ownerId,
+      complaint.id,
+      NotificationType.ProviderAssigned,
+      NotificationRecipient.Owner,
+      `A service provider has been assigned to your complaint #${complaint.id}.`,
+    );
     return complaint;
   }
 
@@ -278,14 +372,28 @@ export class ComplaintsService {
     }
 
     if (!complaint.interestedProviders) complaint.interestedProviders = [];
+    if (!complaint.rejectedProviders) complaint.rejectedProviders = [];
+
+    // Idempotent: If already in queue, return existing queue without error or duplicate record
     if (complaint.interestedProviders.includes(providerId)) {
-      throw new BadRequestException(
-        `Provider ${providerId} has already expressed interest in complaint ${complaintId}`,
-      );
+      return {
+        message: `Provider ${providerId} already added to queue for complaint ${complaintId}`,
+        queue: [...complaint.interestedProviders],
+      };
     }
+
+    // Remove from rejected list if previously rejected
+    complaint.rejectedProviders = complaint.rejectedProviders.filter((id) => id !== providerId);
 
     complaint.interestedProviders.push(providerId);
     complaint.updatedAt = new Date().toISOString().split('T')[0];
+    this.notify(
+      complaint.managerId,
+      complaint.id,
+      NotificationType.Custom,
+      NotificationRecipient.MaintenanceManager,
+      `A service provider expressed interest in complaint #${complaint.id}.`,
+    );
 
     return {
       message: `Provider ${providerId} added to queue for complaint ${complaintId}`,
@@ -308,17 +416,67 @@ export class ComplaintsService {
   }
 
   spRejectAssignment(id: number, reason: string): Complaint {
+    return this.spReject(id, undefined, reason) as Complaint;
+  }
+
+  spReject(
+    id: number,
+    providerId?: number,
+    reason?: string,
+  ): Complaint | { message: string; rejectedProviders: number[] } {
     const complaint = this.findById(id);
-    if (complaint.status !== ComplaintStatus.Assigned) {
-      throw new BadRequestException(
-        'Complaint must be in Assigned status to reject',
+
+    // If complaint was assigned to this provider, handle assignment rejection
+    if (
+      complaint.status === ComplaintStatus.Assigned &&
+      (!providerId || complaint.assignedProviderId === providerId)
+    ) {
+      complaint.assignedProviderId = undefined;
+      complaint.status = ComplaintStatus.Approved;
+      complaint.rejectionReason = reason || 'Assignment rejected by service provider';
+      if (providerId) {
+        if (!complaint.rejectedProviders) complaint.rejectedProviders = [];
+        if (!complaint.rejectedProviders.includes(providerId)) {
+          complaint.rejectedProviders.push(providerId);
+        }
+        if (complaint.interestedProviders) {
+          complaint.interestedProviders = complaint.interestedProviders.filter(
+            (p) => p !== providerId,
+          );
+        }
+      }
+      complaint.updatedAt = new Date().toISOString().split('T')[0];
+      this.notify(
+        complaint.managerId,
+        complaint.id,
+        NotificationType.Custom,
+        NotificationRecipient.MaintenanceManager,
+        `The assigned provider declined complaint #${complaint.id}.${reason ? ` ${reason}` : ''}`,
+      );
+      return complaint;
+    }
+
+    // Otherwise, decline / reject interest in available complaint
+    if (!providerId) {
+      throw new BadRequestException('providerId is required to record rejection');
+    }
+
+    if (!complaint.rejectedProviders) complaint.rejectedProviders = [];
+    if (!complaint.rejectedProviders.includes(providerId)) {
+      complaint.rejectedProviders.push(providerId);
+    }
+    if (complaint.interestedProviders) {
+      complaint.interestedProviders = complaint.interestedProviders.filter(
+        (p) => p !== providerId,
       );
     }
-    complaint.assignedProviderId = undefined;
-    complaint.status = ComplaintStatus.Approved;
-    complaint.rejectionReason = reason;
+    if (reason) complaint.rejectionReason = reason;
     complaint.updatedAt = new Date().toISOString().split('T')[0];
-    return complaint;
+
+    return {
+      message: `Provider ${providerId} rejected complaint ${id}`,
+      rejectedProviders: [...complaint.rejectedProviders],
+    };
   }
 
   markEstimateSubmitted(id: number, providerId: number): Complaint {
@@ -341,6 +499,13 @@ export class ComplaintsService {
     complaint.estimateApproved = false;
     complaint.status = ComplaintStatus.EstimatingCost;
     complaint.updatedAt = new Date().toISOString().split('T')[0];
+    this.notify(
+      complaint.managerId,
+      complaint.id,
+      NotificationType.EstimateSubmitted,
+      NotificationRecipient.MaintenanceManager,
+      `A service estimate was submitted for complaint #${complaint.id}.`,
+    );
     return complaint;
   }
 
@@ -359,6 +524,22 @@ export class ComplaintsService {
       complaint.status = ComplaintStatus.Assigned;
     }
     complaint.updatedAt = new Date().toISOString().split('T')[0];
+    if (complaint.assignedProviderId) {
+      this.notify(
+        complaint.assignedProviderId,
+        complaint.id,
+        NotificationType.EstimateApproved,
+        NotificationRecipient.ServiceProvider,
+        `Your estimate for complaint #${complaint.id} was ${approved ? 'approved' : 'rejected'}.`,
+      );
+    }
+    this.notify(
+      complaint.ownerId,
+      complaint.id,
+      NotificationType.EstimateApproved,
+      NotificationRecipient.Owner,
+      `The estimate for your complaint #${complaint.id} was ${approved ? 'approved' : 'rejected'}.`,
+    );
     return complaint;
   }
 
@@ -418,5 +599,15 @@ export class ComplaintsService {
     ).length;
 
     return { total, pending, inProgress, resolved, rejected };
+  }
+
+  private notify(
+    userId: number,
+    complaintId: number,
+    type: NotificationType,
+    recipient: NotificationRecipient,
+    message: string,
+  ): void {
+    this.notificationsService?.create({ userId, complaintId, type, recipient, message });
   }
 }

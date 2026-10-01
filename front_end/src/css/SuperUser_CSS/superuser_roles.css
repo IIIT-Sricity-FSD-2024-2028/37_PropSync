@@ -1,161 +1,106 @@
 /* ============================================================
    ROLE MANAGEMENT
    ============================================================ */
-#page-roles {
-  padding: 24px;
-}
+#page-roles { padding: 24px; }
 
 .roles-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+  align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+  .roles-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .roles-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .role-card {
   border-radius: 12px;
   overflow: hidden;
   border: 2px solid;
-}
-.role-card.owner {
-  border-color: #bfdbfe;
-}
-.role-card.manager {
-  border-color: #bbf7d0;
-}
-.role-card.provider {
-  border-color: #fed7aa;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.role-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.role-card.owner    { border-color: #bfdbfe; }
+.role-card.manager  { border-color: #bbf7d0; }
+.role-card.provider { border-color: #fed7aa; }
+.role-card.admin    { border-color: #e9d5ff; }
+
 .role-card-header {
-  padding: 24px;
+  padding: 24px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.role-card-header svg {
-  width: 48px;
-  height: 48px;
-}
+.role-card-header svg { width: 44px; height: 44px; }
 
 .role-card-body {
   padding: 16px;
   background: #fff;
-}
-.role-card-body h3 {
-  font-size: 18px;
-  font-weight: 700;
-  color: #111827;
-  margin-bottom: 4px;
-}
-.role-user-count {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  color: #4b5563;
-  margin-bottom: 12px;
-  font-size: 12px;
-}
-.role-user-count svg {
-  width: 12px;
-  height: 12px;
-  stroke: currentColor;
-}
-.role-description {
-  font-size: 12px;
-  color: #4b5563;
-  margin-bottom: 12px;
-}
-
-.permissions-label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #374151;
-  margin-bottom: 8px;
-}
-
-.permission-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 4px;
-}
-.permission-item svg {
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-.permission-item span {
-  font-size: 12px;
-  color: #374151;
-}
-
-.edit-role-btn {
-  width: 100%;
-  padding: 8px;
-  font-size: 14px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: none;
-  color: #374151;
-  margin-top: 12px;
-  transition: background 0.15s;
-}
-.edit-role-btn:hover {
-  background: #f9fafb;
-}
-
-/* Edit permissions modal */
-.perm-edit-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.perm-edit-row input {
+  flex-direction: column;
   flex: 1;
 }
-.perm-del-btn {
-  background: none;
-  border: none;
-  color: #ef4444;
-  padding: 8px;
-  border-radius: 8px;
-  transition: background 0.15s;
+.role-card-body h3 { font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 4px; }
+.role-user-count { display: flex; align-items: center; gap: 6px; color: #4b5563; margin-bottom: 10px; font-size: 12px; font-weight: 500; }
+.role-user-count svg { width: 14px; height: 14px; stroke: currentColor; }
+.role-description { font-size: 12px; color: #4b5563; margin-bottom: 14px; line-height: 1.4; min-height: 48px; }
+
+.permissions-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #374151; margin-bottom: 8px; }
+
+.role-permissions-wrap {
+  flex: 1;
+  margin-bottom: 16px;
   display: flex;
-  align-items: center;
-}
-.perm-del-btn:hover {
-  background: #fef2f2;
-}
-.perm-del-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke: currentColor;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.perm-add-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-top: 8px;
-}
-.perm-add-btn {
-  padding: 10px;
-  background: #2563eb;
-  color: #fff;
-  border: none;
+.permission-item { display: flex; align-items: flex-start; gap: 6px; }
+.permission-item svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 1px; }
+.permission-item span { font-size: 12px; color: #374151; line-height: 1.35; }
+
+.edit-role-btn {
+  margin-top: auto;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
+  background: #f9fafb;
+  color: #374151;
+  transition: all 0.15s;
+  cursor: pointer;
+  text-align: center;
 }
-.perm-add-btn:hover {
-  background: #1d4ed8;
-}
-.perm-add-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke: currentColor;
-}
+.edit-role-btn:hover { background: #f3f4f6; border-color: #9ca3af; }
+
+/* Edit permissions modal */
+.perm-edit-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.perm-edit-row input { flex: 1; }
+.perm-del-btn { background: none; border: none; color: #ef4444; padding: 8px; border-radius: 8px; transition: background 0.15s; display: flex; align-items: center; cursor: pointer; }
+.perm-del-btn:hover { background: #fef2f2; }
+.perm-del-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+
+.perm-add-row { display: flex; align-items: center; gap: 8px; padding-top: 8px; }
+.perm-add-btn { padding: 10px; background: #2563eb; color: #fff; border: none; border-radius: 8px; display: flex; align-items: center; cursor: pointer; }
+.perm-add-btn:hover { background: #1d4ed8; }
+.perm-add-btn svg { width: 16px; height: 16px; stroke: currentColor; }

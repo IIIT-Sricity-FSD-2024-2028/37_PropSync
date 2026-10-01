@@ -1,5 +1,6 @@
 import {
   Body,
+  BadRequestException,
   Controller,
   Delete,
   Get,
@@ -9,6 +10,8 @@ import {
   Post,
   Query,
   UseGuards,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiHeader,
@@ -23,6 +26,13 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role, RolesGuard } from '../../common/guards/roles.guard';
 import { ApproveEstimateDto, CreateEstimateDto } from './dto/estimate.dto';
 import { EstimatesService } from './estimates.service';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { existsSync, mkdirSync } from 'fs';
+import { extname, join } from 'path';
+import { appConfig } from '../../config/app.config';
+
+const estimateUploadPath = join(process.cwd(), 'uploads', 'estimates');
 
 @ApiTags('Service Estimates')
 @ApiSecurity('role')
@@ -66,10 +76,28 @@ export class EstimatesController {
 
   @Post()
   @Roles(Role.ServiceProvider)
+  @UseInterceptors(FileInterceptor('document', {
+    storage: diskStorage({
+      destination: (_req, _file, callback) => {
+        try { if (!existsSync(estimateUploadPath)) mkdirSync(estimateUploadPath, { recursive: true }); callback(null, estimateUploadPath); }
+        catch (error) { callback(error as Error, estimateUploadPath); }
+      },
+      filename: (_req, file, callback) => callback(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`),
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, callback) => callback(null, ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'].includes(file.mimetype)),
+  }))
   @ApiOperation({ summary: 'Submit a cost estimate (Service Provider only)' })
   @ApiResponse({ status: 201, description: 'Estimate submitted' })
   @ApiResponse({ status: 400, description: 'Duplicate or validation error' })
-  create(@Body() dto: CreateEstimateDto) {
+  create(@Body() dto: CreateEstimateDto, @UploadedFile() file?: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('An estimate document is required. Upload a PDF, Word, or Excel file.');
+    }
+    if (file) {
+      dto.documentName = file.originalname;
+      dto.documentUrl = `http://localhost:${appConfig.port}/uploads/estimates/${file.filename}`;
+    }
     return this.estimatesService.create(dto);
   }
 
