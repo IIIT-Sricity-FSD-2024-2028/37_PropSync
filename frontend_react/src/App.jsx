@@ -1,16 +1,10 @@
 import React from "react";
-import LoginSignup from "./pages/LoginSignup";
-import Navbar from "./components/Navbar";
-import UserProfile from "./layouts/UserProfile";
+import Notifications from "./layouts/Notifications";
 
 function App() {
-  return (
-    <div>
-      <Navbar />
-      {/* <LoginSignup /> */}
-      <UserProfile />
-    </div>
-  );
+  // Change role to 'admin', 'maintenance_manager', 'service_provider', or 'owner'
+  return <Notifications role="admin" />;
 }
 
 export default App;
+
