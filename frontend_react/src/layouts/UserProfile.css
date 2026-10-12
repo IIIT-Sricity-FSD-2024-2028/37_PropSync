@@ -1,0 +1,246 @@
+/* ------------------------- Profile Page CSS ---------------------- */
+
+.profile_cont {
+  width: 100%;
+  min-height: 89vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f3f5f7;
+  padding: 30px 20px;
+  box-sizing: border-box;
+}
+
+.profile_divs {
+  max-width: 950px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile_divs h1 {
+  margin: 0 0 5px 0;
+  font-size: 1.8rem;
+}
+
+.profile_divs p {
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.95rem;
+}
+
+.card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 25px 30px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.card_header,
+.password_header,
+.modal_header,
+.modal_actions {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card_header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.profile_info {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  margin-top: 20px;
+}
+
+.avatar_col,
+.stat_content,
+.detail_item,
+.modal_form,
+.form_group {
+  display: flex;
+  flex-direction: column;
+}
+
+.avatar_col {
+  align-items: center;
+  min-width: 120px;
+  gap: 10px;
+}
+
+.avatar_circle {
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  background-color: #1e3a8a;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.details_grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 35px;
+  width: 100%;
+}
+
+.detail_label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.detail_value {
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 2px;
+}
+
+.role_badge {
+  background-color: #dbeafe;
+  color: #1d4ed8;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  width: fit-content;
+}
+
+.btn_blue {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+}
+
+.btn_blue:hover {
+  background-color: #1d4ed8;
+}
+
+.btn_cancel {
+  background-color: #eee;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn_cancel:hover {
+  background-color: #ccc;
+}
+
+.password_card {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.password_header {
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.password_icon {
+  background-color: #eff6ff;
+  color: #2563eb;
+  padding: 8px;
+  border-radius: 6px;
+  display: flex;
+}
+
+.stats_grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.stat_card {
+  background-color: #f9fafb;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.stat_value {
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.stat_label {
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+/* Modals */
+.modal_overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 50;
+}
+
+.modal_box {
+  background-color: white;
+  border-radius: 12px;
+  padding: 25px;
+  width: 90%;
+  max-width: 480px;
+}
+
+.modal_form {
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.form_group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.form_group input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.modal_actions {
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+@media (max-width: 768px) {
+  .profile_info {
+    flex-direction: column;
+    align-items: center;
+  }
+  .details_grid {
+    grid-template-columns: 1fr;
+  }
+}
