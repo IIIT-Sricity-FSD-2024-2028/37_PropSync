@@ -128,9 +128,26 @@ export class ComplaintsService {
       .filter((complaint) => complaint.status === ComplaintStatus.Pending);
   }
 
-  create(dto: CreateComplaintDto): Complaint {
+  create(dto: CreateComplaintDto, actor?: { role?: string; id?: number }): Complaint {
     const today = new Date().toISOString().split('T')[0];
     const owner = this.getOwnerForComplaint(dto.ownerId);
+    if (!actor?.id || !['admin', 'owner'].includes(actor.role || '')) {
+      throw new BadRequestException('A valid administrator or owner session is required');
+    }
+    if (owner.approvalStatus !== 'approved') {
+      throw new BadRequestException(`Owner ${dto.ownerId} is not an approved account`);
+    }
+    if (actor?.role === 'admin') {
+      const administrator = actor.id ? this.usersService.findRawById(actor.id) : undefined;
+      if (!administrator || administrator.role !== UserRole.Admin || administrator.approvalStatus !== 'approved') {
+        throw new BadRequestException('An approved administrator account is required');
+      }
+      if (!administrator.communityName || administrator.communityName.trim().toLowerCase() !== owner.communityName?.trim().toLowerCase()) {
+        throw new BadRequestException('You can only create complaints for owners in your community');
+      }
+    } else if (actor?.role === 'owner' && actor.id !== owner.id) {
+      throw new BadRequestException('Owners can only submit complaints for their own account');
+    }
     const managerId = dto.managerId || this.resolveManagerIdForOwner(owner);
     const location = owner.propertyUnit;
 

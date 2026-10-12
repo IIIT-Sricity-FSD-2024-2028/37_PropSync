@@ -1,10 +1,7 @@
-import React from "react";
-import Notifications from "./layouts/Notifications";
+import AppRoutes from "./routes/AppRoutes.jsx";
 
 function App() {
-  // Change role to 'admin', 'maintenance_manager', 'service_provider', or 'owner'
-  return <Notifications role="admin" />;
+  return <AppRoutes />;
 }
 
 export default App;
-

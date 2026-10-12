@@ -305,7 +305,7 @@ export class ComplaintsController {
   // ======================================================
 
   @Post()
-  @Roles(Role.Owner)
+  @Roles(Role.Owner, Role.Admin)
   @UseInterceptors(
     FileInterceptor('photo', {
       storage: diskStorage({
@@ -385,6 +385,8 @@ export class ComplaintsController {
   create(
     @Body() dto: CreateComplaintDto,
     @UploadedFile() file?: Express.Multer.File,
+    @Headers('x-user-id') actorId?: string,
+    @Headers('role') actorRole?: string,
   ) {
     // If a photo was uploaded,
     // store its public API URL. A relative /uploads URL would otherwise be
@@ -394,7 +396,10 @@ export class ComplaintsController {
         `http://localhost:${appConfig.port}/uploads/complaints/${file.filename}`;
     }
 
-    return this.complaintsService.create(dto);
+    return this.complaintsService.create(dto, {
+      role: actorRole?.toLowerCase().trim(),
+      id: actorId ? Number(actorId) : undefined,
+    });
   }
 
 
