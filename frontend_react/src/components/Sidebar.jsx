@@ -84,8 +84,8 @@ function Sidebar({ role, menu, setMenu }) {
   };
   const [selected, setSelected] = useState("");
   return (
-    <div className="sidebar-overlay">
-      <div className="sideBar">
+    <div className="sidebar-overlay" onClick={() => setMenu(false)}>
+      <div className="sideBar" onClick={(e) => e.stopPropagation()}>
         <div>
           <div className="side_cont">
             <img src="logo.png" alt="" height="40px" />

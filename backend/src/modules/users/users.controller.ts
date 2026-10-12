@@ -170,8 +170,8 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @Roles(Role.Admin, Role.Owner, Role.MaintenanceManager, Role.ServiceProvider)
-  @ApiOperation({ summary: 'Update user profile' })
+  @Roles(Role.Admin, Role.SuperUser, Role.Owner, Role.MaintenanceManager, Role.ServiceProvider)
+  @ApiOperation({ summary: 'Update a user profile (including Super User management)' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'User updated successfully' })
   @ApiResponse({ status: 404, description: 'User not found' })
@@ -180,9 +180,9 @@ export class UsersController {
   }
 
   @Delete(':id')
-  @Roles(Role.Admin)
+  @Roles(Role.Admin, Role.SuperUser)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a user (Admin only)' })
+  @ApiOperation({ summary: 'Delete a user (Admin or Super User)' })
   @ApiParam({ name: 'id', type: Number })
   @ApiResponse({ status: 200, description: 'User deleted' })
   @ApiResponse({ status: 404, description: 'User not found' })

@@ -259,8 +259,8 @@ const PasswordModal = ({ isOpen, onClose, onSave }) => {
 };
 
 function UserProfile({
-  user = {},
-  role = "",
+  user,
+  role,
   title = "My Profile",
   subtitle,
   performanceSummary,
@@ -273,10 +273,10 @@ function UserProfile({
   const currentRole = normalizedRole.includes("service")
     ? "service_provider"
     : normalizedRole.includes("maintain") || normalizedRole.includes("maintenance")
-    ? "maintenance_manager"
-    : normalizedRole.includes("owner")
-    ? "owner"
-    : "admin";
+      ? "maintenance_manager"
+      : normalizedRole.includes("owner")
+        ? "owner"
+        : "admin";
 
   const [profileData, setProfileData] = useState({
     fullName: user?.fullName || "",

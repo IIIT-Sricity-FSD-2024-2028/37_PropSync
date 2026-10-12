@@ -71,12 +71,11 @@ const Right = ({ name }) => {
     </div>
   );
 };
-function Navbar({ name }) {
-  const [menu, setMenu] = useState(true);
-  const [role, setRole] = useState("");
+function Navbar({ name, role = "admin" }) {
+  const [menu, setMenu] = useState(false);
   return (
     <div id="nav_container">
-      {menu && <Sidebar role={"admin"} menu={menu} setMenu={setMenu} />}
+      {menu && <Sidebar role={role} menu={menu} setMenu={setMenu} />}
       <div className="left">
         <Menu setMenu={setMenu} menu={menu} />
         <Logo />

@@ -1,88 +1,301 @@
-// SHARED - may be replaced by team version
-const API_BASE_URL = 'http://localhost:3000';
+// Shared notification service for PropSync
+const API_BASE_URL = "http://localhost:3000";
 
-function getHeaders(user) {
-  const role = user?.role || 'owner';
-  const userId = user?.id !== undefined ? String(user.id) : (JSON.parse(localStorage.getItem('currentUser') || '{}').id || '5');
+// --------------------------------------------------
+// Common helpers
+// --------------------------------------------------
+
+function getCurrentUser() {
+  try {
+    return JSON.parse(localStorage.getItem("currentUser") || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function getUserId(user) {
+  if (user && typeof user === "object" && user.id !== undefined) {
+    return String(user.id);
+  }
+
+  if (user !== undefined && user !== null && user !== "") {
+    return String(user);
+  }
+
+  const currentUser = getCurrentUser();
+  return currentUser.id !== undefined ? String(currentUser.id) : "";
+}
+
+function getUserRole(user, fallback = "owner") {
+  if (typeof user === "string") {
+    return user;
+  }
+
+  return user?.role || getCurrentUser().role || fallback;
+}
+
+function getHeaders(user, fallbackRole = "owner") {
+  const role = getUserRole(user, fallbackRole);
+  const userId = getUserId(user);
+
   return {
-    'Content-Type': 'application/json',
-    'role': role,
-    'x-user-id': String(userId)
+    "Content-Type": "application/json",
+    role,
+    ...(userId ? { "x-user-id": userId } : {}),
   };
 }
 
+// --------------------------------------------------
+// Fetch notifications
+// --------------------------------------------------
+
 export async function getNotifications(user) {
-  const uid = typeof user === 'object' ? user?.id : user;
-  if (!uid && uid !== 0) return [];
-  const response = await fetch(`${API_BASE_URL}/notifications?userId=${uid}`, {
-    method: 'GET',
-    headers: getHeaders(typeof user === 'object' ? user : { id: uid })
+  const uid = getUserId(user);
+  if (!uid) return [];
+
+  const url = new URL(`${API_BASE_URL}/notifications`);
+  url.searchParams.set("userId", uid);
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: getHeaders(user),
   });
-  if (!response.ok) throw new Error('Failed to load notifications');
+
+  if (!response.ok) {
+    throw new Error(`Failed to load notifications: ${response.statusText}`);
+  }
+
   return response.json();
 }
 
 export const getUserNotifications = getNotifications;
 
-export async function markNotificationAsRead(id, user) {
-  const response = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
-    method: 'PATCH',
-    headers: getHeaders(user)
+// Team API: fetchNotifications(role, userId, status)
+export async function fetchNotifications(
+  role = "admin",
+  userId = 13,
+  status = ""
+) {
+  const url = new URL(`${API_BASE_URL}/notifications`);
+
+  if (status && status !== "all") {
+    url.searchParams.set("status", status);
+  }
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: getHeaders({ role, id: userId }),
   });
-  if (!response.ok) throw new Error('Failed to mark notification as read');
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch notifications: ${response.statusText}`);
+  }
+
+  return response.json();
+}
+
+// --------------------------------------------------
+// Mark one notification as read
+// Supports (id, user) and (id, role, userId)
+// --------------------------------------------------
+
+export async function markNotificationAsRead(
+  id,
+  user = "owner",
+  userId
+) {
+  const identity =
+    userId !== undefined
+      ? { role: user, id: userId }
+      : user;
+
+  const response = await fetch(
+    `${API_BASE_URL}/notifications/${id}/read`,
+    {
+      method: "PATCH",
+      headers: getHeaders(identity),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to mark notification as read: ${response.statusText}`
+    );
+  }
+
   return response.json();
 }
 
 export const markNotificationRead = markNotificationAsRead;
 
-export async function markAllNotificationsRead(user) {
-  const uid = typeof user === 'object' ? user?.id : user;
-  if (!uid && uid !== 0) return;
-  const response = await fetch(`${API_BASE_URL}/notifications/user/${uid}/mark-all-read`, {
-    method: 'PATCH',
-    headers: getHeaders(typeof user === 'object' ? user : { id: uid })
-  });
-  if (!response.ok) throw new Error('Failed to mark all as read');
+// --------------------------------------------------
+// Mark all notifications as read
+// --------------------------------------------------
+
+export async function markAllNotificationsRead(
+  user,
+  role = "owner"
+) {
+  const identity =
+    typeof user === "object" && user !== null
+      ? user
+      : { id: user, role };
+
+  const uid = getUserId(identity);
+  if (!uid) return;
+
+  const response = await fetch(
+    `${API_BASE_URL}/notifications/user/${uid}/mark-all-read`,
+    {
+      method: "PATCH",
+      headers: getHeaders(identity),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to mark all notifications as read: ${response.statusText}`
+    );
+  }
+
   return response.json();
 }
 
-export async function deleteNotification(id, user) {
-  const response = await fetch(`${API_BASE_URL}/notifications/${id}`, {
-    method: 'DELETE',
-    headers: getHeaders(user)
-  });
-  if (!response.ok) throw new Error('Failed to delete notification');
+// Team API: markAllNotificationsAsRead(userId, role)
+export async function markAllNotificationsAsRead(
+  userId = 13,
+  role = "admin"
+) {
+  return markAllNotificationsRead({ id: userId, role });
+}
+
+// --------------------------------------------------
+// Delete one notification
+// --------------------------------------------------
+
+export async function deleteNotification(
+  id,
+  user = "owner",
+  userId
+) {
+  const identity =
+    userId !== undefined
+      ? { role: user, id: userId }
+      : user;
+
+  const response = await fetch(
+    `${API_BASE_URL}/notifications/${id}`,
+    {
+      method: "DELETE",
+      headers: getHeaders(identity),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to delete notification: ${response.statusText}`
+    );
+  }
+
   return response.json();
 }
 
-export async function clearAllNotifications(user) {
-  const uid = typeof user === 'object' ? user?.id : user;
-  if (!uid && uid !== 0) return;
-  const response = await fetch(`${API_BASE_URL}/notifications/user/${uid}/clear`, {
-    method: 'DELETE',
-    headers: getHeaders(typeof user === 'object' ? user : { id: uid })
-  });
-  if (!response.ok) throw new Error('Failed to clear notifications');
+// --------------------------------------------------
+// Clear all notifications for a user
+// --------------------------------------------------
+
+export async function clearAllNotifications(
+  user,
+  role = "owner"
+) {
+  const identity =
+    typeof user === "object" && user !== null
+      ? user
+      : { id: user, role };
+
+  const uid = getUserId(identity);
+  if (!uid) return;
+
+  const response = await fetch(
+    `${API_BASE_URL}/notifications/user/${uid}/clear`,
+    {
+      method: "DELETE",
+      headers: getHeaders(identity),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to clear notifications: ${response.statusText}`
+    );
+  }
+
   return response.json();
 }
 
-export async function createNotification(data, user) {
-  const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-  const userRole = user?.role || currentUser?.role || 'maintenance_manager';
-  const roleHeader = userRole === 'admin' ? 'admin' : 'maintenance_manager';
-  const userId = user?.id !== undefined ? String(user.id) : (currentUser?.id || '5');
+// --------------------------------------------------
+// Create notification
+// Supports (data, user) and (dto, role, senderUserId)
+// --------------------------------------------------
+
+export async function createNotification(
+  data,
+  user = "maintenance_manager",
+  senderUserId
+) {
+  const currentUser = getCurrentUser();
+
+  const identity =
+    senderUserId !== undefined
+      ? { role: user, id: senderUserId }
+      : typeof user === "object" && user !== null
+        ? user
+        : {
+            role: user,
+            id: currentUser.id ?? 5,
+          };
 
   const response = await fetch(`${API_BASE_URL}/notifications`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'role': roleHeader,
-      'x-user-id': String(userId)
-    },
-    body: JSON.stringify(data)
+    method: "POST",
+    headers: getHeaders(identity, "maintenance_manager"),
+    body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('Failed to send notification');
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+
+    throw new Error(
+      error.message ||
+        `Failed to create notification: ${response.statusText}`
+    );
+  }
+
   return response.json();
 }
 
 export const createManagerNotification = createNotification;
+
+// --------------------------------------------------
+// Fetch service providers for notification targeting
+// --------------------------------------------------
+
+export async function fetchServiceProviders(
+  role = "maintenance_manager",
+  userId = 5
+) {
+  const response = await fetch(
+    `${API_BASE_URL}/users?role=service_provider`,
+    {
+      method: "GET",
+      headers: getHeaders({ role, id: userId }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch service providers: ${response.statusText}`
+    );
+  }
+
+  return response.json();
+}
