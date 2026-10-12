@@ -1,39 +1,4 @@
-<<<<<<< HEAD
-// Owner Module Routes
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-import ProtectedRoute from './ProtectedRoutes';
-import OwnerRoutes from '../pages/owner/OwnerRoutes';
-
-export default function AppRoutes() {
-  return (
-    <Routes>
-      {/* Root redirect to Owner Dashboard */}
-      <Route path="/" element={<Navigate to="/owner/dashboard" replace />} />
-      <Route path="/login" element={<Navigate to="/owner/dashboard" replace />} />
-
-      {/* Aliases for Sidebar.jsx links */}
-      <Route path="/dashboard" element={<Navigate to="/owner/dashboard" replace />} />
-      <Route path="/new-complaint" element={<Navigate to="/owner/new-complaint" replace />} />
-      <Route path="/payment-history" element={<Navigate to="/owner/payment-history" replace />} />
-      <Route path="/notifications" element={<Navigate to="/owner/alerts" replace />} />
-      <Route path="/profile" element={<Navigate to="/owner/profile" replace />} />
-      <Route path="/alerts" element={<Navigate to="/owner/alerts" replace />} />
-
-      {/* Aliases for Navbar.jsx links */}
-      <Route path="/alerts.html" element={<Navigate to="/owner/alerts" replace />} />
-      <Route path="/profile.html" element={<Navigate to="/owner/profile" replace />} />
-      <Route path="/owner/profile.html" element={<Navigate to="/owner/profile" replace />} />
-      <Route path="/owner/alerts.html" element={<Navigate to="/owner/alerts" replace />} />
-
-      {/* Owner Protected Routes */}
-      <Route
-        path="/owner/*"
-        element={
-          <ProtectedRoute allowedRoles={['owner']}>
-=======
 import {
-  BrowserRouter,
   Navigate,
   Route,
   Routes,
@@ -70,6 +35,19 @@ import SubmitEstimate from "../pages/service_provider/SubmitEstimate.jsx";
 import UpdateStatus from "../pages/service_provider/UpdateStatus.jsx";
 import Ratings from "../pages/service_provider/Ratings.jsx";
 
+// Maintenance Manager
+import ManagerGuard, { isManager } from "../pages/maintenance_manager/shared/ManagerGuard";
+import MMDashboard from "../pages/maintenance_manager/Dashboard/Dashboard";
+import MMComplaints from "../pages/maintenance_manager/Complaints/Complaints";
+import MMComplaintDetails from "../pages/maintenance_manager/ComplaintDetails/ComplaintDetails";
+import MMAssignProvider from "../pages/maintenance_manager/AssignProvider/AssignProvider";
+import MMServiceEstimate from "../pages/maintenance_manager/ServiceEstimate/ServiceEstimate";
+import MMPaymentHistory from "../pages/maintenance_manager/PaymentHistory/PaymentHistory";
+import MMMaintenance from "../pages/maintenance_manager/Maintenance/Maintenance";
+import MMProviderPerformance from "../pages/maintenance_manager/ProviderPerformance/ProviderPerformance";
+import MMNotifications from "../pages/maintenance_manager/Notifications/Notifications";
+import MMProfile from "../pages/maintenance_manager/Profile/Profile";
+
 // Current user's role
 function getCurrentRole() {
   try {
@@ -94,6 +72,8 @@ function LegacyRoleRoute() {
     "service_provider": "/service-provider",
     "service-provider": "/service-provider",
     owner: "/owner",
+    maintenance_manager: "/maintenance_manager",
+    manager: "/maintenance_manager",
   };
 
   const prefix = prefixes[role];
@@ -126,6 +106,14 @@ function LegacySuperUserRoute() {
   return <Navigate to={`/super_user/${page}`} replace />;
 }
 
+// Shared Sidebar link: Maintenance Manager -> its own page, everyone else -> same as before
+function ManagerOr({ page, to }) {
+  if (isManager()) {
+    return <Navigate to={`/maintenance_manager/${page}`} replace />;
+  }
+  return <Navigate to={to} replace />;
+}
+
 // Application routes
 function AppRouteDefinitions() {
   return (
@@ -145,7 +133,7 @@ function AppRouteDefinitions() {
       />
       <Route
         path="/payment-history"
-        element={<Navigate to="/owner/payment-history" replace />}
+        element={<ManagerOr page="payment-history" to="/owner/payment-history" />}
       />
       <Route
         path="/alerts"
@@ -153,7 +141,7 @@ function AppRouteDefinitions() {
       />
       <Route
         path="/profile"
-        element={<Navigate to="/owner/profile" replace />}
+        element={<ManagerOr page="profile" to="/owner/profile" />}
       />
       <Route
         path="/alerts.html"
@@ -177,16 +165,11 @@ function AppRouteDefinitions() {
         path="/owner/*"
         element={
           <ProtectedRoute allowedRoles={["owner"]}>
->>>>>>> 5fc1ef96f03f4e1df500e59c9ed3f8a3d3a35209
             <OwnerRoutes />
           </ProtectedRoute>
         }
       />
 
-<<<<<<< HEAD
-      {/* Fallback to Owner Dashboard */}
-      <Route path="*" element={<Navigate to="/owner/dashboard" replace />} />
-=======
       {/* Administrator */}
       <Route
         path="/admin"
@@ -313,29 +296,51 @@ function AppRouteDefinitions() {
         element={<Ratings />}
       />
 
+      {/* Maintenance Manager */}
+      <Route
+        path="/maintenance_manager"
+        element={<Navigate to="/maintenance_manager/dashboard" replace />}
+      />
+      <Route
+        path="/maintenance_manager/dashboard.html"
+        element={<Navigate to="/maintenance_manager/dashboard" replace />}
+      />
+      <Route path="/maintenance_manager/dashboard" element={<ManagerGuard><MMDashboard /></ManagerGuard>} />
+      <Route path="/maintenance_manager/complaints" element={<ManagerGuard><MMComplaints /></ManagerGuard>} />
+      <Route path="/maintenance_manager/complaint-details" element={<ManagerGuard><MMComplaintDetails /></ManagerGuard>} />
+      <Route path="/maintenance_manager/assign-provider" element={<ManagerGuard><MMAssignProvider /></ManagerGuard>} />
+      <Route path="/maintenance_manager/service-estimate" element={<ManagerGuard><MMServiceEstimate /></ManagerGuard>} />
+      <Route path="/maintenance_manager/payment-history" element={<ManagerGuard><MMPaymentHistory /></ManagerGuard>} />
+      <Route path="/maintenance_manager/maintenance" element={<ManagerGuard><MMMaintenance /></ManagerGuard>} />
+      <Route path="/maintenance_manager/provider-performance" element={<ManagerGuard><MMProviderPerformance /></ManagerGuard>} />
+      <Route path="/maintenance_manager/notifications" element={<ManagerGuard><MMNotifications /></ManagerGuard>} />
+      <Route path="/maintenance_manager/profile" element={<ManagerGuard><MMProfile /></ManagerGuard>} />
+      {/* Navbar bell / avatar links ("./alerts.html", "./profile.html") */}
+      <Route
+        path="/maintenance_manager/alerts.html"
+        element={<Navigate to="/maintenance_manager/notifications" replace />}
+      />
+      <Route
+        path="/maintenance_manager/profile.html"
+        element={<Navigate to="/maintenance_manager/profile" replace />}
+      />
+
       {/* Legacy role-based routes */}
       <Route path="/participants" element={<LegacyRoleRoute />} />
       <Route path="/complaints" element={<LegacyRoleRoute />} />
       <Route path="/notifications" element={<LegacyRoleRoute />} />
+      <Route path="/provider-performance" element={<LegacyRoleRoute />} />
 
       {/* Fallback */}
       <Route
         path="*"
         element={<Navigate to="/" replace />}
       />
->>>>>>> 5fc1ef96f03f4e1df500e59c9ed3f8a3d3a35209
     </Routes>
   );
 }
 
-<<<<<<< HEAD
-=======
-// Keep BrowserRouter in this file only if main.jsx does not already provide it.
+// BrowserRouter + AuthProvider are already in App.jsx, so no second BrowserRouter here.
 export default function AppRoutes() {
-  return (
-    <BrowserRouter>
-      <AppRouteDefinitions />
-    </BrowserRouter>
-  );
+  return <AppRouteDefinitions />;
 }
->>>>>>> 5fc1ef96f03f4e1df500e59c9ed3f8a3d3a35209

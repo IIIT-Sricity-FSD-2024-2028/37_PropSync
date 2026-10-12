@@ -1,4 +1,5 @@
 // Shared notification service for PropSync
+// Combined version: team API (role, userId) + owner API (user object) – all roles use this file
 const API_BASE_URL = "http://localhost:3000";
 
 // --------------------------------------------------
@@ -18,7 +19,8 @@ function getUserId(user) {
     return String(user.id);
   }
 
-  if (user !== undefined && user !== null && user !== "") {
+  // a number / numeric id (a role name like "maintenance_manager" is NOT an id)
+  if (user !== undefined && user !== null && user !== "" && /^\d+$/.test(String(user))) {
     return String(user);
   }
 
