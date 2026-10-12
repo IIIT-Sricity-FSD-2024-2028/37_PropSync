@@ -1,16 +1,15 @@
-import React from "react";
-import LoginSignup from "./pages/LoginSignup";
-import Navbar from "./components/Navbar";
-import UserProfile from "./layouts/UserProfile";
+// SHARED - may be replaced by team version
+import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import AppRoutes from './routes/AppRoutes';
 
-function App() {
+export default function App() {
   return (
-    <div>
-      <Navbar />
-      {/* <LoginSignup /> */}
-      <UserProfile />
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
   );
-}
-
-export default App;
+} 
