@@ -1,5 +1,5 @@
 // SHARED - may be replaced by team version
-const API_BASE_URL = 'http://localhost:3000';
+import { API_BASE_URL } from './api';
 
 export async function loginUser(email, password, role) {
   const roleFormatMap = {

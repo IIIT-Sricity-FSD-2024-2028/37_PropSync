@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import "./styles.css";
 
-const API = "http://localhost:3000";
+import { API_BASE_URL as API } from "../../services/api";
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "xlsx", "xls"];
 

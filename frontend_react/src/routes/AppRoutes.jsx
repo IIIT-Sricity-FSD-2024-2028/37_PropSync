@@ -35,6 +35,9 @@ import SubmitEstimate from "../pages/service_provider/SubmitEstimate.jsx";
 import UpdateStatus from "../pages/service_provider/UpdateStatus.jsx";
 import Ratings from "../pages/service_provider/Ratings.jsx";
 import ComplaintDetails from "../layouts/ComplaintDetails.jsx";
+import Notifications from "../layouts/Notifications.jsx";
+import RoleLayout from "../components/RoleLayout";
+import RoleProfilePage from "../layouts/RoleProfilePage";
 
 // Maintenance Manager
 import ManagerGuard, { isManager } from "../pages/maintenance_manager/shared/ManagerGuard";
@@ -98,6 +101,7 @@ function LegacySuperUserRoute() {
     "notifications",
     "roles",
     "revenue",
+    "profile",
   ];
 
   if (!validPages.includes(page)) {
@@ -182,20 +186,21 @@ function AppRouteDefinitions() {
       />
       <Route
         path="/admin/dashboard"
-        element={<AdministratorDashboard />}
+        element={<ProtectedRoute allowedRoles={["admin", "administrator"]}><RoleLayout role="admin"><AdministratorDashboard /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/admin/participants"
-        element={<AdministratorParticipants />}
+        element={<ProtectedRoute allowedRoles={["admin", "administrator"]}><RoleLayout role="admin"><AdministratorParticipants /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/admin/complaints"
-        element={<AdministratorComplaints />}
+        element={<ProtectedRoute allowedRoles={["admin", "administrator"]}><RoleLayout role="admin"><AdministratorComplaints /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/admin/notifications"
-        element={<AdministratorNotifications />}
+        element={<ProtectedRoute allowedRoles={["admin", "administrator"]}><RoleLayout role="admin"><AdministratorNotifications /></RoleLayout></ProtectedRoute>}
       />
+      <Route path="/admin/profile" element={<ProtectedRoute allowedRoles={["admin", "administrator"]}><RoleLayout role="admin"><RoleProfilePage role="admin" /></RoleLayout></ProtectedRoute>} />
 
       {/* Administrator aliases */}
       <Route
@@ -218,6 +223,7 @@ function AppRouteDefinitions() {
         path="/administrator/notifications"
         element={<Navigate to="/admin/notifications" replace />}
       />
+      <Route path="/administrator/profile" element={<Navigate to="/admin/profile" replace />} />
 
       {/* Super User */}
       <Route
@@ -230,28 +236,29 @@ function AppRouteDefinitions() {
       />
       <Route
         path="/super_user/dashboard"
-        element={<SuperUserDashboard />}
+        element={<RoleLayout role="super_user"><SuperUserDashboard /></RoleLayout>}
       />
       <Route
         path="/super_user/participants"
-        element={<SuperUserParticipants />}
+        element={<RoleLayout role="super_user"><SuperUserParticipants /></RoleLayout>}
       />
       <Route
         path="/super_user/complaints"
-        element={<SuperUserComplaints />}
+        element={<RoleLayout role="super_user"><SuperUserComplaints /></RoleLayout>}
       />
       <Route
         path="/super_user/notifications"
-        element={<SuperUserNotifications />}
+        element={<RoleLayout role="super_user"><SuperUserNotifications /></RoleLayout>}
       />
       <Route
         path="/super_user/roles"
-        element={<SuperUserRoles />}
+        element={<RoleLayout role="super_user"><SuperUserRoles /></RoleLayout>}
       />
       <Route
         path="/super_user/revenue"
-        element={<SuperUserRevenue />}
+        element={<RoleLayout role="super_user"><SuperUserRevenue /></RoleLayout>}
       />
+      <Route path="/super_user/profile" element={<RoleLayout role="super_user"><RoleProfilePage role="super_user" /></RoleLayout>} />
 
       {/* Super User aliases */}
       <Route
@@ -268,34 +275,36 @@ function AppRouteDefinitions() {
         path="/service-provider"
         element={<Navigate to="/service-provider/dashboard" replace />}
       />
+      <Route path="/service_provider/index.html" element={<Navigate to="/service-provider/dashboard" replace />} />
       <Route
         path="/service-provider/dashboard"
-        element={<ServiceProviderDashboard />}
+        element={<ProtectedRoute allowedRoles={["service_provider"]}><ServiceProviderDashboard /></ProtectedRoute>}
       />
       <Route
         path="/service-provider/available-complaints"
-        element={<AvailableComplaints />}
+        element={<ProtectedRoute allowedRoles={["service_provider"]}><AvailableComplaints /></ProtectedRoute>}
       />
       <Route
         path="/service-provider/assigned-tasks"
-        element={<AssignedTasks />}
+        element={<ProtectedRoute allowedRoles={["service_provider"]}><AssignedTasks /></ProtectedRoute>}
       />
       <Route
         path="/service-provider/task-details"
-        element={<TaskDetails />}
+        element={<ProtectedRoute allowedRoles={["service_provider"]}><TaskDetails /></ProtectedRoute>}
       />
       <Route
         path="/service-provider/submit-estimate"
-        element={<SubmitEstimate />}
+        element={<ProtectedRoute allowedRoles={["service_provider"]}><SubmitEstimate /></ProtectedRoute>}
       />
       <Route
         path="/service-provider/update-status"
-        element={<UpdateStatus />}
+        element={<ProtectedRoute allowedRoles={["service_provider"]}><UpdateStatus /></ProtectedRoute>}
       />
       <Route
         path="/service-provider/ratings"
-        element={<Ratings />}
+        element={<ProtectedRoute allowedRoles={["service_provider"]}><Ratings /></ProtectedRoute>}
       />
+      <Route path="/service-provider/notifications" element={<ProtectedRoute allowedRoles={["service_provider"]}><Notifications role="service_provider" /></ProtectedRoute>} />
 
       {/* Maintenance Manager */}
       <Route
@@ -336,10 +345,7 @@ function AppRouteDefinitions() {
       <Route path="/provider-performance" element={<LegacyRoleRoute />} />
 
       {/* Fallback */}
-      <Route
-        path="*"
-        element={<Navigate to="/" replace />}
-      />
+      <Route path="*" element={<main style={{ padding: "2rem" }}><h1>Page not found</h1><p>The requested PropSync page does not exist.</p><a href="/">Return to login</a></main>} />
     </Routes>
   );
 }

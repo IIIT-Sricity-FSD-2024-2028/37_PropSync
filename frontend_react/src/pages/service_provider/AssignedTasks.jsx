@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./styles.css";
 
-const API = "http://localhost:3000";
+import { API_BASE_URL as API } from "../../services/api";
 
 const STATUS_LABELS = {
   assigned: "Assigned",

@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import {
   FiHome,
   FiClipboard,
@@ -8,11 +7,16 @@ import {
   FiStar,
   FiFileText,
   FiCheckSquare,
+  FiLogOut,
 } from "react-icons/fi";
 import { HiOutlineUsers } from "react-icons/hi2";
 import { GrDocumentPdf } from "react-icons/gr";
+import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Sidebar({ role, menu, setMenu }) {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const roleOptions = {
     owner: [
       { name: "Dashboard", icon: <FiHome />, href: "/dashboard" },
@@ -71,50 +75,51 @@ function Sidebar({ role, menu, setMenu }) {
       { name: "Profile", icon: <FiUser />, href: "/profile" },
     ],
     admin: [
-      { name: "Dashboard", icon: <FiHome />, href: "/dashboard" },
+      { name: "Dashboard", icon: <FiHome />, href: "/admin/dashboard" },
       {
         name: "Manage Participants",
         icon: <HiOutlineUsers />,
-        href: "/dashboard",
+        href: "/admin/participants",
       },
-      { name: "Complaints", icon: <FiFileText />, href: "/complaints" },
-      { name: "Notifications", icon: <FiBell />, href: "/notifications" },
-      { name: "Profile", icon: <FiUser />, href: "/profile" },
+      { name: "Complaints", icon: <FiFileText />, href: "/admin/complaints" },
+      { name: "Notifications", icon: <FiBell />, href: "/admin/notifications" },
+      { name: "Profile", icon: <FiUser />, href: "/admin/profile" },
+    ],
+    super_user: [
+      { name: "Dashboard", icon: <FiHome />, href: "/super_user/dashboard" },
+      { name: "Manage Participants", icon: <HiOutlineUsers />, href: "/super_user/participants" },
+      { name: "Complaints", icon: <FiFileText />, href: "/super_user/complaints" },
+      { name: "Notifications", icon: <FiBell />, href: "/super_user/notifications" },
+      { name: "Roles", icon: <FiUser />, href: "/super_user/roles" },
+      { name: "Revenue", icon: <FiCreditCard />, href: "/super_user/revenue" },
+      { name: "Profile", icon: <FiUser />, href: "/super_user/profile" },
     ],
   };
-  const [selected, setSelected] = useState("");
+  const options = roleOptions[role] || [];
   return (
     <div className="sidebar-overlay" onClick={() => setMenu(false)}>
       <div className="sideBar" onClick={(e) => e.stopPropagation()}>
         <div>
           <div className="side_cont">
-            <img src="logo.png" alt="" height="40px" />
+            <img src="/logo.png" alt="PropSync" height="40px" />
             <span id="closeBtn" onClick={() => setMenu(!menu)}>
               ✖
             </span>
           </div>
           <div className="optionCont">
-            {roleOptions[role].map((r) => (
-              <a
-                href={r.href}
-                onClick={() => setSelected(r.name)}
-                style={
-                  selected == r.name
-                    ? { backgroundColor: "#16a34a" }
-                    : { backgroundColor: "white" }
-                }
-              >
+            {options.map((r) => (
+              <NavLink key={r.href} to={r.href} onClick={() => setMenu(false)} className={({ isActive }) => isActive ? "sidebar-link active" : "sidebar-link"} end>
                 <span>{r.icon}</span>
                 <span>{r.name}</span>
-              </a>
+              </NavLink>
             ))}
           </div>
         </div>
         <div>
-          <a className="logout" href="../login_signup.html">
-            <p id="arrow">&rarr;</p>
+          <button className="logout" type="button" onClick={() => { logout(); navigate("/", { replace: true }); }}>
+            <FiLogOut aria-hidden="true" />
             Logout
-          </a>
+          </button>
         </div>
       </div>
     </div>

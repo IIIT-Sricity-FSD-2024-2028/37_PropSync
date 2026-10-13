@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { useAuth } from "../context/AuthContext";
 import "./Notifications.css";
 import Navbar from "../components/Navbar";
 import {
@@ -306,10 +307,11 @@ const ManagerComposer = ({ serviceProviders, onSend }) => {
 };
 
 function Notifications({ role = "admin", userId, name }) {
+  const { currentUser } = useAuth();
   const currentRole = ROLE_PROFILES[role] ? role : "admin";
   const profile = ROLE_PROFILES[currentRole];
-  const activeUserId = userId || profile.userId;
-  const displayName = name || profile.name;
+  const activeUserId = userId || currentUser?.id || profile.userId;
+  const displayName = name || currentUser?.name || profile.name;
 
   const [notificationList, setNotificationList] = useState([]);
   const [serviceProviders, setServiceProviders] = useState([]);

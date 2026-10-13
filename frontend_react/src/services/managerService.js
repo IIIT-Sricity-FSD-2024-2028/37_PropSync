@@ -4,7 +4,8 @@
 // (Notifications calls come from the shared notificationService.js)
 // =============================================================
 
-export const API_BASE_URL = "http://localhost:3000";
+import { API_BASE_URL } from "./api";
+export { API_BASE_URL };
 
 /* ---------- current user (set by LoginSignup in localStorage) ---------- */
 export function getCurrentManager() {

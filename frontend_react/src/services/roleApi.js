@@ -1,18 +1,20 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+import { API_BASE_URL as API_URL } from "./api";
 
 export function getRoleSession(role) {
-  let user = {};
+  let user;
   try {
     user = JSON.parse(localStorage.getItem("currentUser") || "{}");
   } catch {
     user = {};
   }
   return {
-    id: Number(user.id ?? (role === "super_user" ? 0 : 13)),
-    name: user.name || (role === "super_user" ? "Super User" : "Administrator"),
+    // The backend models Super User as a system actor (ID 0), not as the
+    // previously logged-in community user stored in currentUser.
+    id: role === "super_user" ? 0 : Number(user.id ?? 13),
+    name: role === "super_user" ? "Super User" : user.name || "Administrator",
     role,
     communityName: user.communityName || "",
-    email: user.email || "",
+    email: role === "super_user" ? "superuser@propsync.com" : user.email || "",
   };
 }
 

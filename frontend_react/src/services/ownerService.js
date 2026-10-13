@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000';
+import { API_BASE_URL } from './api';
 
 function getHeaders(user) {
   const role = user?.role || 'owner';

@@ -15,6 +15,7 @@ export default function OwnerRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="new-complaint" element={<NewComplaint />} />
         <Route path="complaint/:id" element={<ComplaintDetails />} />
+        <Route path="complaints/:id" element={<ComplaintDetails />} />
         <Route path="payment-history" element={<PaymentHistory />} />
         <Route path="alerts" element={<Alerts />} />
         <Route path="profile" element={<Profile />} />

@@ -1,11 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import "../App.css";
 import Sidebar from "./Sidebar";
 
 const Menu = ({ menu, setMenu }) => {
   return (
-    <div
+    <button
+      type="button"
       className="menu"
+      aria-label={menu ? "Close navigation menu" : "Open navigation menu"}
+      aria-expanded={menu}
       onClick={() => {
         setMenu(!menu);
       }}
@@ -25,16 +29,18 @@ const Menu = ({ menu, setMenu }) => {
           strokeLinejoin="round"
         ></path>
       </svg>
-    </div>
+    </button>
   );
 };
 const Logo = () => {
-  return <img src="logo.png" alt="logo" height="40px"></img>;
+  return <img src="/logo.png" alt="PropSync" height="40px" />;
 };
-const Right = ({ name }) => {
+const Right = ({ name, role }) => {
+  const notificationsPath = role === "super_user" ? "/super_user/notifications" : role === "admin" || role === "administrator" ? "/admin/notifications" : role === "service_provider" ? "/service-provider/notifications" : role === "maintenance_manager" ? "/maintenance_manager/notifications" : "/notifications";
+  const profilePath = role === "super_user" ? "/super_user/profile" : role === "admin" || role === "administrator" ? "/admin/profile" : role === "maintenance_manager" ? "/maintenance_manager/profile" : role === "owner" ? "/owner/profile" : "/profile";
   return (
     <div className="right">
-      <a className="icon" href="./alerts.html">
+      <Link className="icon" to={notificationsPath} aria-label="Notifications">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="24"
@@ -42,17 +48,17 @@ const Right = ({ name }) => {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          class="lucide lucide-bell w-5 h-5 flex-shrink-0"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="lucide lucide-bell w-5 h-5 flex-shrink-0"
         >
           <path d="M10.268 21a2 2 0 0 0 3.464 0"></path>
           <path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"></path>
         </svg>
-      </a>
+      </Link>
       <div className="profile">
-        <a className="avatar" href="./profile.html" title="Raj Kumar">
+        <Link className="avatar" to={profilePath} title={name || "User"} aria-label="Open profile">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="35"
@@ -66,7 +72,7 @@ const Right = ({ name }) => {
             ></path>
           </svg>
           {name}
-        </a>
+        </Link>
       </div>
     </div>
   );
@@ -80,7 +86,7 @@ function Navbar({ name, role = "admin" }) {
         <Menu setMenu={setMenu} menu={menu} />
         <Logo />
       </div>
-      <Right name={name} />
+      <Right name={name} role={role} />
     </div>
   );
 }

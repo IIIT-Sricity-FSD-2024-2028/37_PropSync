@@ -396,15 +396,29 @@ body:has(.superuser-role-page) { background: #f3f5f7; color: #111827; }
 /* Participant management and revenue chart match the original Super User screens. */
 .superuser-participants .role-head { margin-bottom: 26px; }
 .superuser-participants h1 { font-size: 29px; }
-.su-participant-toolbar { display:flex; align-items:center; gap:12px; margin:0 0 18px; padding:20px; border:1px solid #e7eaee; border-radius:15px; background:#fff; box-shadow:0 2px 6px rgba(15,23,42,.055); }
-.su-participant-toolbar .role-input { flex:0 1 475px; min-width:240px; height:44px; font-size:16px; }
-.su-participant-toolbar .role-select { min-width:174px; height:44px; padding:8px 13px; font-size:15px; }
+.su-participant-toolbar { display:flex; align-items:center; gap:14px; margin:0 0 18px; padding:19px 20px; border:1px solid #e7eaee; border-radius:15px; background:#fff; box-shadow:0 2px 6px rgba(15,23,42,.055); }
+.superuser-participants .su-participant-toolbar .su-participant-search { position:relative; display:flex; flex:0 1 475px; align-items:center; height:43px; min-width:220px; border:1px solid #d9dee5; border-radius:10px; padding:0 14px; color:#94a3b8; }
+.superuser-participants .su-participant-toolbar .su-participant-search > svg { width:18px; height:18px; flex:0 0 auto; }
+.superuser-participants .su-participant-toolbar .su-participant-search .role-input { width:100%; min-width:0; height:100%; flex:1 1 auto; border:0; margin:0; padding:8px 10px; background:transparent; box-shadow:none; font-size:16px; }
+.superuser-participants .su-participant-toolbar .su-participant-search .role-input:focus { outline:0; }
+.superuser-participants .su-participant-toolbar .su-participant-select { position:relative; display:flex; flex:0 0 174px; align-items:center; height:43px; border:1px solid #d9dee5; border-radius:10px; padding:0 12px; color:#475569; }
+.superuser-participants .su-participant-toolbar .su-participant-select > svg:first-child { width:17px; height:17px; flex:0 0 auto; }
+.superuser-participants .su-participant-toolbar .role-select { width:100%; min-width:0; height:100%; flex:1 1 auto; border:0; appearance:none; padding:8px 7px 8px 10px; background:transparent; color:#1f2937; font-size:15px; }
+.superuser-participants .su-participant-toolbar .role-select:focus { outline:0; box-shadow:none; }
+.superuser-participants .su-participant-toolbar .su-select-chevron { position:absolute; right:11px; width:16px; height:16px; pointer-events:none; }
+.superuser-participants .su-participant-toolbar .su-sort-indicator { display:inline-flex; flex:0 0 auto; align-items:center; gap:0; }
+.superuser-participants .su-participant-toolbar .su-sort-indicator svg { width:9px; height:14px; }
+.superuser-participants .su-participant-toolbar .su-sort-select { flex-basis:162px; }
+.superuser-participants .su-participant-toolbar .su-sort-select .role-select { padding-right:19px; }
 .su-participant-toolbar .su-add-participant { min-width:210px; min-height:42px; margin-left:auto; border-radius:9px; background:#16a34a; font-size:15px; }
 .su-participant-toolbar .su-add-participant:hover:not(:disabled) { background:#15803d; }
 .su-participants-table { border-radius:15px; box-shadow:0 2px 6px rgba(15,23,42,.055); }
 .su-participants-table .role-table { width:100%; min-width:1050px; }
-.su-participants-table .role-table th { height:44px; padding:11px 18px; background:#f9fafb; color:#1f2937; font-size:12px; }
-.su-participants-table .role-table th button { display:inline-flex; align-items:center; gap:7px; font-size:12px; }
+.su-participants-table .role-table th { height:44px; padding:11px 18px; background:#f9fafb; color:#1f2937; font-size:14px; text-transform:none; }
+.su-participants-table .role-table th button { display:inline-flex; align-items:center; gap:5px; font-size:14px; text-transform:none; }
+.su-participants-table .role-table th button svg { width:14px; height:14px; color:#64748b; stroke-width:1.7; }
+.su-participants-table .role-table th button .su-sort-indicator { display:inline-flex; align-items:center; gap:0; }
+.su-participants-table .role-table th button .su-sort-indicator svg { width:8px; height:12px; }
 .su-participants-table .role-table td { height:63px; padding:11px 18px; color:#182638; font-size:16px; }
 .su-participant-code { white-space:nowrap; }
 .su-participant-name strong { display:block; color:#111827; font-size:16px; font-weight:650; }
@@ -440,7 +454,7 @@ body:has(.superuser-role-page) { background: #f3f5f7; color: #111827; }
 .su-revenue-plot > .empty-revenue { border:2px dashed #cbd5e1; border-bottom:0; border-radius:9px 9px 0 0; background:transparent; box-shadow:none; }
 .su-revenue-label { padding-bottom:1px; color:#334155; font-size:14px; font-weight:600; text-align:center; white-space:nowrap; }
 .su-revenue-notice { display:flex; align-items:center; gap:14px; margin:20px 0 0; border:1px solid #fcd34d; border-radius:10px; padding:17px 20px; background:#fef3c7; color:#92400e; font-size:16px; }
-@media (max-width: 900px) { .su-participant-toolbar { flex-wrap:wrap; } .su-participant-toolbar .role-input { flex:1 1 100%; } .su-participant-toolbar .su-add-participant { margin-left:0; } }
+@media (max-width: 900px) { .su-participant-toolbar { flex-wrap:wrap; } .superuser-participants .su-participant-toolbar .su-participant-search { flex:1 1 100%; } .superuser-participants .su-participant-toolbar .su-participant-select { flex:1 1 180px; } .superuser-participants .su-participant-toolbar .su-sort-select { flex-basis:180px; } .su-participant-toolbar .su-add-participant { margin-left:auto; } }
 @media (max-width: 650px) { .su-revenue-chart-panel { padding:18px !important; } .su-revenue-chart { height:340px; grid-template-columns:repeat(6,minmax(110px,1fr)); gap:10px; padding:18px 12px 10px; } .su-revenue-month { min-width:110px; } .su-revenue-notice { align-items:flex-start; padding:13px; font-size:14px; } }
 
 /* The complaint modal follows the original tall, independently scrolling detail view. */

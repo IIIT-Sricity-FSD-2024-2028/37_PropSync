@@ -1,139 +1,150 @@
-* {
-  margin: 0;
-  padding: 0;
+.login-page,
+.login-page * {
   box-sizing: border-box;
-  font-family:
-    Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    Segoe UI,
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    sans-serif;
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, sans-serif;
 }
-body {
-  height: 100vh;
-  width: 100vw;
-  background-image: url("/image.png");
+
+.login-page {
+  min-height: 100vh;
+  width: 100%;
+  padding: 100px 24px 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: url("/login_background.png");
   background-repeat: no-repeat;
   background-position: bottom center;
   background-size: cover;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
-#home_icon {
-  background-color: #105922;
-  padding: 10px;
-  border-radius: 20px;
+
+.login-page #home_icon {
   position: fixed;
   top: 45px;
   left: 65px;
+  padding: 10px;
+  border-radius: 20px;
+  background-color: #105922;
 }
-#home_icon:hover {
+
+.login-page #home_icon:hover {
   cursor: pointer;
   background-color: #0c4219;
 }
-#superUser {
+
+.login-page #superUser {
   position: fixed;
   top: 45px;
   right: 65px;
-
   padding: 10px 16px;
-  font-size: 14px;
-  font-weight: 500;
-
-  background-color: #4caf50;
-  color: black;
   border: none;
   border-radius: 8px;
-
+  background-color: #4caf50;
+  color: black;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-
   transition: all 0.2s ease;
 }
-#superUser:hover {
+
+.login-page #superUser:hover {
   background-color: #45a049;
   transform: scale(1.05);
 }
-#superUser:active {
+
+.login-page #superUser:active {
   transform: scale(0.98);
 }
-.center_box {
-  width: 850px;
-  height: 500px;
-  background-color: #fff;
+
+.login-page .center_box {
+  width: min(850px, 100%);
+  min-height: 500px;
   border-radius: 30px;
+  background-color: #fff;
   display: flex;
-  flex-direction: row;
-  box-shadow:
-    -4px 4px 4px 5px rgba(0, 0, 0, 0.15),
-    4px 4px 4px 2px rgba(0, 0, 0, 0.15);
+  box-shadow: -4px 4px 9px rgba(0, 0, 0, 0.15),
+    4px 4px 6px rgba(0, 0, 0, 0.15);
   transition: all 0.6s ease-in-out;
 }
-.content {
+
+.login-page .content {
   width: 500px;
-  height: 500px;
+  min-height: 500px;
+  padding: 40px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
   justify-content: center;
-  padding: 50px;
+  gap: 10px;
   transition: all 0.4s ease;
 }
-.heading1 {
+
+.login-page .heading1 {
   font-size: 40px;
   font-weight: 400;
 }
-.heading2 {
+
+.login-page .heading2 {
   font-size: 30px;
   font-weight: 300;
 }
-.roles,
-.s_roles {
+
+.login-page .roles,
+.login-page .s_roles {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 15px;
   margin-top: 15px;
 }
-.role,
-.s_role {
+
+.login-page .role,
+.login-page .s_role {
+  width: 100%;
   padding: 10px 8px;
+  border: 0;
+  border-radius: 15px;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #eee;
-  border-radius: 15px;
+  color: #1f2937;
   font-size: 13px;
+  text-align: center;
   cursor: pointer;
-  transition: 0.3s;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
-.role.active,
-.role:hover,
-.s_role.active,
-.s_role:hover {
-  background: rgba(22, 163, 74, 0.5);
+
+.login-page .role.active,
+.login-page .role:hover,
+.login-page .s_role.active,
+.login-page .s_role:hover {
+  background: rgba(22, 163, 74, 0.28);
 }
-.error-message {
+
+.login-page .role:focus-visible,
+.login-page .s_role:focus-visible {
+  outline: 3px solid #15803d;
+  outline-offset: 2px;
+}
+
+.login-page .error-message {
+  margin: 8px 0;
   color: #dc2626;
   font-size: 14px;
-  margin-top: 8px;
-  margin-bottom: 8px;
   display: none;
 }
-.error-message.show {
+
+.login-page .error-message.show {
   display: block;
 }
-.box {
+
+.login-page .box {
   width: 350px;
-  height: 500px;
-  color: #000000;
+  min-height: 500px;
   border-radius: 210px 30px 30px 210px;
   background: rgba(22, 163, 74, 0.5);
+  color: #000;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -141,51 +152,99 @@ body {
   gap: 20px;
   transition: all 0.6s ease-in-out;
 }
-.boxTitle {
+
+.login-page .boxTitle {
   font-size: 28px;
   font-weight: 400;
 }
-.boxText {
+
+.login-page .boxText {
   padding-left: 20px;
-  font-size: 18px;
   color: rgba(0, 0, 0, 0.65);
+  font-size: 18px;
 }
-.toggleBtn {
+
+.login-page .toggleBtn {
   width: 130px;
-  border-radius: 25px;
-  background-color: #000000;
-  color: #fff;
   padding: 5px;
+  border-radius: 25px;
+  background-color: #000;
+  color: #fff;
   font-size: 20px;
   cursor: pointer;
 }
-.hidden {
+
+.login-page .hidden {
   display: none !important;
 }
 
-input {
-  display: block;
+.login-page input {
   width: 300px;
-  padding: 10px;
+  max-width: 100%;
   margin-top: 10px;
-  border-radius: 10px;
+  padding: 10px;
   border: 1px solid #aaa;
+  border-radius: 10px;
+  display: block;
 }
-.btn {
+
+.login-page .btn {
   width: 130px;
+  margin: 13px auto;
   padding: 5px;
-  border-radius: 25px;
   border: none;
-  font-size: 20px;
+  border-radius: 25px;
   background-color: #105922;
   color: white;
+  font-size: 20px;
   display: block;
-  margin: 13px auto;
   cursor: pointer;
 }
-.btn:hover {
+
+.login-page .btn:hover {
   background-color: #0c441a;
 }
-.signupBack:hover {
+
+.login-page .signupBack:hover {
   cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .login-page .center_box {
+    width: min(500px, 100%);
+  }
+
+  .login-page .content {
+    width: 100%;
+  }
+
+  .login-page .box {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .login-page {
+    padding: 90px 14px 20px;
+  }
+
+  .login-page #home_icon {
+    top: 18px;
+    left: 16px;
+  }
+
+  .login-page #superUser {
+    top: 18px;
+    right: 16px;
+  }
+
+  .login-page .center_box {
+    min-height: 0;
+    border-radius: 20px;
+  }
+
+  .login-page .content {
+    min-height: 0;
+    padding: 28px 20px;
+  }
 }

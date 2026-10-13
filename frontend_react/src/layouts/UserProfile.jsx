@@ -206,14 +206,19 @@ const PasswordModal = ({ isOpen, onClose, onSave }) => {
   const [form, setForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [error, setError] = useState("");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!form.currentPassword) return setError("Please enter your current password.");
     if (!form.newPassword) return setError("Please enter a new password.");
     if (form.newPassword.length < 6) return setError("Password must be at least 6 characters.");
     if (form.newPassword !== form.confirmPassword) return setError("New passwords do not match.");
-    onSave(form);
+    try {
+      await onSave(form);
+      onClose();
+    } catch (saveError) {
+      setError(saveError.message || "Unable to update password.");
+    }
   };
 
   const fields = [
@@ -317,9 +322,8 @@ function UserProfile({
     if (onUpdateProfile) onUpdateProfile(fullUpdated);
   };
 
-  const handleSavePassword = (data) => {
-    setIsPasswordModalOpen(false);
-    if (onChangePassword) onChangePassword(data);
+  const handleSavePassword = async (data) => {
+    if (onChangePassword) await onChangePassword(data);
   };
 
   return (
