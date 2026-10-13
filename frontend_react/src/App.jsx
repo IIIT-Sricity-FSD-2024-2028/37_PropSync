@@ -1,7 +1,11 @@
-import AppRoutes from "./routes/AppRoutes.jsx";
+import Navbar from "./components/Navbar.jsx";
+import ComplaintDetails from "./layouts/ComplaintDetails.jsx";
 
 function App() {
-  return <AppRoutes />;
+  return (<div>
+    <Navbar />
+    <ComplaintDetails role={"admin"} />
+  </div>);
 }
 
 export default App;

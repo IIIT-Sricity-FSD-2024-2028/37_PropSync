@@ -31,6 +31,7 @@ import TaskDetails from "../pages/service_provider/TaskDetails.jsx";
 import SubmitEstimate from "../pages/service_provider/SubmitEstimate.jsx";
 import UpdateStatus from "../pages/service_provider/UpdateStatus.jsx";
 import Ratings from "../pages/service_provider/Ratings.jsx";
+import ComplaintDetails from "../layouts/ComplaintDetails.jsx";
 
 // Get the current user's role
 function getCurrentRole() {
@@ -205,6 +206,9 @@ function AppRoutes() {
       <Route path="/dashboard" element={<LegacyRoleRoute />} />
       <Route path="/participants" element={<LegacyRoleRoute />} />
       <Route path="/complaints" element={<LegacyRoleRoute />} />
+      <Route path="/complaint-details" element={<ComplaintDetails />} />
+      <Route path="/complaint-details/:id" element={<ComplaintDetails />} />
+      <Route path="/complaints/:id" element={<ComplaintDetails />} />
       <Route path="/notifications" element={<LegacyRoleRoute />} />
 
       {/* Unknown URL */}
