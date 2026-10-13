@@ -37,7 +37,7 @@ const Logo = () => {
 };
 const Right = ({ name, role }) => {
   const notificationsPath = role === "super_user" ? "/super_user/notifications" : role === "admin" || role === "administrator" ? "/admin/notifications" : role === "service_provider" ? "/service-provider/notifications" : role === "maintenance_manager" ? "/maintenance_manager/notifications" : "/notifications";
-  const profilePath = role === "super_user" ? "/super_user/profile" : role === "admin" || role === "administrator" ? "/admin/profile" : role === "maintenance_manager" ? "/maintenance_manager/profile" : role === "owner" ? "/owner/profile" : "/profile";
+  const profilePath = role === "super_user" ? "/super_user/profile" : role === "admin" || role === "administrator" ? "/admin/profile" : role === "maintenance_manager" ? "/maintenance_manager/profile" : role === "service_provider" ? "/service-provider/profile" : role === "owner" ? "/owner/profile" : "/profile";
   return (
     <div className="right">
       <Link className="icon" to={notificationsPath} aria-label="Notifications">

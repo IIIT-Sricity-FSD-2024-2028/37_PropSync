@@ -301,7 +301,7 @@ function AssignedTasks() {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
           <div className="page-header">

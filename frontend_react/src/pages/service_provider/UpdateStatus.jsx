@@ -381,7 +381,7 @@ export default function UpdateStatus() {
 
   if (loading) {
     return (
-      <div className="app-shell">
+      <div className="app-shell service-provider-app">
         <main className="main-wrap">
           <div className="page-content">
             <div className="empty-state">
@@ -398,7 +398,7 @@ export default function UpdateStatus() {
     const billAlreadySubmitted = loadError === "Bill Already Submitted";
 
     return (
-      <div className="app-shell">
+      <div className="app-shell service-provider-app">
         <main className="main-wrap">
           <div className="page-content">
             <div className="empty-state">
@@ -449,7 +449,7 @@ export default function UpdateStatus() {
   }
 
   return (
-    <div className="app-shell">
+    <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
           <div className="update-status-container">

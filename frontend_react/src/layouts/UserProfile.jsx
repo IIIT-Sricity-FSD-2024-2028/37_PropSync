@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import "./UserProfile.css";
 import {
   FiUser,
@@ -144,8 +145,7 @@ const PasswordCard = ({ onOpen }) => (
   </div>
 );
 
-const EditModal = ({ isOpen, onClose, currentRole, profileData, onSave }) => {
-  if (!isOpen) return null;
+const EditModal = ({ onClose, currentRole, profileData, onSave }) => {
   const [form, setForm] = useState({ ...profileData });
 
   const fields = [
@@ -160,8 +160,8 @@ const EditModal = ({ isOpen, onClose, currentRole, profileData, onSave }) => {
     { label: "Location", key: "location", type: "text" },
   ];
 
-  return (
-    <div className="modal_overlay" onClick={onClose}>
+  return createPortal((
+    <div className={`modal_overlay${currentRole === "service_provider" ? " service-provider-profile-modal" : ""}`} onClick={onClose}>
       <div className="modal_box" onClick={(e) => e.stopPropagation()}>
         <div className="modal_header">
           <h2>Edit Profile Information</h2>
@@ -198,7 +198,7 @@ const EditModal = ({ isOpen, onClose, currentRole, profileData, onSave }) => {
         </form>
       </div>
     </div>
-  );
+  ), document.body);
 };
 
 const PasswordModal = ({ isOpen, onClose, onSave }) => {
@@ -366,13 +366,12 @@ function UserProfile({
         <PasswordCard onOpen={() => setIsPasswordModalOpen(true)} />
       </div>
 
-      <EditModal
-        isOpen={isEditModalOpen}
+      {isEditModalOpen && <EditModal
         onClose={() => setIsEditModalOpen(false)}
         currentRole={currentRole}
         profileData={profileData}
         onSave={handleSaveProfile}
-      />
+      />}
 
       <PasswordModal
         isOpen={isPasswordModalOpen}

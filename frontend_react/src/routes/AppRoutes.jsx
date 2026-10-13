@@ -119,6 +119,14 @@ function ManagerOr({ page, to }) {
   return <Navigate to={to} replace />;
 }
 
+function ServiceProviderPage({ children }) {
+  return (
+    <ProtectedRoute allowedRoles={["service_provider"]}>
+      <RoleLayout role="service_provider">{children}</RoleLayout>
+    </ProtectedRoute>
+  );
+}
+
 // Application routes
 function AppRouteDefinitions() {
   return (
@@ -278,31 +286,35 @@ function AppRouteDefinitions() {
       <Route path="/service_provider/index.html" element={<Navigate to="/service-provider/dashboard" replace />} />
       <Route
         path="/service-provider/dashboard"
-        element={<ProtectedRoute allowedRoles={["service_provider"]}><ServiceProviderDashboard /></ProtectedRoute>}
+        element={<ServiceProviderPage><ServiceProviderDashboard /></ServiceProviderPage>}
       />
       <Route
         path="/service-provider/available-complaints"
-        element={<ProtectedRoute allowedRoles={["service_provider"]}><AvailableComplaints /></ProtectedRoute>}
+        element={<ServiceProviderPage><AvailableComplaints /></ServiceProviderPage>}
       />
       <Route
         path="/service-provider/assigned-tasks"
-        element={<ProtectedRoute allowedRoles={["service_provider"]}><AssignedTasks /></ProtectedRoute>}
+        element={<ServiceProviderPage><AssignedTasks /></ServiceProviderPage>}
       />
       <Route
         path="/service-provider/task-details"
-        element={<ProtectedRoute allowedRoles={["service_provider"]}><TaskDetails /></ProtectedRoute>}
+        element={<ServiceProviderPage><TaskDetails /></ServiceProviderPage>}
       />
       <Route
         path="/service-provider/submit-estimate"
-        element={<ProtectedRoute allowedRoles={["service_provider"]}><SubmitEstimate /></ProtectedRoute>}
+        element={<ServiceProviderPage><SubmitEstimate /></ServiceProviderPage>}
       />
       <Route
         path="/service-provider/update-status"
-        element={<ProtectedRoute allowedRoles={["service_provider"]}><UpdateStatus /></ProtectedRoute>}
+        element={<ServiceProviderPage><UpdateStatus /></ServiceProviderPage>}
       />
       <Route
         path="/service-provider/ratings"
-        element={<ProtectedRoute allowedRoles={["service_provider"]}><Ratings /></ProtectedRoute>}
+        element={<ServiceProviderPage><Ratings /></ServiceProviderPage>}
+      />
+      <Route
+        path="/service-provider/profile"
+        element={<ServiceProviderPage><RoleProfilePage role="service_provider" /></ServiceProviderPage>}
       />
       <Route path="/service-provider/notifications" element={<ProtectedRoute allowedRoles={["service_provider"]}><Notifications role="service_provider" /></ProtectedRoute>} />
 

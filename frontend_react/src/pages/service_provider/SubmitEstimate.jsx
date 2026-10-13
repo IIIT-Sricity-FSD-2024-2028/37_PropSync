@@ -273,7 +273,7 @@ export default function SubmitEstimate() {
 
   if (loading) {
     return (
-      <div className="app-shell">
+      <div className="app-shell service-provider-app">
         <main className="main-wrap">
           <div className="page-content">
             <p>Loading task information...</p>
@@ -285,7 +285,7 @@ export default function SubmitEstimate() {
 
   if (!task) {
     return (
-      <div className="app-shell">
+      <div className="app-shell service-provider-app">
         <main className="main-wrap">
           <div className="page-content">
             <div className="empty-state">
@@ -311,7 +311,7 @@ export default function SubmitEstimate() {
         : "#10B981";
 
   return (
-    <div className="app-shell">
+    <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
           <div className="estimate-page-container">

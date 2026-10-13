@@ -1,9 +1,11 @@
 
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { FiBell } from "react-icons/fi";
 import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
+import { fetchNotifications } from "../../services/notificationService";
 
 const STATUS_LABELS = {
   assigned: "Assigned",
@@ -203,6 +205,9 @@ function Dashboard() {
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [rejectingId, setRejectingId] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationsError, setNotificationsError] = useState("");
 
   const fetchProviderTasks = useCallback(async () => {
     setLoading(true);
@@ -263,6 +268,26 @@ function Dashboard() {
   useEffect(() => {
     fetchProviderTasks();
   }, [fetchProviderTasks]);
+
+  const fetchProviderNotifications = useCallback(async () => {
+    setNotificationsLoading(true);
+    setNotificationsError("");
+
+    try {
+      const data = await fetchNotifications("service_provider", providerId);
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to load provider notifications:", err);
+      setNotifications([]);
+      setNotificationsError("Could not load notifications. Please try again.");
+    } finally {
+      setNotificationsLoading(false);
+    }
+  }, [providerId]);
+
+  useEffect(() => {
+    fetchProviderNotifications();
+  }, [fetchProviderNotifications]);
 
   const handleReject = async (taskId) => {
     const confirmed = window.confirm(
@@ -325,9 +350,12 @@ function Dashboard() {
 
   const recentComplaints = tasks.slice(0, 3);
   const tableTasks = tasks.slice(0, 4);
+  const unreadNotificationCount = notifications.filter(
+    (notification) => notification.status === "unread"
+  ).length;
 
   return (
-    <div className="app-shell">
+    <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
           <div className="page-header">
@@ -516,7 +544,9 @@ function Dashboard() {
                     >
                       Notifications
                     </h2>
-                    <span className="notif-count-badge">0</span>
+                    <span className="notif-count-badge">
+                      {unreadNotificationCount}
+                    </span>
                   </div>
 
                   <button
@@ -529,14 +559,46 @@ function Dashboard() {
                   </button>
                 </div>
 
-                <p
-                  style={{
-                    color: "var(--muted-foreground)",
-                    fontSize: "0.9rem",
-                  }}
-                >
-                  Notifications integration is not connected yet.
-                </p>
+                {notificationsLoading ? (
+                  <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+                    Loading notifications...
+                  </p>
+                ) : notificationsError ? (
+                  <p role="alert" style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+                    {notificationsError}{" "}
+                    <button className="btn-link" onClick={fetchProviderNotifications}>
+                      Retry
+                    </button>
+                  </p>
+                ) : notifications.length === 0 ? (
+                  <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+                    You’re all caught up. No notifications yet.
+                  </p>
+                ) : (
+                  notifications.slice(0, 3).map((notification, index) => (
+                    <Link
+                      className="notif-item"
+                      key={notification.id ?? `${notification.createdAt}-${index}`}
+                      to="/service-provider/notifications"
+                    >
+                      <div className="notif-icon-wrap notif-icon-green">
+                        <FiBell aria-hidden="true" />
+                      </div>
+                      <div className="notif-info">
+                        <p className="notif-title">
+                          {notification.title || "Notification"}
+                          {notification.status === "unread" && (
+                            <span className="new-dot">New</span>
+                          )}
+                        </p>
+                        <p className="notif-msg">{notification.message}</p>
+                        <span className="notif-time">
+                          {notification.time || notification.createdAt || "Recently"}
+                        </span>
+                      </div>
+                    </Link>
+                  ))
+                )}
               </div>
             </section>
           </div>

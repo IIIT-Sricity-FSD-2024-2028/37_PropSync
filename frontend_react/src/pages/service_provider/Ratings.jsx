@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
 
@@ -272,7 +273,7 @@ export default function Ratings() {
   ];
 
   return (
-    <div className="page-content ratings-page">
+    <div className="page-content ratings-page service-provider-app">
       <div className="page-header">
         <h1>Ratings &amp; Feedback</h1>
         <p>View ratings and feedback from property owners for completed services.</p>

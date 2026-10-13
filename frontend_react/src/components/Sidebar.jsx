@@ -34,20 +34,20 @@ function Sidebar({ role, menu, setMenu }) {
       { name: "Profile", icon: <FiUser />, href: "/profile" },
     ],
     service_provider: [
-      { name: "Dashboard", icon: <FiHome />, href: "/dashboard" },
+      { name: "Dashboard", icon: <FiHome />, href: "/service-provider/dashboard" },
       {
         name: "Available Complaints",
         icon: <FiFileText />,
-        href: "/available-complaints",
-      },
-      { name: "Profile", icon: <FiUser />, href: "/profile" },
-      {
+        href: "/service-provider/available-complaints",
+      },      {
         name: "Assigned Tasks",
         icon: <FiCheckSquare />,
-        href: "/assigned-tasks",
+        href: "/service-provider/assigned-tasks",
       },
-      { name: "Ratings & Feedback", icon: <FiStar />, href: "/ratings" },
-      { name: "Notifications", icon: <FiBell />, href: "/notifications" },
+      { name: "Ratings & Feedback", icon: <FiStar />, href: "/service-provider/ratings" },
+      { name: "Notifications", icon: <FiBell />, href: "/service-provider/notifications" },
+      { name: "Profile", icon: <FiUser />, href: "/service-provider/profile" },
+
     ],
     maintenance_manager: [
       { name: "Dashboard", icon: <FiHome />, href: "/dashboard" },
@@ -55,7 +55,7 @@ function Sidebar({ role, menu, setMenu }) {
       {
         name: "Service Estimate",
         icon: <GrDocumentPdf />,
-        href: "/complaints",
+        href: "/service-estimate",
       },
       {
         name: "Payment History",

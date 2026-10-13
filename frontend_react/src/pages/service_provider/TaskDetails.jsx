@@ -254,7 +254,7 @@ export default function TaskDetails() {
 
   if (loading) {
     return (
-      <div className="app-shell">
+      <div className="app-shell service-provider-app">
         <main className="main-wrap">
           <div className="page-content">
             <p>Loading task details...</p>
@@ -266,7 +266,7 @@ export default function TaskDetails() {
 
   if (!task) {
     return (
-      <div className="app-shell">
+      <div className="app-shell service-provider-app">
         <main className="main-wrap">
           <div className="page-content">
             <div className="empty-state">
@@ -309,7 +309,7 @@ export default function TaskDetails() {
     navigate("/service-provider/assigned-tasks");
 
   return (
-    <div className="app-shell">
+    <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
           <button className="back-btn" onClick={goToTasks}>
