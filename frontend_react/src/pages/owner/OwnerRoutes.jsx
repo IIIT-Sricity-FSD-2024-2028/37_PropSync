@@ -18,7 +18,10 @@ export default function OwnerRoutes() {
         <Route path="complaints/:id" element={<ComplaintDetails />} />
         <Route path="payment-history" element={<PaymentHistory />} />
         <Route path="alerts" element={<Alerts />} />
+        <Route path="notifications" element={<Navigate to="alerts" replace />} />
+        <Route path="alerts.html" element={<Navigate to="alerts" replace />} />
         <Route path="profile" element={<Profile />} />
+        <Route path="profile.html" element={<Navigate to="profile" replace />} />
         <Route path="*" element={<Navigate to="dashboard" replace />} />
       </Routes>
     </OwnerProvider>

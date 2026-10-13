@@ -172,6 +172,10 @@ function AppRouteDefinitions() {
         path="/owner/alerts.html"
         element={<Navigate to="/owner/alerts" replace />}
       />
+      <Route
+        path="/owner/notifications"
+        element={<Navigate to="/owner/alerts" replace />}
+      />
 
       {/* Protected Owner pages */}
       <Route

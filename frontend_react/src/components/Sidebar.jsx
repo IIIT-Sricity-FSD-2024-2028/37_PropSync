@@ -19,19 +19,19 @@ function Sidebar({ role, menu, setMenu }) {
   const { logout } = useAuth();
   const roleOptions = {
     owner: [
-      { name: "Dashboard", icon: <FiHome />, href: "/dashboard" },
-      { name: "New Complaint", icon: <FiClipboard />, href: "/new-complaint" },
+      { name: "Dashboard", icon: <FiHome />, href: "/owner/dashboard" },
+      { name: "New Complaint", icon: <FiClipboard />, href: "/owner/new-complaint" },
       {
         name: "Payment History",
         icon: <FiCreditCard />,
-        href: "/payment-history",
+        href: "/owner/payment-history",
       },
       {
         name: "Alerts & Notifications",
         icon: <FiBell />,
-        href: "/notifications",
+        href: "/owner/alerts",
       },
-      { name: "Profile", icon: <FiUser />, href: "/profile" },
+      { name: "Profile", icon: <FiUser />, href: "/owner/profile" },
     ],
     service_provider: [
       { name: "Dashboard", icon: <FiHome />, href: "/service-provider/dashboard" },

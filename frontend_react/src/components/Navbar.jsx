@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import "../App.css";
 import Sidebar from "./Sidebar";
 
@@ -36,8 +36,30 @@ const Logo = () => {
   return <img src="/logo.png" alt="PropSync" height="40px" />;
 };
 const Right = ({ name, role }) => {
-  const notificationsPath = role === "super_user" ? "/super_user/notifications" : role === "admin" || role === "administrator" ? "/admin/notifications" : role === "service_provider" ? "/service-provider/notifications" : role === "maintenance_manager" ? "/maintenance_manager/notifications" : "/notifications";
-  const profilePath = role === "super_user" ? "/super_user/profile" : role === "admin" || role === "administrator" ? "/admin/profile" : role === "maintenance_manager" ? "/maintenance_manager/profile" : role === "service_provider" ? "/service-provider/profile" : role === "owner" ? "/owner/profile" : "/profile";
+  const notificationsPath =
+    role === "super_user"
+      ? "/super_user/notifications"
+      : role === "admin" || role === "administrator"
+      ? "/admin/notifications"
+      : role === "service_provider"
+      ? "/service-provider/notifications"
+      : role === "maintenance_manager"
+      ? "/maintenance_manager/notifications"
+      : role === "owner"
+      ? "/owner/alerts"
+      : "/notifications";
+  const profilePath =
+    role === "super_user"
+      ? "/super_user/profile"
+      : role === "admin" || role === "administrator"
+      ? "/admin/profile"
+      : role === "maintenance_manager"
+      ? "/maintenance_manager/profile"
+      : role === "service_provider"
+      ? "/service-provider/profile"
+      : role === "owner"
+      ? "/owner/profile"
+      : "/profile";
   return (
     <div className="right">
       <Link className="icon" to={notificationsPath} aria-label="Notifications">
@@ -77,16 +99,18 @@ const Right = ({ name, role }) => {
     </div>
   );
 };
-function Navbar({ name, role = "admin" }) {
+function Navbar({ name, role }) {
+  const location = useLocation();
+  const currentRole = role || (location.pathname.startsWith("/owner") ? "owner" : "admin");
   const [menu, setMenu] = useState(false);
   return (
     <div id="nav_container">
-      {menu && <Sidebar role={role} menu={menu} setMenu={setMenu} />}
+      {menu && <Sidebar role={currentRole} menu={menu} setMenu={setMenu} />}
       <div className="left">
         <Menu setMenu={setMenu} menu={menu} />
         <Logo />
       </div>
-      <Right name={name} role={role} />
+      <Right name={name} role={currentRole} />
     </div>
   );
 }
