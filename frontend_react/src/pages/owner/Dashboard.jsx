@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
+import { API_BASE_URL } from '../../services/api';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
@@ -359,7 +360,7 @@ export default function Dashboard() {
                     {c.image && (
                       <img
                         className="complaint-thumb"
-                        src={c.image.startsWith('http') ? c.image : `http://localhost:3000${c.image.startsWith('/') ? '' : '/'}${c.image}`}
+                        src={c.image.startsWith('http') ? c.image : `${API_BASE_URL}${c.image.startsWith('/') ? '' : '/'}${c.image}`}
                         alt={c.title}
                         onError={(e) => { e.currentTarget.style.display = 'none'; }}
                       />

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { getComplaintDetails, getOwnerRatings, submitOwnerRating } from '../../services/ownerService';
+import { API_BASE_URL } from '../../services/api';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
@@ -476,7 +477,7 @@ export default function ComplaintDetails() {
               {photoSrc ? (
                 <>
                   <img
-                    src={photoSrc.startsWith('http') ? photoSrc : `http://localhost:3000${photoSrc.startsWith('/') ? '' : '/'}${photoSrc}`}
+                    src={photoSrc.startsWith('http') ? photoSrc : `${API_BASE_URL}${photoSrc.startsWith('/') ? '' : '/'}${photoSrc}`}
                     alt={complaint.title}
                     loading="lazy"
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}

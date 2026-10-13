@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
-import { FiActivity, FiBriefcase, FiEdit2, FiEye, FiGlobe, FiHome, FiMail, FiPlus, FiTrash2, FiUser, FiX } from "react-icons/fi";
+import { FiActivity, FiArrowDown, FiArrowUp, FiBriefcase, FiChevronDown, FiEdit2, FiEye, FiFilter, FiGlobe, FiHome, FiMail, FiPlus, FiSearch, FiTrash2, FiUser, FiX } from "react-icons/fi";
 import { formatRole, getRoleSession, roleRequest } from "../../services/roleApi";
 import "./SuperUserPages.css";
 
@@ -10,7 +10,7 @@ export default function SuperUserParticipants() {
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [role, setRole] = useState("all");
-  const [sort, setSort] = useState("name");
+  const [sort, setSort] = useState("participantCode");
   const [dir, setDir] = useState("asc");
   const [selected, setSelected] = useState(null);
   const [editing, setEditing] = useState(false);
@@ -23,9 +23,9 @@ export default function SuperUserParticipants() {
     setState((previous) => ({ ...previous, loading: true, error: "" }));
     try {
       const result = await roleRequest("super_user", session.id, "/users");
-      const actualUsers = Array.isArray(result) ? result.map((user, index) => ({
+      const actualUsers = Array.isArray(result) ? result.map((user) => ({
         ...user,
-        participantCode: `P${String(index + 1).padStart(3, "0")}`,
+        participantCode: `P${String(user.id).padStart(3, "0")}`,
       })) : [];
       setUsers(actualUsers);
       setState((previous) => ({ ...previous, loading: false }));
@@ -106,12 +106,12 @@ export default function SuperUserParticipants() {
     {state.error && <div className="role-alert" role="alert">{state.error}</div>}
     {state.success && <div className="role-alert success" role="status">{state.success}</div>}
     <section className="role-toolbar su-participant-toolbar" aria-label="Participant search and filters">
-      <input className="role-input" placeholder="Search by name, ID, or email..." value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Search participants" />
-      <select className="role-select" value={role} onChange={(event) => setRole(event.target.value)} aria-label="Filter by role"><option value="all">All Roles</option>{["owner", "maintenance_manager", "service_provider", "admin"].map((value) => <option key={value} value={value}>{formatRole(value)}</option>)}</select>
-      <select className="role-select" value={`${sort}:${dir}`} onChange={(event) => { const [field, direction] = event.target.value.split(":"); setSort(field); setDir(direction); }} aria-label="Sort participants"><option value="name:asc">Sort By: Name (Aâ€“Z)</option><option value="id:asc">Sort By: ID (Aâ€“Z)</option><option value="email:asc">Sort By: Email (Aâ€“Z)</option><option value="name:desc">Name (Zâ€“A)</option></select>
+      <label className="su-participant-search"><FiSearch aria-hidden="true" /><input className="role-input" placeholder="Search by name, ID, or email..." value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Search participants" /></label>
+      <label className="su-participant-select"><FiFilter aria-hidden="true" /><select className="role-select" value={role} onChange={(event) => setRole(event.target.value)} aria-label="Filter by role"><option value="all">All Roles</option>{["owner", "maintenance_manager", "service_provider", "admin"].map((value) => <option key={value} value={value}>{formatRole(value)}</option>)}</select><FiChevronDown className="su-select-chevron" aria-hidden="true" /></label>
+      <label className="su-participant-select su-sort-select"><span className="su-sort-indicator" aria-hidden="true"><FiArrowUp /><FiArrowDown /></span><select className="role-select" value={`${sort}:${dir}`} onChange={(event) => { const [field, direction] = event.target.value.split(":"); setSort(field); setDir(direction); }} aria-label="Sort participants"><option value="participantCode:asc">Sort By</option><option value="participantCode:desc">Participant ID (High to Low)</option><option value="name:asc">Name (A-Z)</option><option value="id:asc">ID (Low to High)</option><option value="email:asc">Email (A-Z)</option><option value="name:desc">Name (Z-A)</option></select><FiChevronDown className="su-select-chevron" aria-hidden="true" /></label>
       <button type="button" className="role-button su-add-participant" onClick={() => { setForm({ ...EMPTY_FORM, communityName: communities[0] || "" }); setCreating(true); setState((previous) => ({ ...previous, error: "", success: "" })); }}><FiPlus /> Add Participant</button>
     </section>
-    <div className="role-table-wrap su-participants-table"><table className="role-table"><thead><tr><th><button type="button" onClick={() => changeSort("participantCode")}>Participant ID â†•</button></th><th><button type="button" onClick={() => changeSort("name")}>Name â†•</button></th><th><button type="button" onClick={() => changeSort("email")}>Email â†•</button></th><th>Role</th><th>Access Status</th><th>Actions</th></tr></thead><tbody>{filtered.map((user) => <tr key={user.id}>
+    <div className="role-table-wrap su-participants-table"><table className="role-table"><thead><tr><th><button type="button" onClick={() => changeSort("participantCode")}>Participant ID <span className="su-sort-indicator" aria-hidden="true"><FiArrowUp /><FiArrowDown /></span></button></th><th><button type="button" onClick={() => changeSort("name")}>Name <span className="su-sort-indicator" aria-hidden="true"><FiArrowUp /><FiArrowDown /></span></button></th><th><button type="button" onClick={() => changeSort("email")}>Email <span className="su-sort-indicator" aria-hidden="true"><FiArrowUp /><FiArrowDown /></span></button></th><th>Role</th><th>Access Status</th><th>Actions</th></tr></thead><tbody>{filtered.map((user) => <tr key={user.id}>
       <td className="su-participant-code">{user.participantCode}</td>
       <td className="su-participant-name"><strong>{user.name}</strong>{user.communityName && <small>{user.communityName}</small>}</td>
       <td className="su-participant-email">{user.email}</td>

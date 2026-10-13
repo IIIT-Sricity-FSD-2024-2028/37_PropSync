@@ -1458,6 +1458,6 @@ body,
 }
 
 /* Ensure Navbar's internal admin sidebar is suppressed for owner, while owner-sidebar is shown */
-#nav_container > .sidebar-overlay {
+.owner-app #nav_container > .sidebar-overlay {
   display: none !important;
 }

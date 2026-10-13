@@ -1,5 +1,8 @@
-import React, { useState } from "react";
-// import "./LoginSignup.css";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../services/api";
+import "./LoginSignup.css";
 
 const HomeIcon = () => (
   <div id="home_icon" onClick={() => (window.location.href = "/")}>
@@ -31,13 +34,15 @@ const RoleSelector = ({ roles, selectedRole, onRoleSelect }) => {
   return (
     <div className="roles">
       {roles.map((role) => (
-        <div
+        <button
+          type="button"
           key={role}
           className={`role ${selectedRole === role ? "active" : ""}`}
+          aria-pressed={selectedRole === role}
           onClick={() => onRoleSelect(role)}
         >
-          <p>{role}</p>
-        </div>
+          {role}
+        </button>
       ))}
     </div>
   );
@@ -174,13 +179,14 @@ const SignupForm = ({ onSignup, isHidden }) => {
           <p>Select Your Role:</p>
           <div className="s_roles">
             {roles.map((role) => (
-              <div
+              <button
+                type="button"
                 key={role}
                 className={`s_role ${selectedRole === role ? "active" : ""}`}
                 onClick={() => handleRoleSelect(role)}
               >
-                <p>{role}</p>
-              </div>
+                {role}
+              </button>
             ))}
           </div>
         </div>
@@ -252,6 +258,8 @@ const SignupForm = ({ onSignup, isHidden }) => {
 
 export default function LoginSignup() {
   const [isLoginView, setIsLoginView] = useState(true);
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const toggleView = () => {
     setIsLoginView(!isLoginView);
@@ -265,33 +273,17 @@ export default function LoginSignup() {
       Administrator: "admin",
     };
     try {
-      const response = await fetch("http://localhost:3000/users/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          role: roleFormatMap[role],
-        },
-        body: JSON.stringify({ email, password, role: roleFormatMap[role] }),
-      });
-      if (response.ok) {
-        const user = await response.json();
-        localStorage.setItem("currentUser", JSON.stringify(user));
+      const user = await login(email, password, roleFormatMap[role]);
         const dashboardByRole = {
-          owner: "/owner/dashboard.html",
-          service_provider: "/service_provider/index.html",
-          maintenance_manager: "/maintenance_manager/dashboard.html",
-          admin: "/admin/index.html",
+          owner: "/owner/dashboard",
+          service_provider: "/service-provider/dashboard",
+          maintenance_manager: "/maintenance_manager/dashboard",
+          admin: "/admin/dashboard",
+          super_user: "/super_user/dashboard",
         };
-        window.location.href = dashboardByRole[user.role] || "/";
-      } else {
-        const data = await response.json().catch(() => ({}));
-        setError(
-          data.message ||
-            "Invalid credentials. Please check your email, password, and selected role.",
-        );
-      }
+        navigate(dashboardByRole[user.role] || "/", { replace: true });
     } catch (err) {
-      setError("Error connecting to the server.");
+      setError(err.message || "Error connecting to the server.");
     }
   };
 
@@ -321,7 +313,7 @@ export default function LoginSignup() {
       if (communityName) newUser.communityName = communityName;
       if (role === "Service Provider") newUser.category = "General";
 
-      const response = await fetch("http://localhost:3000/users", {
+      const response = await fetch(`${API_BASE_URL}/users`, {
         method: "POST",
         headers: { "Content-Type": "application/json", role: "admin" },
         body: JSON.stringify(newUser),
@@ -337,13 +329,13 @@ export default function LoginSignup() {
         const data = await response.json().catch(() => ({}));
         setError(data.message || "Signup failed.");
       }
-    } catch (err) {
+    } catch {
       setError("Error connecting to server.");
     }
   };
 
   return (
-    <>
+    <main className="login-page">
       <HomeIcon />
       <SuperUserBtn />
       <div
@@ -360,7 +352,7 @@ export default function LoginSignup() {
             <p className="boxText">
               Create an account today and start your journey with PropSync now!
             </p>
-            <button className="toggleBtn" onClick={toggleView}>
+            <button className="toggleBtn" type="button" onClick={toggleView}>
               Sign Up
             </button>
           </div>
@@ -374,12 +366,12 @@ export default function LoginSignup() {
               To keep connected with your service requests and property, please
               login with your personal info.
             </p>
-            <button className="toggleBtn" onClick={toggleView}>
+            <button className="toggleBtn" type="button" onClick={toggleView}>
               Log In
             </button>
           </div>
         </div>
       </div>
-    </>
+    </main>
   );
 }

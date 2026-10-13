@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { FiEye, FiFilter, FiTool } from "react-icons/fi";
 import { getRoleSession, roleRequest } from "../../services/roleApi";
+import { API_BASE_URL } from "../../services/api";
 import "./SuperUserPages.css";
 
 const STATUSES = ["all", "pending", "approved", "assigned", "estimating_cost", "estimate_approval", "ongoing", "in_progress", "completed", "paid", "closed", "rejected"];
@@ -90,7 +91,7 @@ export default function SuperUserComplaints() {
         <section className="su-detail-card"><h3>◷ Work Updates &amp; Timeline</h3><div className="su-timeline"><article><i /><div><strong>Issue Reported &amp; Logged <time>{formattedDate(selected.submittedAt)}</time></strong><p>Resident reported issue: {selected.title || "Maintenance complaint"}</p></div></article><article><i className="green" /><div><strong>Review &amp; Assignment Status <time>{formattedDate(selected.updatedAt)}</time></strong><p>Status: <b>{label(selected.status)}</b> · Provider: {selected.assignedProviderName || (selected.assignedProviderId ? `Provider #${selected.assignedProviderId}` : "Not Assigned")}</p></div></article><article><i className="purple" /><div><strong>PropSync System Record <time>Current</time></strong><p>This complaint is stored in the platform record and visible to authorized maintenance staff.</p></div></article></div></section>
         <section className="su-detail-card"><h3>📝 Description &amp; Notes</h3><p className="su-description-box">{selected.description || "No additional description provided."}</p></section>
         <section className="su-detail-card"><h3>📄 Service Provider Documents</h3>{selected.estimateSubmitted ? <div className="su-document-row"><span>📄</span><div><strong>Service estimate submitted</strong><small>{selected.estimatedCost ? `Estimate amount: ₹${selected.estimatedCost}` : "Estimate amount is not included in this complaint record."}</small></div></div> : <div className="su-document-empty">No service provider documents are attached to this complaint.</div>}</section>
-        <section className="su-detail-card"><h3>📷 Complaint Issue Photo</h3>{selected.photo ? <img className="su-complaint-photo" src={selected.photo.startsWith("http")?selected.photo:`${import.meta.env.VITE_API_URL||"http://localhost:3000"}/${selected.photo.replace(/^\//,"")}`} alt={`Issue reported for ${selected.title||"complaint"}`}/> : <div className="su-photo-empty">No issue photo is attached to this complaint.</div>}</section>
+        <section className="su-detail-card"><h3>📷 Complaint Issue Photo</h3>{selected.photo ? <img className="su-complaint-photo" src={selected.photo.startsWith("http")?selected.photo:`${API_BASE_URL}/${selected.photo.replace(/^\//,"")}`} alt={`Issue reported for ${selected.title||"complaint"}`}/> : <div className="su-photo-empty">No issue photo is attached to this complaint.</div>}</section>
         <div className="su-detail-footer"><button type="button" className="role-button secondary" onClick={() => setSelected(null)}>Close</button></div>
       </div>
     </section></div>}

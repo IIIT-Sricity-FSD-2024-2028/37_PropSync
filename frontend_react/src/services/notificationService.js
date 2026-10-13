@@ -1,6 +1,6 @@
 // Shared notification service for PropSync
 // Combined version: team API (role, userId) + owner API (user object) – all roles use this file
-const API_BASE_URL = "http://localhost:3000";
+import { API_BASE_URL } from "./api";
 
 // --------------------------------------------------
 // Common helpers

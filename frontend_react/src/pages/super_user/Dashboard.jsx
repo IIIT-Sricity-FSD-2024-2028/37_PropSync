@@ -4,9 +4,9 @@ import { formatRole, getRoleSession, roleRequest } from "../../services/roleApi"
 import "./SuperUserPages.css";
 
 const ROLE_METRICS = [
-  { key: "owner", label: "Property Owners", icon: FiHome, tone: "blue", meta: "Across all communities" },
-  { key: "maintenance_manager", label: "Maintenance Managers", icon: FiTool, tone: "green", meta: "Managing maintenance" },
-  { key: "service_provider", label: "Service Providers", icon: FiBriefcase, tone: "orange", meta: "Registered providers" },
+  { key: "owner", title: "Property Owners", icon: FiHome, tone: "blue", hintLabel: "Societies" },
+  { key: "maintenance_manager", title: "Maintenance Managers", icon: FiTool, tone: "green", hintLabel: "Blocks" },
+  { key: "service_provider", title: "Service Providers", icon: FiBriefcase, tone: "orange", hintLabel: "Trades" },
 ];
 const CLOSED_STATUSES = new Set(["completed", "closed", "resolved", "rejected"]);
 
@@ -58,7 +58,18 @@ export default function SuperUserDashboard() {
   const activeComplaints = data.complaints.filter((complaint) => !CLOSED_STATUSES.has(String(complaint.status || "").toLowerCase()));
   const metricCards = [
     { title: "Total System Participants", value: data.users.length, hint: "All Roles", icon: FiUsers, tone: "purple" },
-    ...ROLE_METRICS.map((metric) => ({ ...metric, value: data.users.filter((user) => user.role === metric.key).length })),
+    ...ROLE_METRICS.map((metric) => {
+      const group = data.users.filter((user) => user.role === metric.key);
+      let hintCount = 0;
+      if (metric.key === "owner") {
+        hintCount = new Set(data.users.map((user) => user.communityName).filter(Boolean)).size;
+      } else if (metric.key === "maintenance_manager") {
+        hintCount = new Set(group.map((user) => `${user.communityName || ""}:${user.block || ""}`).filter((block) => block !== ":")).size;
+      } else {
+        hintCount = new Set(group.map((user) => user.category).filter(Boolean)).size;
+      }
+      return { ...metric, value: group.length, hint: `${hintCount} ${metric.hintLabel}` };
+    }),
     { title: "Active Complaints", value: activeComplaints.length, hint: "In Progress", icon: FiAlertTriangle, tone: "red" },
   ];
   const recentUsers = [...data.users].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 4);

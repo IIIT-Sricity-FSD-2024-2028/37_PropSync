@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 
-const API = "http://localhost:3000";
+import { API_BASE_URL as API } from "../../services/api";
 
 function getProviderId() {
   try {
