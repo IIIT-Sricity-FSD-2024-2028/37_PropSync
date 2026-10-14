@@ -22,7 +22,7 @@ const DONE = ["Completed", "Paid", "Closed"];
 export default function Dashboard() {
   const user = getCurrentManager();
   const [complaints, setComplaints] = useState([]);
-  const [pendingEstimates, setPendingEstimates] = useState(0);
+  const [estimates, setEstimates] = useState([]);
   const [providers, setProviders] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,7 +39,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadComplaints();
-    fetchEstimates().then((all) => setPendingEstimates(all.filter((e) => e.approved === null).length)).catch(() => {});
+    fetchEstimates().then(setEstimates).catch(() => {});
     fetchProviders().then(setProviders).catch(() => {});
     fetchNotifications("maintenance_manager", getManagerId())
       .then((list) => setNotifications(Array.isArray(list) ? list.slice(0, 5) : []))
@@ -49,6 +49,7 @@ export default function Dashboard() {
   }, [loadComplaints]);
 
   const { askApprove, askReject, modals } = useComplaintActions(loadComplaints);
+  const pendingEstimates = useMemo(() => estimates.filter((e) => e.approved === null && complaints.some((c) => String(c.id) === String(e.complaintId))).length, [complaints, estimates]);
 
   const stats = useMemo(() => ({
     total: complaints.length,
