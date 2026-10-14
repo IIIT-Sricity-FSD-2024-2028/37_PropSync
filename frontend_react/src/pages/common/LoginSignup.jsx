@@ -1,34 +1,47 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { API_BASE_URL } from "../services/api";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL } from "../../services/api";
 import "./LoginSignup.css";
 
-const HomeIcon = () => (
-  <div id="home_icon" onClick={() => (window.location.href = "/")}>
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="40"
-      height="40"
-      viewBox="0 0 40 40"
-      fill="none"
+const HomeIcon = () => {
+  const navigate = useNavigate();
+  return (
+    <div
+      id="home_icon"
+      onClick={() => navigate("/")}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === "Enter" && navigate("/")}
+      aria-label="Return to home page"
     >
-      <path
-        d="M15 36.6666V20H25V36.6666M5 15L20 3.33331L35 15V33.3333C35 34.2174 34.6488 35.0652 34.0237 35.6903C33.3986 36.3155 32.5507 36.6666 31.6667 36.6666H8.33333C7.44928 36.6666 6.60143 36.3155 5.97631 35.6903C5.35119 35.0652 5 34.2174 5 33.3333V15Z"
-        stroke="#F3F3F3"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  </div>
-);
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="40"
+        height="40"
+        viewBox="0 0 40 40"
+        fill="none"
+      >
+        <path
+          d="M15 36.6666V20H25V36.6666M5 15L20 3.33331L35 15V33.3333C35 34.2174 34.6488 35.0652 34.0237 35.6903C33.3986 36.3155 32.5507 36.6666 31.6667 36.6666H8.33333C7.44928 36.6666 6.60143 36.3155 5.97631 35.6903C5.35119 35.0652 5 34.2174 5 33.3333V15Z"
+          stroke="#F3F3F3"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+};
 
-const SuperUserBtn = () => (
-  <button id="superUser" onClick={() => (window.location.href = "/super_user")}>
-    Open Super User
-  </button>
-);
+const SuperUserBtn = () => {
+  const navigate = useNavigate();
+  return (
+    <button id="superUser" type="button" onClick={() => navigate("/super_user")}>
+      Open Super User
+    </button>
+  );
+};
 
 const RoleSelector = ({ roles, selectedRole, onRoleSelect }) => {
   return (
@@ -256,10 +269,34 @@ const SignupForm = ({ onSignup, isHidden }) => {
   );
 };
 
-export default function LoginSignup() {
-  const [isLoginView, setIsLoginView] = useState(true);
+export default function LoginSignup({ initialMode }) {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const modeParam = searchParams.get("mode") || location.state?.mode;
+  const isInitialSignup =
+    initialMode === "signup" ||
+    location.pathname === "/signup" ||
+    modeParam === "signup";
+
+  const [isLoginView, setIsLoginView] = useState(!isInitialSignup);
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (
+      initialMode === "signup" ||
+      location.pathname === "/signup" ||
+      modeParam === "signup"
+    ) {
+      setIsLoginView(false);
+    } else if (
+      initialMode === "login" ||
+      location.pathname === "/login" ||
+      modeParam === "login"
+    ) {
+      setIsLoginView(true);
+    }
+  }, [initialMode, location.pathname, modeParam]);
 
   const toggleView = () => {
     setIsLoginView(!isLoginView);
@@ -274,14 +311,14 @@ export default function LoginSignup() {
     };
     try {
       const user = await login(email, password, roleFormatMap[role]);
-        const dashboardByRole = {
-          owner: "/owner/dashboard",
-          service_provider: "/service-provider/dashboard",
-          maintenance_manager: "/maintenance_manager/dashboard",
-          admin: "/admin/dashboard",
-          super_user: "/super_user/dashboard",
-        };
-        navigate(dashboardByRole[user.role] || "/", { replace: true });
+      const dashboardByRole = {
+        owner: "/owner/dashboard",
+        service_provider: "/service-provider/dashboard",
+        maintenance_manager: "/maintenance_manager/dashboard",
+        admin: "/admin/dashboard",
+        super_user: "/super_user/dashboard",
+      };
+      navigate(dashboardByRole[user.role] || "/", { replace: true });
     } catch (err) {
       setError(err.message || "Error connecting to the server.");
     }
@@ -342,7 +379,6 @@ export default function LoginSignup() {
         className="center_box"
         style={{ flexDirection: isLoginView ? "row" : "row-reverse" }}
       >
-        {/* Pass down props and callbacks */}
         <LoginForm onLogin={handleLogin} isHidden={!isLoginView} />
         <SignupForm onSignup={handleSignup} isHidden={isLoginView} />
 

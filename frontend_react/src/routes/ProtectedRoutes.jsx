@@ -6,7 +6,7 @@ export default function ProtectedRoutes({ allowedRoles, children }) {
   const { currentUser } = useAuth();
   const location = useLocation();
   if (!currentUser) {
-    return <Navigate to="/" replace state={{ from: location }} />;
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   const role = String(currentUser.role || "").toLowerCase();

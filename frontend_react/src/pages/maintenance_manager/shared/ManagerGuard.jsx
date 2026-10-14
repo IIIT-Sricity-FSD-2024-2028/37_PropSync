@@ -15,6 +15,6 @@ export function isManager() {
 }
 
 export default function ManagerGuard({ children }) {
-  if (!isManager()) return <Navigate to="/" replace />;
+  if (!isManager()) return <Navigate to="/login" replace />;
   return <ToastProvider>{children}</ToastProvider>;
 }

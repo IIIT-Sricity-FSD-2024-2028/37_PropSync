@@ -5,8 +5,11 @@ import {
   useLocation,
 } from "react-router-dom";
 
+// Landing
+import LandingPage from "../pages/common/LandingPage";
+
 // Login
-import LoginSignup from "../pages/LoginSignup";
+import LoginSignup from "../pages/common/LoginSignup";
 
 // Owner
 import ProtectedRoute from "./ProtectedRoutes";
@@ -83,7 +86,7 @@ function LegacyRoleRoute() {
   const prefix = prefixes[role];
 
   if (!prefix) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   return <Navigate to={`${prefix}/${page}`} replace />;
@@ -131,9 +134,19 @@ function ServiceProviderPage({ children }) {
 function AppRouteDefinitions() {
   return (
     <Routes>
-      {/* Login */}
-      <Route path="/" element={<LoginSignup />} />
-      <Route path="/login" element={<LoginSignup />} />
+      {/* Landing Page */}
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/home" element={<LandingPage />} />
+      <Route path="/landing" element={<LandingPage />} />
+      <Route path="/index.html" element={<LandingPage />} />
+
+      {/* Login & Signup */}
+      <Route path="/login" element={<LoginSignup initialMode="login" />} />
+      <Route path="/signup" element={<LoginSignup initialMode="signup" />} />
+      <Route
+        path="/src/login_signup.html"
+        element={<Navigate to="/login" replace />}
+      />
 
       {/* Owner aliases */}
       <Route
