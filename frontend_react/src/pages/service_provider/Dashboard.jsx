@@ -39,28 +39,6 @@ const COMPLETED_STATUSES = [
   "Resolved",
 ];
 
-const DEMO_FEEDBACK = [
-  {
-    name: "Sarah Johnson",
-    rating: 5,
-    comment:
-      "Excellent work! Very professional and quick service.",
-    date: "Mar 4, 2026",
-  },
-  {
-    name: "Michael Chen",
-    rating: 4,
-    comment: "Good service, minor delay but quality work.",
-    date: "Mar 2, 2026",
-  },
-  {
-    name: "Emily Davis",
-    rating: 5,
-    comment: "Outstanding service! Highly recommended.",
-    date: "Feb 28, 2026",
-  },
-];
-
 function getProviderId() {
   try {
     const user = JSON.parse(
@@ -208,6 +186,9 @@ function Dashboard() {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [notificationsError, setNotificationsError] = useState("");
+  const [feedback, setFeedback] = useState([]);
+  const [ratingsLoading, setRatingsLoading] = useState(true);
+  const [ratingsError, setRatingsError] = useState("");
 
   const fetchProviderTasks = useCallback(async () => {
     setLoading(true);
@@ -289,6 +270,84 @@ function Dashboard() {
     fetchProviderNotifications();
   }, [fetchProviderNotifications]);
 
+  const fetchProviderRatings = useCallback(async () => {
+    setRatingsLoading(true);
+    setRatingsError("");
+
+    const headers = {
+      role: "service_provider",
+      "Content-Type": "application/json",
+      "x-user-id": String(providerId),
+    };
+
+    try {
+      const [complaintsResponse, ratingsResponse] = await Promise.all([
+        fetch(`${API}/complaints/provider/${providerId}`, { headers }),
+        fetch(`${API}/ratings`, { headers }),
+      ]);
+
+      if (!complaintsResponse.ok) {
+        throw new Error("Could not load your complaints for ratings.");
+      }
+      if (!ratingsResponse.ok) {
+        throw new Error("Could not load ratings. Please try again.");
+      }
+
+      const [complaints, ratings] = await Promise.all([
+        complaintsResponse.json(),
+        ratingsResponse.json(),
+      ]);
+
+      if (!Array.isArray(complaints) || !Array.isArray(ratings)) {
+        throw new Error("Unexpected response while loading ratings.");
+      }
+
+      const complaintsById = new Map(
+        complaints.map((complaint) => [Number(complaint.id), complaint])
+      );
+      const providerComplaintIds = new Set(complaintsById.keys());
+      const providerFeedback = ratings
+        .filter((rating) =>
+          providerComplaintIds.has(Number(rating.complaintId))
+        )
+        .sort(
+          (first, second) =>
+            new Date(second.ratedAt).getTime() -
+            new Date(first.ratedAt).getTime()
+        )
+        .map((rating) => {
+          const ratingDate = new Date(`${rating.ratedAt}T00:00:00`);
+          const date = Number.isNaN(ratingDate.getTime())
+            ? rating.ratedAt || ""
+            : ratingDate.toLocaleDateString(undefined, {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              });
+
+          return {
+            id: String(rating.id),
+            name: `Owner #${rating.ownerId}`,
+            rating: Number(rating.score) || 0,
+            comment: rating.feedback || "No written feedback.",
+            date,
+          };
+        });
+
+      setFeedback(providerFeedback);
+    } catch (err) {
+      console.error("Failed to load provider ratings:", err);
+      setFeedback([]);
+      setRatingsError(err.message || "Could not load ratings.");
+    } finally {
+      setRatingsLoading(false);
+    }
+  }, [providerId]);
+
+  useEffect(() => {
+    fetchProviderRatings();
+  }, [fetchProviderRatings]);
+
   const handleReject = async (taskId) => {
     const confirmed = window.confirm(
       "Are you sure you want to reject this complaint?"
@@ -353,6 +412,10 @@ function Dashboard() {
   const unreadNotificationCount = notifications.filter(
     (notification) => notification.status === "unread"
   ).length;
+  const averageRating = feedback.length
+    ? feedback.reduce((total, item) => total + item.rating, 0) / feedback.length
+    : 0;
+  const recentFeedback = feedback.slice(0, 3);
 
   return (
     <div className="app-shell service-provider-app">
@@ -683,7 +746,6 @@ function Dashboard() {
             </section>
           </div>
 
-          {/* Feedback: these entries are demo data from the original page */}
           <section className="card">
             <div className="card-body">
               <div
@@ -714,21 +776,16 @@ function Dashboard() {
                 </button>
               </div>
 
-              <p
-                style={{
-                  fontSize: "0.8rem",
-                  color: "var(--muted-foreground)",
-                  marginBottom: 16,
-                }}
-              >
-                Sample feedback from the original prototype; not live
-                backend data.
-              </p>
-
               <div className="ratings-summary">
                 <div className="ratings-avg">
-                  <div className="ratings-avg-num">4.8</div>
-                  <Stars rating={5} />
+                  <div className="ratings-avg-num">
+                    {ratingsLoading || ratingsError
+                      ? "—"
+                      : averageRating.toFixed(1)}
+                  </div>
+                  {!ratingsLoading && !ratingsError && (
+                    <Stars rating={Math.round(averageRating)} />
+                  )}
                   <p
                     style={{
                       fontSize: "0.75rem",
@@ -740,36 +797,51 @@ function Dashboard() {
                 </div>
 
                 <div className="ratings-total">
-                  <div className="ratings-total-num">127</div>
+                  <div className="ratings-total-num">
+                    {ratingsLoading || ratingsError ? "—" : feedback.length}
+                  </div>
                   <p className="ratings-total-label">Total Reviews</p>
                 </div>
               </div>
 
-              {DEMO_FEEDBACK.map((feedback) => (
-                <div className="feedback-item" key={feedback.name}>
+              {ratingsLoading ? (
+                <p>Loading recent feedback...</p>
+              ) : ratingsError ? (
+                <p role="alert" style={{ color: "var(--muted-foreground)" }}>
+                  {ratingsError}{" "}
+                  <button className="btn-link" onClick={fetchProviderRatings}>
+                    Retry
+                  </button>
+                </p>
+              ) : recentFeedback.length === 0 ? (
+                <p>No ratings yet.</p>
+              ) : (
+                recentFeedback.map((item) => (
+                <div className="feedback-item" key={item.id}>
                   <div className="feedback-header">
                     <div className="feedback-user">
                       <div className="feedback-avatar">
-                        {feedback.name.charAt(0)}
+                        {item.name.charAt(0)}
                       </div>
                       <div>
                         <div className="feedback-name">
-                          {feedback.name}
+                          {item.name}
                         </div>
                         <div className="feedback-date">
-                          {feedback.date}
+                          {item.date}
                         </div>
                       </div>
                     </div>
 
-                    <Stars rating={feedback.rating} size={12} />
+                    <Stars rating={item.rating} size={12} />
                   </div>
 
                   <p className="feedback-comment">
-                    {feedback.comment}
+                    {item.comment}
                   </p>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </section>
         </div>

@@ -55,7 +55,7 @@ function Sidebar({ role, menu, setMenu }) {
       {
         name: "Service Estimate",
         icon: <GrDocumentPdf />,
-        href: "/service-estimate",
+        href: "/maintenance_manager/service-estimate",
       },
       {
         name: "Payment History",

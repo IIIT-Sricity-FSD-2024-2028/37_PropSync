@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = ["pdf", "doc", "docx", "xlsx", "xls"];
 
 function getProviderId() {
@@ -186,7 +186,7 @@ export default function SubmitEstimate() {
     }
 
     if (selectedFile.size > MAX_FILE_SIZE) {
-      setFileError("The file must be 10 MB or smaller.");
+      setFileError("The file must be 5 MB or smaller.");
       setFile(null);
       return;
     }
@@ -559,7 +559,7 @@ export default function SubmitEstimate() {
                         </div>
 
                         <p className="upload-zone-sub">
-                          PDF, Word, or Excel (max 10MB)
+                          PDF, Word, or Excel (max 5 MB)
                         </p>
 
                         {file && (
