@@ -23,7 +23,7 @@ export default function ServiceEstimate() {
     try {
       const [comps, ests] = await Promise.all([fetchComplaints(), fetchEstimates()]);
       setComplaintsById(Object.fromEntries(comps.map((c) => [Number(c.id), c])));
-      setEstimates(ests);
+      setEstimates(ests.filter((e) => comps.some((c) => Number(c.id) === Number(e.complaintId))));
     } catch (e) {
       console.error(e);
     } finally {

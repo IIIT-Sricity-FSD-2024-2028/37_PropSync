@@ -372,6 +372,7 @@ function AppRouteDefinitions() {
       <Route path="/complaints/:id" element={<ComplaintDetails />} />
       <Route path="/notifications" element={<LegacyRoleRoute />} />
       <Route path="/provider-performance" element={<LegacyRoleRoute />} />
+      <Route path="/service-estimate" element={<LegacyRoleRoute />} />
 
       {/* Fallback */}
       <Route path="*" element={<main style={{ padding: "2rem" }}><h1>Page not found</h1><p>The requested PropSync page does not exist.</p><a href="/">Return to login</a></main>} />
