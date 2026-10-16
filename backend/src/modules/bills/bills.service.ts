@@ -12,6 +12,7 @@ import { NotificationRecipient, NotificationType } from '../notifications/dto/no
 export interface ServiceBill {
   id: number;
   complaintId: number;
+  providerId?: number;
   amount: number;
   penalty: number;
   totalAmount: number;
@@ -40,6 +41,27 @@ export class BillsService {
     return bills;
   }
 
+  findPaidByProvider(providerId: number): ServiceBill[] {
+    const providerComplaintIds = new Set(
+      this.complaintsService
+        .findByProvider(providerId)
+        .map((complaint) => complaint.id),
+    );
+
+    return this.billsRepository
+      .findAll()
+      .filter((bill) =>
+        bill.isPaid &&
+        (bill.providerId === providerId ||
+          (bill.providerId === undefined && providerComplaintIds.has(bill.complaintId))),
+      )
+      .sort((first, second) => {
+        const firstDate = first.paidAt || first.generatedAt;
+        const secondDate = second.paidAt || second.generatedAt;
+        return secondDate.localeCompare(firstDate) || second.id - first.id;
+      });
+  }
+
   findById(id: number): ServiceBill {
     const bill = this.billsRepository.findById(id);
     if (!bill) throw new NotFoundException(`Bill with id ${id} not found`);
@@ -57,9 +79,11 @@ export class BillsService {
       );
     }
 
+    const complaint = this.complaintsService.findById(dto.complaintId);
     const penalty = dto.penalty ?? 0;
     const bill = this.billsRepository.create({
       complaintId: dto.complaintId,
+      providerId: complaint.assignedProviderId,
       amount: dto.amount,
       penalty,
       totalAmount: dto.amount + penalty,
@@ -72,13 +96,13 @@ export class BillsService {
     });
 
     this.complaintsService.markCompletedAndBilled(dto.complaintId);
-    const complaint = this.complaintsService.findById(dto.complaintId);
+    const updatedComplaint = this.complaintsService.findById(dto.complaintId);
     this.notificationsService.create({
-      userId: complaint.ownerId,
-      complaintId: complaint.id,
+      userId: updatedComplaint.ownerId,
+      complaintId: updatedComplaint.id,
       type: NotificationType.PaymentDue,
       recipient: NotificationRecipient.Owner,
-      message: `A service bill of ${bill.totalAmount} is ready for complaint #${complaint.id}.`,
+      message: `A service bill of ${bill.totalAmount} is ready for complaint #${updatedComplaint.id}.`,
     });
     return bill;
   }

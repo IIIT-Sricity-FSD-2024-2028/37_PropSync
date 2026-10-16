@@ -3,7 +3,9 @@ import {
   BadRequestException,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
+  Headers,
   Param,
   ParseIntPipe,
   Patch,
@@ -45,6 +47,21 @@ const billUploadPath = join(process.cwd(), 'uploads', 'bills');
 @Controller('bills')
 export class BillsController {
   constructor(private readonly billsService: BillsService) {}
+
+  @Get('provider/:providerId/paid')
+  @Roles(Role.ServiceProvider)
+  @ApiOperation({ summary: 'Get paid service bills for the authenticated provider' })
+  @ApiParam({ name: 'providerId', type: Number })
+  @ApiResponse({ status: 200, description: 'Paid bills for the service provider' })
+  findPaidByProvider(
+    @Param('providerId', ParseIntPipe) providerId: number,
+    @Headers('x-user-id') userIdHeader?: string,
+  ) {
+    if (!userIdHeader || Number(userIdHeader) !== providerId) {
+      throw new ForbiddenException('You can only view your own earnings');
+    }
+    return this.billsService.findPaidByProvider(providerId);
+  }
 
   @Get()
   @Roles(Role.MaintenanceManager, Role.Owner, Role.Admin)
