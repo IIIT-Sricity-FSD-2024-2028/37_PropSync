@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
+import PageHeader from "../../components/service_provider/PageHeader";
+import TaskList from "../../components/service_provider/TaskList";
 
 const STATUS_LABELS = {
   assigned: "Assigned",
@@ -304,13 +306,7 @@ function AssignedTasks() {
     <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
-          <div className="page-header">
-            <h1>Assigned Tasks</h1>
-            <p>
-              View complaints that have been officially assigned to you
-              by the maintenance manager.
-            </p>
-          </div>
+          <PageHeader title="Assigned Tasks" description="View complaints that have been officially assigned to you by the maintenance manager." />
 
           {error && (
             <div
@@ -456,154 +452,19 @@ function AssignedTasks() {
                         <td colSpan={7}>Loading tasks...</td>
                       </tr>
                     ) : (
-                      filteredTasks.map((task) => {
-                        const overdue = isOverdue(
-                          task.deadline,
-                          task.status
-                        );
-
-                        return (
-                          <tr
-                            key={task.id}
-                            className="clickable"
-                            onClick={() => openTaskDetails(task.id)}
-                            tabIndex={0}
-                            onKeyDown={(event) => {
-                              if (event.key === "Enter") {
-                                openTaskDetails(task.id);
-                              }
-                            }}
-                          >
-                            <td>
-                              <span
-                                style={{
-                                  fontWeight: 600,
-                                  color: "var(--foreground)",
-                                }}
-                              >
-                                {task.id}
-                              </span>
-                            </td>
-
-                            <td>
-                              <span
-                                className="badge badge-green"
-                                style={{ borderRadius: 999 }}
-                              >
-                                {task.issueType}
-                              </span>
-                            </td>
-
-                            <td
-                              style={{
-                                fontSize: "0.88rem",
-                                color: "var(--muted-foreground)",
-                              }}
-                            >
-                              {task.location}
-                            </td>
-
-                            <td>
-                              <span
-                                className="badge"
-                                style={{
-                                  ...getPriorityColor(task.priority),
-                                  borderRadius: 999,
-                                }}
-                              >
-                                {task.priority}
-                              </span>
-                            </td>
-
-                            <td>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  flexWrap: "wrap",
-                                  gap: 8,
-                                }}
-                              >
-                                <Icon type="calendar" />
-                                <span
-                                  className={overdue ? "overdue-text" : ""}
-                                  style={{ fontSize: "0.88rem" }}
-                                >
-                                  {task.deadline}
-                                </span>
-                                {overdue && (
-                                  <span className="overdue-badge">
-                                    Overdue
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-
-                            <td>
-                              <span
-                                className="badge"
-                                style={{
-                                  ...getStatusColor(task.status),
-                                  borderRadius: 999,
-                                }}
-                              >
-                                {task.status}
-                              </span>
-                            </td>
-
-                            <td>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 4,
-                                }}
-                                onClick={(event) => event.stopPropagation()}
-                              >
-                                {!task.estimateSubmitted && (
-                                  <button
-                                    type="button"
-                                    title="Submit Estimate"
-                                    aria-label={`Submit estimate for task ${task.id}`}
-                                    onClick={(event) =>
-                                      submitEstimate(event, task.id)
-                                    }
-                                    style={{
-                                      padding: 7,
-                                      background: "none",
-                                      border: 0,
-                                      cursor: "pointer",
-                                      color: "#16A34A",
-                                    }}
-                                  >
-                                    <Icon type="document" />
-                                  </button>
-                                )}
-
-                                {canUpdateStatus(task) && (
-                                  <button
-                                    type="button"
-                                    title="Update Status"
-                                    aria-label={`Update status for task ${task.id}`}
-                                    onClick={(event) =>
-                                      updateTaskStatus(event, task.id)
-                                    }
-                                    style={{
-                                      padding: 7,
-                                      background: "none",
-                                      border: 0,
-                                      cursor: "pointer",
-                                      color: "#D97706",
-                                    }}
-                                  >
-                                    ↻
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })
+                      <TaskList
+                        tasks={filteredTasks}
+                        canUpdateStatus={canUpdateStatus}
+                        getPriorityColor={getPriorityColor}
+                        getStatusColor={getStatusColor}
+                        isOverdue={isOverdue}
+                        onView={(task) => openTaskDetails(task.id)}
+                        onEstimate={(event, task) => submitEstimate(event, task.id)}
+                        onUpdate={(event, task) => updateTaskStatus(event, task.id)}
+                        calendarIcon={<Icon type="calendar" />}
+                        estimateIcon={<Icon type="document" />}
+                        updateIcon="↻"
+                      />
                     )}
                   </tbody>
                 </table>

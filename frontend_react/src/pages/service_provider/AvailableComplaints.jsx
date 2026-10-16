@@ -3,6 +3,9 @@ import { useCallback, useEffect, useState } from "react";
 import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
+import PageHeader from "../../components/service_provider/PageHeader";
+import ComplaintList from "../../components/service_provider/ComplaintList";
+import { ErrorMessage } from "../../components/service_provider/FeatureStates";
 
 function getProviderId() {
   try {
@@ -408,35 +411,11 @@ function AvailableComplaints() {
     <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
-          <div className="page-header">
-            <h1>Available Complaints</h1>
-            <p>
-              View available complaints and register your interest.
-              The Maintenance Manager will select a provider.
-            </p>
-          </div>
+          <PageHeader title="Available Complaints" description="View available complaints and register your interest. The Maintenance Manager will select a provider." />
 
-          {error && (
-            <div
-              role="alert"
-              style={{
-                padding: 16,
-                marginBottom: 20,
-                background: "#FEE2E2",
-                color: "#991B1B",
-                borderRadius: 8,
-              }}
-            >
-              <p>{error}</p>
-              <button
-                className="btn btn-accent"
-                onClick={loadComplaints}
-                style={{ marginTop: 10 }}
-              >
-                Retry
-              </button>
-            </div>
-          )}
+          {error && <ErrorMessage onRetry={loadComplaints} style={{ padding: 16, marginBottom: 20, background: "#FEE2E2", color: "#991B1B", borderRadius: 8 }}>
+            {error}
+          </ErrorMessage>}
 
           <div className="filters-bar">
             <div className="filters-grid">
@@ -544,96 +523,12 @@ function AvailableComplaints() {
                 </button>
               </div>
             ) : (
-              filteredComplaints.map((complaint) => {
-                const priority = complaint.priority || "Low";
-
-                return (
-                  <div
-                    className="complaint-grid-card"
-                    key={complaint.id}
-                    onClick={() => openComplaint(complaint)}
-                    onKeyDown={(event) => {
-                      if (
-                        event.key === "Enter" ||
-                        event.key === " "
-                      ) {
-                        event.preventDefault();
-                        openComplaint(complaint);
-                      }
-                    }}
-                    role="button"
-                    tabIndex={0}
-                  >
-                    <div className="complaint-grid-img-wrap">
-                      <img
-                        src={imageUrl(complaint.photo)}
-                        alt={complaint.title || "Complaint"}
-                        className="complaint-grid-img"
-                        onError={(event) => {
-                          event.currentTarget.onerror = null;
-                          event.currentTarget.src =
-                            "https://placehold.co/400x180/e5e7eb/6b7280?text=Image";
-                        }}
-                      />
-                      <div
-                        className={`urgency-badge ${urgencyClass(
-                          priority
-                        )}`}
-                      >
-                        {priority} Priority
-                      </div>
-                    </div>
-
-                    <div className="complaint-grid-body">
-                      <div className="complaint-grid-id-row">
-                        <span className="complaint-grid-id">
-                          C-{complaint.id}
-                        </span>
-                        <span className="badge badge-yellow">
-                          {complaint.category || "General"}
-                        </span>
-                      </div>
-
-                      <h3 className="complaint-grid-title">
-                        {complaint.title}
-                      </h3>
-
-                      <p
-                        className="complaint-grid-desc"
-                        style={{
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {complaint.description ||
-                          "No description provided."}
-                      </p>
-
-                      <div className="complaint-grid-meta">
-                        <div className="complaint-grid-meta-row">
-                          <Icon type="location" />
-                          {complaint.location || "Unknown Location"}
-                        </div>
-                        <div className="complaint-grid-meta-row">
-                          <Icon type="calendar" />
-                          Deadline: {complaint.deadline || "None"}
-                        </div>
-                      </div>
-
-                      <button
-                        className="btn btn-accent btn-full"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          openComplaint(complaint);
-                        }}
-                      >
-                        View Details
-                      </button>
-                    </div>
-                  </div>
-                );
-              })
+              <ComplaintList complaints={filteredComplaints}
+                imageUrl={imageUrl}
+                priorityClass={urgencyClass}
+                locationIcon={<Icon type="location" />}
+                calendarIcon={<Icon type="calendar" />}
+                onView={openComplaint} />
             )}
           </div>
 

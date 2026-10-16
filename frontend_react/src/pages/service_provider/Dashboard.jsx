@@ -6,6 +6,8 @@ import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
 import { fetchNotifications } from "../../services/notificationService";
+import { StatusBadge } from "../../components/service_provider/FeatureStates";
+import PageHeader from "../../components/service_provider/PageHeader";
 
 const STATUS_LABELS = {
   assigned: "Assigned",
@@ -77,32 +79,6 @@ function getImageUrl(photo) {
 
 function getStatusLabel(status) {
   return STATUS_LABELS[status] || status || "Unknown";
-}
-
-function getStatusClass(status) {
-  const normalized = status.toLowerCase().replaceAll("_", "-");
-
-  if (normalized === "assigned") {
-    return "badge-status-assigned";
-  }
-
-  if (normalized === "in-progress") {
-    return "badge-status-in-progress";
-  }
-
-  if (normalized === "completed") {
-    return "badge-status-completed";
-  }
-
-  if (normalized === "estimating-cost") {
-    return "badge-status-estimate";
-  }
-
-  if (normalized === "payment-pending" || normalized === "billed") {
-    return "badge-status-waiting";
-  }
-
-  return "badge-gray";
 }
 
 function Stars({ rating, size = 16 }) {
@@ -421,12 +397,7 @@ function Dashboard() {
     <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
-          <div className="page-header">
-            <h1>Dashboard</h1>
-            <p>
-              Welcome back, {providerName}! Here's your overview.
-            </p>
-          </div>
+          <PageHeader title="Dashboard" description={`Welcome back, ${providerName}! Here's your overview.`} />
 
           {error && (
             <div
@@ -707,13 +678,7 @@ function Dashboard() {
                           </td>
                           <td>{task.issueType}</td>
                           <td>
-                            <span
-                              className={`badge ${getStatusClass(
-                                task.status
-                              )}`}
-                            >
-                              {task.status}
-                            </span>
+                            <StatusBadge status={task.status} />
                           </td>
                           <td
                             style={{

@@ -2,6 +2,7 @@ import {
   FiHome,
   FiClipboard,
   FiCreditCard,
+  FiDollarSign,
   FiBell,
   FiUser,
   FiStar,
@@ -45,6 +46,7 @@ function Sidebar({ role, menu, setMenu }) {
         href: "/service-provider/assigned-tasks",
       },
       { name: "Ratings & Feedback", icon: <FiStar />, href: "/service-provider/ratings" },
+      { name: "My Earnings", icon: <FiDollarSign />, href: "/service-provider/earnings" },
       { name: "Notifications", icon: <FiBell />, href: "/service-provider/notifications" },
       { name: "Profile", icon: <FiUser />, href: "/service-provider/profile" },
 

@@ -37,6 +37,7 @@ import TaskDetails from "../pages/service_provider/TaskDetails.jsx";
 import SubmitEstimate from "../pages/service_provider/SubmitEstimate.jsx";
 import UpdateStatus from "../pages/service_provider/UpdateStatus.jsx";
 import Ratings from "../pages/service_provider/Ratings.jsx";
+import Earnings from "../pages/service_provider/Earnings.jsx";
 import ComplaintDetails from "../layouts/ComplaintDetails.jsx";
 import Notifications from "../layouts/Notifications.jsx";
 import RoleLayout from "../components/RoleLayout";
@@ -328,6 +329,10 @@ function AppRouteDefinitions() {
       <Route
         path="/service-provider/ratings"
         element={<ServiceProviderPage><Ratings /></ServiceProviderPage>}
+      />
+      <Route
+        path="/service-provider/earnings"
+        element={<ServiceProviderPage><Earnings /></ServiceProviderPage>}
       />
       <Route
         path="/service-provider/profile"
