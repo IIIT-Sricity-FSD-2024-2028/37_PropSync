@@ -9,7 +9,7 @@ import './owner.css';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { complaints, notifications, payments, ownerProfile, refreshComplaints, refreshNotifications, refreshPayments } = useOwner();
+  const { complaints, notifications, payments, ownerProfile, refreshComplaints, refreshNotifications, refreshPayments, removeComplaint } = useOwner();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
@@ -373,8 +373,37 @@ export default function Dashboard() {
                         <span className="tag blue">Category: {c.category}</span>
                       </div>
                     </div>
-                    <div className={`status ${statusClass}`}>
-                      {displayStatus(c.status)}
+                    <div className="card-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                      <div className={`status ${statusClass}`}>
+                        {displayStatus(c.status)}
+                      </div>
+                      <button
+                        className="delete-complaint-btn"
+                        type="button"
+                        style={{
+                          background: '#fee2e2',
+                          color: '#dc2626',
+                          border: '1px solid #fca5a5',
+                          borderRadius: '6px',
+                          padding: '4px 10px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                        }}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (!window.confirm(`Are you sure you want to delete complaint "${c.title}"?`)) return;
+                          try {
+                            if (removeComplaint) {
+                              await removeComplaint(c.id);
+                            }
+                          } catch (err) {
+                            alert(err.message || 'Failed to delete complaint');
+                          }
+                        }}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 );

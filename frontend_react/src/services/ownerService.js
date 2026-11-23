@@ -59,6 +59,21 @@ export async function createComplaint(formData, user) {
   return response.json();
 }
 
+export async function deleteComplaint(id, user) {
+  const response = await fetch(`${API_BASE_URL}/complaints/${id}`, {
+    method: 'DELETE',
+    headers: {
+      ...getHeaders(user),
+      'Content-Type': 'application/json',
+    },
+  });
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.message || 'Failed to delete complaint');
+  }
+  return response.json().catch(() => ({}));
+}
+
 // ── RATINGS ──
 export async function getOwnerRatings(ownerId, complaintId, user) {
   const response = await fetch(`${API_BASE_URL}/ratings?ownerId=${ownerId}&complaintId=${complaintId}`, {

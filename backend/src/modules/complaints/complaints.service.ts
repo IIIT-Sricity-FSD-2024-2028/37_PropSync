@@ -155,6 +155,22 @@ export class ComplaintsService {
     const managerId = dto.managerId || this.resolveManagerIdForOwner(owner);
     const location = owner.propertyUnit;
 
+    const normalizedTitle = dto.title.trim().toLowerCase();
+    const duplicate = this.complaintsRepository
+      .findAll()
+      .find(
+        (c) =>
+          c.ownerId === dto.ownerId &&
+          c.title.trim().toLowerCase() === normalizedTitle &&
+          c.status !== ComplaintStatus.Rejected &&
+          c.status !== ComplaintStatus.Closed,
+      );
+    if (duplicate) {
+      throw new BadRequestException(
+        `A complaint with the title "${dto.title}" already exists for this owner`,
+      );
+    }
+
     const complaint = this.complaintsRepository.create({
       title: dto.title,
       description: dto.description,
@@ -461,7 +477,14 @@ export class ComplaintsService {
     });
   }
 
-  remove(id: number): { message: string } {
+  remove(id: number, actor?: { role?: string; id?: number }): { message: string } {
+    const complaint = this.complaintsRepository.findById(id);
+    if (!complaint) {
+      throw new NotFoundException(`Complaint with id ${id} not found`);
+    }
+    if (actor?.role === 'owner' && actor.id && complaint.ownerId !== actor.id) {
+      throw new ForbiddenException('Owners can only delete their own complaints');
+    }
     if (!this.complaintsRepository.remove(id)) {
       throw new NotFoundException(`Complaint with id ${id} not found`);
     }

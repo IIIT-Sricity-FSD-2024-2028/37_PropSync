@@ -121,4 +121,16 @@ describe('UsersService community approval scope', () => {
     expect(admin1Users.every((u) => u.communityName === 'Green Valley Society')).toBe(true);
     expect(admin1Users.some((u) => u.communityName === 'Sunrise Residency')).toBe(false);
   });
+
+  it('authenticates Super User with credentials without requiring role header', () => {
+    const superUser = service.login({ email: 'superuser@propsync.com', password: 'superuser123' });
+    expect(superUser.id).toBe(SYSTEM_SUPER_USER_ID);
+    expect(superUser.role).toBe(UserRole.SuperUser);
+    expect(superUser.email).toBe('superuser@propsync.com');
+  });
+
+  it('rejects Super User login with invalid password', () => {
+    expect(() => service.login({ email: 'superuser@propsync.com', password: 'wrongpassword' }))
+      .toThrow(UnauthorizedException);
+  });
 });

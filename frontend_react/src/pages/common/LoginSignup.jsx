@@ -34,14 +34,6 @@ const HomeIcon = () => {
   );
 };
 
-const SuperUserBtn = () => {
-  const navigate = useNavigate();
-  return (
-    <button id="superUser" type="button" onClick={() => navigate("/super_user")}>
-      Open Super User
-    </button>
-  );
-};
 
 const RoleSelector = ({ roles, selectedRole, onRoleSelect }) => {
   return (
@@ -62,29 +54,20 @@ const RoleSelector = ({ roles, selectedRole, onRoleSelect }) => {
 };
 
 const LoginForm = ({ onLogin, isHidden }) => {
-  const [selectedRole, setSelectedRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-
-  const roles = [
-    "Owner",
-    "Service Provider",
-    "Maintenance Manager",
-    "Administrator",
-  ];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!selectedRole) return setError("Please select a role.");
     if (!email || !password)
       return setError("Please enter both email and password.");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
       return setError("Please enter a valid email address.");
 
-    onLogin(email, password, selectedRole, setError);
+    onLogin(email, password, setError);
   };
 
   return (
@@ -93,12 +76,6 @@ const LoginForm = ({ onLogin, isHidden }) => {
       <h2 className="heading2">Log In</h2>
       <div id="login_form">
         <div className={`error-message ${error ? "show" : ""}`}>{error}</div>
-        <p>Select Your Role:</p>
-        <RoleSelector
-          roles={roles}
-          selectedRole={selectedRole}
-          onRoleSelect={setSelectedRole}
-        />
         <form onSubmit={handleSubmit}>
           <input
             type="email"
@@ -302,7 +279,9 @@ export default function LoginSignup({ initialMode }) {
     setIsLoginView(!isLoginView);
   };
 
-  const handleLogin = async (email, password, role, setError) => {
+  const handleLogin = async (email, password, roleOrSetError, maybeSetError) => {
+    const setError = typeof roleOrSetError === "function" ? roleOrSetError : maybeSetError;
+    const role = typeof roleOrSetError === "string" ? roleOrSetError : undefined;
     const roleFormatMap = {
       Owner: "owner",
       "Maintenance Manager": "maintenance_manager",
@@ -310,7 +289,11 @@ export default function LoginSignup({ initialMode }) {
       Administrator: "admin",
     };
     try {
-      const user = await login(email, password, roleFormatMap[role]);
+      const user = await login(
+        email,
+        password,
+        role ? roleFormatMap[role] || role : undefined,
+      );
       const dashboardByRole = {
         owner: "/owner/dashboard",
         service_provider: "/service-provider/dashboard",
@@ -320,7 +303,9 @@ export default function LoginSignup({ initialMode }) {
       };
       navigate(dashboardByRole[user.role] || "/", { replace: true });
     } catch (err) {
-      setError(err.message || "Error connecting to the server.");
+      if (setError) {
+        setError(err.message || "Error connecting to the server.");
+      }
     }
   };
 
@@ -374,7 +359,6 @@ export default function LoginSignup({ initialMode }) {
   return (
     <main className="login-page">
       <HomeIcon />
-      <SuperUserBtn />
       <div
         className="center_box"
         style={{ flexDirection: isLoginView ? "row" : "row-reverse" }}

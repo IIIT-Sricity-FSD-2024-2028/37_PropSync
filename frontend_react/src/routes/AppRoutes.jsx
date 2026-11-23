@@ -275,29 +275,29 @@ function AppRouteDefinitions() {
       />
       <Route
         path="/super_user/dashboard"
-        element={<RoleLayout role="super_user"><SuperUserDashboard /></RoleLayout>}
+        element={<ProtectedRoute allowedRoles={["super_user"]}><RoleLayout role="super_user"><SuperUserDashboard /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/super_user/participants"
-        element={<RoleLayout role="super_user"><SuperUserParticipants /></RoleLayout>}
+        element={<ProtectedRoute allowedRoles={["super_user"]}><RoleLayout role="super_user"><SuperUserParticipants /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/super_user/complaints"
-        element={<RoleLayout role="super_user"><SuperUserComplaints /></RoleLayout>}
+        element={<ProtectedRoute allowedRoles={["super_user"]}><RoleLayout role="super_user"><SuperUserComplaints /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/super_user/notifications"
-        element={<RoleLayout role="super_user"><SuperUserNotifications /></RoleLayout>}
+        element={<ProtectedRoute allowedRoles={["super_user"]}><RoleLayout role="super_user"><SuperUserNotifications /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/super_user/roles"
-        element={<RoleLayout role="super_user"><SuperUserRoles /></RoleLayout>}
+        element={<ProtectedRoute allowedRoles={["super_user"]}><RoleLayout role="super_user"><SuperUserRoles /></RoleLayout></ProtectedRoute>}
       />
       <Route
         path="/super_user/revenue"
-        element={<RoleLayout role="super_user"><SuperUserRevenue /></RoleLayout>}
+        element={<ProtectedRoute allowedRoles={["super_user"]}><RoleLayout role="super_user"><SuperUserRevenue /></RoleLayout></ProtectedRoute>}
       />
-      <Route path="/super_user/profile" element={<RoleLayout role="super_user"><RoleProfilePage role="super_user" /></RoleLayout>} />
+      <Route path="/super_user/profile" element={<ProtectedRoute allowedRoles={["super_user"]}><RoleLayout role="super_user"><RoleProfilePage role="super_user" /></RoleLayout></ProtectedRoute>} />
 
       {/* Super User aliases */}
       <Route

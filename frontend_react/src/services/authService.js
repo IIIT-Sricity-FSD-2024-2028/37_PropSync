@@ -13,24 +13,32 @@ export async function loginUser(email, password, role) {
     'admin': 'admin'
   };
 
-  const roleKey = roleFormatMap[role] || role.toLowerCase();
+  const roleKey = role ? (roleFormatMap[role] || role.toLowerCase()) : undefined;
+
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (roleKey) {
+    headers['role'] = roleKey;
+  }
+
+  const body = {
+    email,
+    password,
+  };
+  if (roleKey) {
+    body.role = roleKey;
+  }
 
   const response = await fetch(`${API_BASE_URL}/users/login`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'role': roleKey
-    },
-    body: JSON.stringify({
-      email,
-      password,
-      role: roleKey
-    })
+    headers,
+    body: JSON.stringify(body)
   });
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Invalid credentials. Please check your email, password, and selected role.');
+    throw new Error(errorData.message || 'Invalid credentials. Please check your email and password.');
   }
 
   return response.json();

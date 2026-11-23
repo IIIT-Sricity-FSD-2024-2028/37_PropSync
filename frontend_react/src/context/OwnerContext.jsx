@@ -1,12 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from './AuthContext';
-import { getOwnerComplaints, getOwnerPayments } from '../services/ownerService';
+import { getOwnerComplaints, getOwnerPayments, deleteComplaint as apiDeleteComplaint } from '../services/ownerService';
 import { getNotifications } from '../services/notificationService';
+import {
+  setComplaints as setComplaintsAction,
+  deleteComplaint as deleteComplaintAction,
+} from '../redux/features/complaints/complaintsSlice';
 
 const OwnerContext = createContext(null);
 
 export function OwnerProvider({ children }) {
   const { currentUser } = useAuth();
+  const dispatch = useDispatch();
+  const reduxComplaints = useSelector((state) => state.complaints);
   const [complaints, setComplaints] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -51,9 +58,16 @@ export function OwnerProvider({ children }) {
       const ownerId = currentUser.id || 1;
       const data = await getOwnerComplaints(ownerId, currentUser);
       setComplaints(data);
+      dispatch(setComplaintsAction(data));
     } catch (err) {
       console.warn('Error fetching owner complaints:', err);
     }
+  };
+
+  const removeComplaint = async (id) => {
+    await apiDeleteComplaint(id, currentUser);
+    dispatch(deleteComplaintAction(id));
+    setComplaints((prev) => prev.filter((c) => String(c.id) !== String(id)));
   };
 
   const refreshNotifications = async () => {
@@ -89,12 +103,13 @@ export function OwnerProvider({ children }) {
   return (
     <OwnerContext.Provider
       value={{
-        complaints,
+        complaints: reduxComplaints.length > 0 ? reduxComplaints : complaints,
         notifications,
         payments,
         ownerProfile,
         updateProfile,
         refreshComplaints,
+        removeComplaint,
         refreshNotifications,
         refreshPayments,
         loading,

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useOwner } from '../../context/OwnerContext';
 import { getComplaintDetails, getOwnerRatings, submitOwnerRating } from '../../services/ownerService';
 import { API_BASE_URL } from '../../services/api';
 import OwnerLayout from './components/OwnerLayout';
@@ -10,6 +11,7 @@ export default function ComplaintDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { removeComplaint } = useOwner();
 
   const [complaint, setComplaint] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -222,37 +224,66 @@ export default function ComplaintDetails() {
     <OwnerLayout>
       <div className="complaint-details-page">
         <main className="main">
-          {/* Back link */}
-          <a
-            className="back-link"
-            onClick={(e) => {
-              e.preventDefault();
-              navigate(-1);
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              marginBottom: '16px',
-              fontSize: '13px',
-              fontWeight: 600,
-              color: '#34a853',
-              textDecoration: 'none',
-              cursor: 'pointer'
-            }}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
+          {/* Top navigation and actions */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <a
+              className="back-link"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate(-1);
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '13px',
+                fontWeight: 600,
+                color: '#34a853',
+                textDecoration: 'none',
+                cursor: 'pointer'
+              }}
             >
-              <polyline points="15 18 9 12 15 6" />
-            </svg>
-            Back to Complaints
-          </a>
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+              Back to Complaints
+            </a>
+
+            <button
+              className="delete-complaint-btn"
+              type="button"
+              style={{
+                background: '#fee2e2',
+                color: '#dc2626',
+                border: '1px solid #fca5a5',
+                borderRadius: '8px',
+                padding: '6px 14px',
+                fontSize: '13px',
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+              onClick={async () => {
+                if (!window.confirm(`Are you sure you want to delete complaint "${complaint?.title}"?`)) return;
+                try {
+                  if (removeComplaint) {
+                    await removeComplaint(complaint.id);
+                  }
+                  navigate('/owner/dashboard');
+                } catch (err) {
+                  alert(err.message || 'Failed to delete complaint');
+                }
+              }}
+            >
+              Delete Complaint
+            </button>
+          </div>
 
           {/* Dynamic page title */}
           <h2

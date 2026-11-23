@@ -653,10 +653,10 @@ export class ComplaintsController {
   // ======================================================
 
   @Delete(':id')
-  @Roles(Role.Admin)
+  @Roles(Role.Admin, Role.Owner, Role.SuperUser)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Delete a complaint (Admin only)',
+    summary: 'Delete a complaint',
   })
   @ApiParam({
     name: 'id',
@@ -672,7 +672,11 @@ export class ComplaintsController {
   })
   remove(
     @Param('id', ParseIntPipe) id: number,
+    @Headers() headers: Record<string, string>,
   ) {
-    return this.complaintsService.remove(id);
+    const role = (headers['role'] || '').toLowerCase().trim();
+    const idHeader = headers['x-user-id'] ?? headers['user-id'] ?? headers['userid'];
+    const actorId = idHeader !== undefined ? Number(idHeader) : undefined;
+    return this.complaintsService.remove(id, { role, id: actorId });
   }
 }

@@ -5,16 +5,18 @@ const complaintsSlice = createSlice({
   initialState: [],
   reducers: {
     createComplaint: (state, action) => {
-      state.push(action.payload);
+      if (action.payload) {
+        state.unshift(action.payload);
+      }
     },
 
     setComplaints: (_state, action) => {
-      return action.payload;
+      return Array.isArray(action.payload) ? action.payload : [];
     },
 
     updateComplaint: (state, action) => {
       const index = state.findIndex(
-        (c) => String(c.id) === String(action.payload.id)
+        (c) => String(c.id) === String(action.payload?.id)
       );
       if (index !== -1) {
         state[index] = { ...state[index], ...action.payload };
@@ -22,15 +24,29 @@ const complaintsSlice = createSlice({
     },
 
     updateComplaintStatus: (state, action) => {
-      const { id, status } = action.payload;
+      const { id, status, deadline, rejectionReason } = action.payload || {};
       const complaint = state.find((c) => String(c.id) === String(id));
       if (complaint) {
-        complaint.status = status;
+        if (status) complaint.status = status;
+        if (deadline !== undefined) complaint.deadline = deadline;
+        if (rejectionReason !== undefined) complaint.rejectionReason = rejectionReason;
+      }
+    },
+
+    assignProvider: (state, action) => {
+      const { id, providerId, deadline } = action.payload || {};
+      const complaint = state.find((c) => String(c.id) === String(id));
+      if (complaint) {
+        complaint.assignedProviderId = providerId;
+        complaint.status = "in_progress";
+        complaint.estimateApproved = true;
+        complaint.spAccepted = true;
+        if (deadline) complaint.deadline = deadline;
       }
     },
 
     deleteComplaint: (state, action) => {
-      const id = typeof action.payload === "object" ? action.payload.id : action.payload;
+      const id = typeof action.payload === "object" ? action.payload?.id : action.payload;
       return state.filter((c) => String(c.id) !== String(id));
     },
 
@@ -54,6 +70,7 @@ export const {
   setComplaints,
   updateComplaint,
   updateComplaintStatus,
+  assignProvider,
   deleteComplaint,
   checkDuplicateComplaint,
 } = complaintsSlice.actions;

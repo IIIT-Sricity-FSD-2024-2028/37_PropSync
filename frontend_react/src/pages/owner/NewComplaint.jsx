@@ -1,15 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
 import { createComplaint } from '../../services/ownerService';
+import {
+  createComplaint as createComplaintAction,
+  checkDuplicateComplaint,
+} from '../../redux/features/complaints/complaintsSlice';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
 export default function NewComplaint() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const reduxComplaints = useSelector((state) => state.complaints);
   const { currentUser } = useAuth();
-  const { ownerProfile, refreshComplaints } = useOwner();
+  const { ownerProfile, complaints, refreshComplaints } = useOwner();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -54,6 +61,18 @@ export default function NewComplaint() {
       return;
     }
 
+    const allComplaints = reduxComplaints?.length ? reduxComplaints : complaints || [];
+    const isDuplicate = allComplaints.some(
+      (c) => c.title?.trim().toLowerCase() === title.trim().toLowerCase()
+    );
+    if (isDuplicate) {
+      dispatch(checkDuplicateComplaint(title.trim()));
+      setErrors({
+        title: `A complaint with the title "${title.trim()}" already exists. Duplicate complaints are not allowed.`,
+      });
+      return;
+    }
+
     setSubmitting(true);
     setErrors({});
 
@@ -69,7 +88,10 @@ export default function NewComplaint() {
         formData.append('photo', file);
       }
 
-      await createComplaint(formData, currentUser);
+      const created = await createComplaint(formData, currentUser);
+      if (created) {
+        dispatch(createComplaintAction(created));
+      }
       await refreshComplaints();
 
       setToastMessage('Complaint submitted successfully!');
