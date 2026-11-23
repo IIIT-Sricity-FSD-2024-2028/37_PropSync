@@ -68,7 +68,7 @@ export class BillsService {
     return bill;
   }
 
-  create(dto: CreateBillDto): ServiceBill {
+  create(dto: CreateBillDto, providerId?: number): ServiceBill {
     const existingOpenBill = this.billsRepository
       .findAll()
       .find((bill) => bill.complaintId === dto.complaintId && !bill.isPaid);
@@ -80,6 +80,12 @@ export class BillsService {
     }
 
     const complaint = this.complaintsService.findById(dto.complaintId);
+    if (!providerId || complaint.assignedProviderId !== providerId) {
+      throw new BadRequestException('Only the assigned provider can submit a service bill');
+    }
+    if (complaint.status !== 'in_progress' || !complaint.estimateApproved) {
+      throw new BadRequestException('Work must be in progress with an approved estimate before billing');
+    }
     const penalty = dto.penalty ?? 0;
     const bill = this.billsRepository.create({
       complaintId: dto.complaintId,

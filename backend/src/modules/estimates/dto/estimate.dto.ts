@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, IsNotEmpty, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -9,7 +9,8 @@ export class CreateEstimateDto {
   @Min(1)
   complaintId: number;
 
-  @ApiProperty({ example: 4, description: 'Service provider user ID' })
+  @ApiPropertyOptional({ example: 4, description: 'Optional compatibility field; must match x-user-id' })
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(1)
@@ -18,13 +19,13 @@ export class CreateEstimateDto {
   @ApiProperty({ example: 3500.00, description: 'Estimated cost in INR' })
   @Type(() => Number)
   @IsNumber()
-  @Min(0)
+  @Min(0.01)
   estimatedCost: number;
 
   @ApiPropertyOptional({ example: 'Includes parts + labour for pipe replacement' })
-  @IsOptional()
   @IsString()
-  notes?: string;
+  @IsNotEmpty()
+  notes: string;
 
   @ApiPropertyOptional({ description: 'Public URL of the uploaded estimate document' })
   @IsOptional()

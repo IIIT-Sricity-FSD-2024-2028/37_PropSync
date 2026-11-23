@@ -23,22 +23,6 @@ function imageUrl(photo) {
   return `${API}${photo.startsWith("/") ? "" : "/"}${photo}`;
 }
 
-function statusLabel(status) {
-  const labels = {
-    assigned: "Assigned",
-    estimating_cost: "Estimating Cost",
-    in_progress: "In Progress",
-    completed: "Completed",
-    billed: "Billed",
-    paid: "Paid",
-    closed: "Closed",
-    payment_pending: "Payment Pending",
-    resolved: "Resolved",
-  };
-
-  return labels[status] || status || "Unknown";
-}
-
 function getTask(complaint, estimate) {
   const status = complaint.status;
 
@@ -220,6 +204,7 @@ export default function TaskDetails() {
       }
 
       const complaint = await complaintResponse.json();
+      if (Number(complaint.assignedProviderId) !== Number(getProviderId())) throw new Error("This task is not assigned to your account.");
 
       let latestEstimate = null;
 
@@ -249,7 +234,8 @@ export default function TaskDetails() {
   }, [taskId]);
 
   useEffect(() => {
-    loadTask();
+    const timer = setTimeout(loadTask, 0);
+    return () => clearTimeout(timer);
   }, [loadTask]);
 
   if (loading) {

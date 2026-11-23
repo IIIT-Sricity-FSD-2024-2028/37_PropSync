@@ -104,3 +104,13 @@ export class UpdateComplaintStatusDto {
   @IsString()
   deadline?: string;
 }
+
+export class AssignProviderDto {
+  @IsOptional()
+  @IsString()
+  deadline?: string;
+
+  @IsOptional()
+  @IsString()
+  managerNote?: string;
+}

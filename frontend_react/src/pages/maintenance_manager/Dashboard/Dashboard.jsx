@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import ManagerLayout, { getManagerName } from "../shared/ManagerLayout";
 import KpiCard from "../shared/KpiCard";
@@ -29,7 +29,9 @@ export default function Dashboard() {
 
   const loadComplaints = useCallback(async () => {
     try {
-      setComplaints((await fetchComplaints()).map(mapComplaint));
+      const [complaints, estimates] = await Promise.all([fetchComplaints(), fetchEstimates()]);
+      setComplaints(complaints.map(mapComplaint));
+      setEstimates(estimates);
     } catch (e) {
       console.error("Error fetching complaints", e);
     } finally {
@@ -38,18 +40,17 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    loadComplaints();
-    fetchEstimates().then(setEstimates).catch(() => {});
+    const timer = setTimeout(loadComplaints, 0);
     fetchProviders().then(setProviders).catch(() => {});
     fetchNotifications("maintenance_manager", getManagerId())
       .then((list) => setNotifications(Array.isArray(list) ? list.slice(0, 5) : []))
       .catch(() => setNotifications([]));
     const t = setInterval(loadComplaints, 15000); // same 15s refresh as the HTML version
-    return () => clearInterval(t);
+    return () => { clearTimeout(timer); clearInterval(t); };
   }, [loadComplaints]);
 
   const { askApprove, askReject, modals } = useComplaintActions(loadComplaints);
-  const pendingEstimates = useMemo(() => estimates.filter((e) => e.approved === null && complaints.some((c) => String(c.id) === String(e.complaintId))).length, [complaints, estimates]);
+  const pendingEstimates = useMemo(() => estimates.filter((e) => e.approved === null && e.selectionStatus !== "not_selected" && complaints.some((c) => String(c.id) === String(e.complaintId))).length, [complaints, estimates]);
 
   const stats = useMemo(() => ({
     total: complaints.length,

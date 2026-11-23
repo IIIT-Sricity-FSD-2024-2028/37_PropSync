@@ -352,7 +352,7 @@ export default function UpdateStatus() {
       // the multipart boundary automatically.
       const response = await fetch(`${API}/bills`, {
         method: "POST",
-        headers: { role: "service_provider" },
+        headers: { role: "service_provider", "x-user-id": String(providerId) },
         body: formData,
       });
 

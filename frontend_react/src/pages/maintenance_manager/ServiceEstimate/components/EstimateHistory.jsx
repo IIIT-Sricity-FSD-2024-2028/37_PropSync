@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import Tabs from "../../shared/Tabs";
 import EmptyRow from "../../shared/EmptyRow";
@@ -10,7 +10,7 @@ const TABS = [{ id: "all", label: "All History" }, { id: "approved", label: "App
    history = estimates with approved === true/false (newest first) */
 export default function EstimateHistory({ history, issueOf, providerOf }) {
   const [tab, setTab] = useState("all");
-  const rows = history.filter((e) => tab === "all" || (tab === "approved") === e.approved);
+  const rows = history.filter((e) => tab === "all" || (tab === "approved" ? e.approved === true : e.approved === false));
 
   return (
     <div style={{ marginTop: 32 }}>
@@ -30,7 +30,7 @@ export default function EstimateHistory({ history, issueOf, providerOf }) {
                   <td>{providerOf(e)}</td>
                   <td style={{ fontWeight: 700, color: "#42a443" }}>₹{Number(e.estimatedCost).toLocaleString("en-IN")}</td>
                   <td>{e.submittedAt || "—"}</td>
-                  <td>{e.approved ? <span className="badge badge-approved">Approved</span> : <span className="badge badge-rejected">Rejected</span>}</td>
+                  <td>{e.selectionStatus === "not_selected" ? <span className="badge badge-gray">Not Selected</span> : e.approved ? <span className="badge badge-approved">Approved</span> : <span className="badge badge-rejected">Rejected</span>}</td>
                   <td>{e.reviewedAt || "—"}</td>
                   <td><Link className="btn-link" to={MM_PATHS.complaintDetails(e.complaintId)}>View</Link></td>
                 </tr>

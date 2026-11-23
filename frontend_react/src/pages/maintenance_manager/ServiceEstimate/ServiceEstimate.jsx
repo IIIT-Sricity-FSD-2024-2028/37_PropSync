@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import Icon from "../shared/Icon";
@@ -12,6 +13,7 @@ import { fetchComplaints, fetchEstimates, fetchProviders, reviewEstimate } from 
 /* service-estimate.html */
 export default function ServiceEstimate() {
   const showToast = useToast();
+  const navigate = useNavigate();
   const [estimates, setEstimates] = useState([]);
   const [complaintsById, setComplaintsById] = useState({});
   const [providersById, setProvidersById] = useState({});
@@ -32,21 +34,23 @@ export default function ServiceEstimate() {
   }, []);
 
   useEffect(() => {
-    load();
+    const timer = setTimeout(load, 0);
     fetchProviders().then((l) => setProvidersById(Object.fromEntries(l.map((p) => [Number(p.id), p.name])))).catch(() => {});
+    return () => clearTimeout(timer);
   }, [load]);
 
   const issueOf = (e) => complaintsById[Number(e.complaintId)]?.title || "Unknown Issue";
   const providerOf = (e) => providersById[Number(e.providerId)] || `Provider #${e.providerId}`;
-  const pending = estimates.filter((e) => e.approved === null || e.approved === undefined);
-  const history = estimates.filter((e) => e.approved === true || e.approved === false).reverse();
+  const pending = estimates.filter((e) => e.approved == null && e.selectionStatus !== "not_selected");
+  const history = estimates.filter((e) => e.approved === true || e.approved === false || e.selectionStatus === "not_selected").reverse();
 
   const approve = async (e) => {
+    if (!complaintsById[e.complaintId]?.assignedProviderId) return navigate(MM_PATHS.complaintDetails(e.complaintId));
     setBusyId(e.id);
     try {
       await reviewEstimate(e.id, true);
       showToast(`Estimate ${e.id} approved. Provider notified.`);
-      load();
+      await load();
     } catch (err) {
       showToast("Error: " + (err.message || "Could not approve"));
     } finally {
@@ -59,7 +63,7 @@ export default function ServiceEstimate() {
       await reviewEstimate(rejecting.id, false, reason);
       showToast(`Estimate ${rejecting.id} rejected.`);
       setRejecting(null);
-      load();
+      await load();
     } catch (err) {
       showToast("Error: " + (err.message || "Could not reject"));
     }
@@ -80,7 +84,7 @@ export default function ServiceEstimate() {
       ) : (
         pending.map((e) => (
           <PendingEstimateCard key={e.id} estimate={e} issue={issueOf(e)} provider={providerOf(e)}
-            busy={busyId === e.id} onApprove={() => approve(e)} onReject={() => setRejecting(e)} />
+            approveLabel={complaintsById[e.complaintId]?.assignedProviderId ? "Approve Estimate" : "Compare Providers in Complaint"} busy={busyId === e.id} onApprove={() => approve(e)} onReject={() => setRejecting(e)} />
         ))
       )}
 

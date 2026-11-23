@@ -103,7 +103,7 @@ export function mapComplaint(c) {
     status: STATUS_LABEL[c.status] || c.status,
     subStatus:
       c.status === "approved" && c.interestedProviders?.length
-        ? "Waiting Provider Response"
+        ? "Awaiting Manager Selection"
         : "",
     interestedProviders: c.interestedProviders || [],
     submitted: c.submittedAt ? c.submittedAt.split("T")[0] : "—",
@@ -139,10 +139,11 @@ export const rejectComplaint = (id, rejectionReason) =>
 export const fetchProviderQueue = (id) =>
   request(`/complaints/${id}/queue`, { headers: headers() });
 
-export const assignProvider = (complaintId, providerId) =>
+export const assignProvider = (complaintId, providerId, details = {}) =>
   request(`/complaints/${complaintId}/assign/${providerId}`, {
     method: "PATCH",
     headers: headers(true),
+    body: JSON.stringify(details),
   });
 
 /* ================= PROVIDERS ================= */

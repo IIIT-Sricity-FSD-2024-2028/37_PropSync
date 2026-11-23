@@ -30,7 +30,7 @@ import { CreateBillDto } from './dto/bill.dto';
 import { BillsService } from './bills.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { extname, join } from 'path';
 import { appConfig } from '../../config/app.config';
 
@@ -97,7 +97,7 @@ export class BillsController {
   }))
   @ApiOperation({ summary: 'Submit a service bill after completing work (Service Provider only)' })
   @ApiResponse({ status: 201, description: 'Bill created' })
-  create(@Body() dto: CreateBillDto, @UploadedFiles() files: Express.Multer.File[] = []) {
+  create(@Body() dto: CreateBillDto, @UploadedFiles() files: Express.Multer.File[] = [], @Headers('x-user-id') userId?: string) {
     if (!files.length) {
       throw new BadRequestException('At least one bill attachment is required. Upload a PDF or work photo.');
     }
@@ -105,7 +105,11 @@ export class BillsController {
       dto.attachmentNames = files.map(file => file.originalname);
       dto.attachmentUrls = files.map(file => `http://localhost:${appConfig.port}/uploads/bills/${file.filename}`);
     }
-    return this.billsService.create(dto);
+    try { return this.billsService.create(dto, Number(userId)); }
+    catch (error) {
+      for (const file of files) if (existsSync(file.path)) unlinkSync(file.path);
+      throw error;
+    }
   }
 
   @Patch(':id/mark-paid')
