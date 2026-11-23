@@ -1458,3 +1458,12 @@ tr.clickable:hover { background: #F9FAFB; }
   flex: 1;
   min-width: 0;
 }
+
+/* Reuse the estimate page inside the existing complaint modal. */
+.embedded-estimate { margin-top: 24px; min-width: 0; }
+.embedded-estimate .estimate-page-container { max-width: 100%; margin: 0; }
+.embedded-estimate .file-row, .embedded-estimate .upload-zone-label { overflow-wrap: anywhere; }
+.embedded-estimate .form-input, .embedded-estimate .form-textarea { box-sizing: border-box; max-width: 100%; }
+@media (max-width: 700px) {
+  .embedded-estimate .info-grid-2 { grid-template-columns: 1fr; }
+}

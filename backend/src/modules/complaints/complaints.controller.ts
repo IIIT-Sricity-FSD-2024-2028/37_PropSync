@@ -32,6 +32,7 @@ import { Role, RolesGuard } from '../../common/guards/roles.guard';
 import { appConfig } from '../../config/app.config';
 
 import {
+  AssignProviderDto,
   ComplaintStatus,
   CreateComplaintDto,
   UpdateComplaintStatusDto,
@@ -440,11 +441,13 @@ export class ComplaintsController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateComplaintStatusDto,
     @Headers('role') role: string,
+    @Headers('x-user-id') userId?: string,
   ) {
     return this.complaintsService.updateStatus(
       id,
       dto,
       role,
+      Number(userId),
     );
   }
 
@@ -457,7 +460,7 @@ export class ComplaintsController {
   @Roles(Role.MaintenanceManager)
   @ApiOperation({
     summary:
-      'Assign an approved complaint to a service provider',
+      'Assign provider and approve their pending estimate together',
   })
   @ApiParam({
     name: 'id',
@@ -484,10 +487,14 @@ export class ComplaintsController {
     @Param('id', ParseIntPipe) id: number,
     @Param('providerId', ParseIntPipe)
       providerId: number,
+    @Body() dto: AssignProviderDto,
+    @Headers('x-user-id') userId?: string,
   ) {
+    this.complaintsService.assertManager(id, Number(userId));
     return this.complaintsService.assignProvider(
       id,
       providerId,
+      dto,
     );
   }
 
@@ -513,7 +520,7 @@ export class ComplaintsController {
   @ApiResponse({
     status: 200,
     description:
-      'Returns complaintId and queue (array of provider IDs)',
+      'Returns complaintId, queue and provider applications with their estimates',
   })
   @ApiResponse({
     status: 404,
@@ -522,7 +529,10 @@ export class ComplaintsController {
   })
   getQueue(
     @Param('id', ParseIntPipe) id: number,
+    @Headers('x-user-id') userId?: string,
+    @Headers('role') role?: string,
   ) {
+    this.complaintsService.assertEstimateReader(id, role || '', Number(userId));
     return this.complaintsService.getInterestedProviders(
       id,
     );
@@ -537,7 +547,7 @@ export class ComplaintsController {
   @Roles(Role.ServiceProvider)
   @ApiOperation({
     summary:
-      'Service Provider expresses interest in an approved complaint — joins the queue',
+      'Legacy interest alias; requires an already submitted estimate for this complaint — joins the queue',
   })
   @ApiParam({
     name: 'id',
@@ -557,16 +567,9 @@ export class ComplaintsController {
     @Param('id', ParseIntPipe) id: number,
     @Body('providerId') providerId?: number,
     @Headers('x-user-id') headerUserId?: string,
-    @Headers('provider-id') headerProviderId?: string,
   ) {
-    const pId =
-      providerId ||
-      (headerUserId ? parseInt(headerUserId, 10) : undefined) ||
-      (headerProviderId ? parseInt(headerProviderId, 10) : undefined);
-
-    if (!pId) {
-      throw new BadRequestException('providerId is required');
-    }
+    const pId = Number(headerUserId);
+    if (!pId || (providerId && Number(providerId) !== pId)) throw new BadRequestException('A matching provider session is required');
 
     return this.complaintsService.spExpressInterest(
       id,
@@ -598,12 +601,9 @@ export class ComplaintsController {
     @Param('id', ParseIntPipe) id: number,
     @Body('providerId') providerId?: number,
     @Headers('x-user-id') headerUserId?: string,
-    @Headers('provider-id') headerProviderId?: string,
   ) {
-    const pId =
-      providerId ||
-      (headerUserId ? parseInt(headerUserId, 10) : undefined) ||
-      (headerProviderId ? parseInt(headerProviderId, 10) : undefined);
+    const pId = Number(headerUserId);
+    if (!pId || (providerId && Number(providerId) !== pId)) throw new BadRequestException('A matching provider session is required');
 
     return this.complaintsService.spAcceptAssignment(
       id,
@@ -636,12 +636,9 @@ export class ComplaintsController {
     @Body('reason') reason?: string,
     @Body('providerId') providerId?: number,
     @Headers('x-user-id') headerUserId?: string,
-    @Headers('provider-id') headerProviderId?: string,
   ) {
-    const pId =
-      providerId ||
-      (headerUserId ? parseInt(headerUserId, 10) : undefined) ||
-      (headerProviderId ? parseInt(headerProviderId, 10) : undefined);
+    const pId = Number(headerUserId);
+    if (!pId || (providerId && Number(providerId) !== pId)) throw new BadRequestException('A matching provider session is required');
 
     return this.complaintsService.spReject(
       id,

@@ -3,16 +3,23 @@ import { ComplaintStatus } from './dto/complaint.dto';
 import { ComplaintsService } from './complaints.service';
 import { ComplaintsRepository } from './complaints.repository';
 import { UsersService } from '../users/users.service';
+import { EstimatesRepository } from '../estimates/estimates.repository';
+import { EstimatesService } from '../estimates/estimates.service';
 import { UsersRepository } from '../users/users.repository';
 
 describe('ComplaintsService', () => {
   let service: ComplaintsService;
+  let estimates: EstimatesService;
 
   beforeEach(() => {
+    const repository = new EstimatesRepository();
     service = new ComplaintsService(
       new ComplaintsRepository(),
       new UsersService(new UsersRepository()),
+      undefined,
+      repository,
     );
+    estimates = new EstimatesService(service, repository);
   });
 
   it('requires a deadline before a manager approves a pending complaint', () => {
@@ -39,6 +46,7 @@ describe('ComplaintsService', () => {
   describe('Service Provider Interest & State Persistence', () => {
     it('allows a service provider to express interest without duplicates when called multiple times', () => {
       // Complaint 8 is approved and has interestedProviders: [9]
+      estimates.create({ complaintId: 8, providerId: 10, estimatedCost: 2500, notes: 'Repair', documentUrl: '/estimate.pdf' });
       const res1 = service.spExpressInterest(8, 10);
       expect(res1.queue).toContain(9);
       expect(res1.queue).toContain(10);
@@ -64,7 +72,7 @@ describe('ComplaintsService', () => {
       );
 
       // Provider 9 accepts complaint 1
-      service.spExpressInterest(1, 9);
+      estimates.create({ complaintId: 1, providerId: 9, estimatedCost: 3000, notes: 'Repair', documentUrl: '/estimate.pdf' });
       let complaint = service.findById(1);
       expect(complaint.interestedProviders).toContain(9);
       expect(complaint.status).toBe(ComplaintStatus.Approved);
@@ -73,7 +81,7 @@ describe('ComplaintsService', () => {
       expect(complaint.interestedProviders.includes(10)).toBe(false);
 
       // When provider 10 also accepts
-      service.spExpressInterest(1, 10);
+      estimates.create({ complaintId: 1, providerId: 10, estimatedCost: 2500, notes: 'Repair', documentUrl: '/estimate.pdf' });
       complaint = service.findById(1);
       expect(complaint.interestedProviders).toContain(9);
       expect(complaint.interestedProviders).toContain(10);
@@ -81,6 +89,7 @@ describe('ComplaintsService', () => {
       // Manager's queue contains both 9 and 10
       const queue = service.getInterestedProviders(1);
       expect(queue.queue).toEqual([9, 10]);
+      expect(queue.applications.map(a => a.estimate.estimatedCost)).toEqual([3000, 2500]);
     });
   });
 });

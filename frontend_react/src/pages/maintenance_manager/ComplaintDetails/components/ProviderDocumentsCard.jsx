@@ -1,10 +1,10 @@
-import React from "react";
+import EstimateDocumentLink from "../../../../components/service_provider/EstimateDocumentLink";
 import Icon from "../../shared/Icon";
 
 /* "Service Provider Documents" – latest estimate document + bill attachments */
 export default function ProviderDocumentsCard({ estimate, bills }) {
   const files = [
-    ...(estimate?.documentUrl ? [{ url: estimate.documentUrl, name: `Estimate: ${estimate.documentName || "Estimate document"}` }] : []),
+    ...(estimate?.documentUrl ? [{ url: estimate.documentUrl, estimate, name: `Estimate: ${estimate.documentName || "Estimate document"}` }] : []),
     ...bills.flatMap((bill) =>
       (bill.attachmentUrls || []).map((url, i) => ({ url, name: `Bill attachment: ${(bill.attachmentNames || [])[i] || `File ${i + 1}`}` }))
     ),
@@ -16,7 +16,7 @@ export default function ProviderDocumentsCard({ estimate, bills }) {
         <p className="muted">No service-provider documents have been submitted for this complaint yet.</p>
       ) : (
         files.map((f) => (
-          <a key={f.url} className="file-row" href={f.url} target="_blank" rel="noopener noreferrer">
+          f.estimate ? <EstimateDocumentLink key={f.url} estimate={f.estimate} /> : <a key={f.url} className="file-row" href={f.url} target="_blank" rel="noopener noreferrer">
             <Icon name="paperclip" size={16} /> {f.name}
           </a>
         ))

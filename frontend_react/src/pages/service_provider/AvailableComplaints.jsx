@@ -1,6 +1,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import "./styles.css";
+import EstimateForm from "../../components/service_provider/EstimateForm";
+import { estimateStatus } from "../../services/estimateWorkflow";
 
 import { API_BASE_URL as API } from "../../services/api";
 import PageHeader from "../../components/service_provider/PageHeader";
@@ -118,6 +120,9 @@ function AvailableComplaints() {
   const providerId = getProviderId();
 
   const [complaints, setComplaints] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [estimateOpen, setEstimateOpen] = useState(false);
+  const [estimateBusy, setEstimateBusy] = useState(false);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("All");
   const [location, setLocation] = useState("All");
@@ -162,6 +167,12 @@ function AvailableComplaints() {
       );
 
       setComplaints(available);
+      const estimatesResponse = await fetch(`${API}/estimates/provider/${providerId}`, {
+        headers: { role: "service_provider", "x-user-id": String(providerId) },
+      });
+      if (!estimatesResponse.ok) throw new Error("Could not load submitted estimates. Please retry.");
+      const estimates = await estimatesResponse.json();
+      setApplications(estimates.map(estimate => ({ estimate, complaint: data.find(c => c.id === estimate.complaintId) })).filter(a => a.complaint));
     } catch (err) {
       console.error("Failed to fetch complaints:", err);
       setError(err.message || "Failed to load available complaints.");
@@ -171,7 +182,8 @@ function AvailableComplaints() {
   }, [providerId]);
 
   useEffect(() => {
-    loadComplaints();
+    const timer = setTimeout(loadComplaints, 0);
+    return () => clearTimeout(timer);
   }, [loadComplaints]);
 
   const filteredComplaints = complaints.filter((complaint) => {
@@ -204,6 +216,7 @@ function AvailableComplaints() {
   const openComplaint = useCallback(
     async (complaint) => {
       setSelectedComplaint(complaint);
+      setEstimateOpen(false);
       setActionError("");
 
       try {
@@ -246,19 +259,22 @@ function AvailableComplaints() {
 
     const complaint = complaints.find(
       (item) => String(item.id) === String(openId)
-    );
+    ) || applications.find(a => String(a.complaint.id) === String(openId))?.complaint;
 
     if (complaint) {
-      openComplaint(complaint);
+      const timer = setTimeout(() => openComplaint(complaint), 0);
       window.history.replaceState(
         null,
         "",
         window.location.pathname
       );
+      return () => clearTimeout(timer);
     }
-  }, [complaints, loading, openComplaint]);
+  }, [complaints, applications, loading, openComplaint]);
 
   const closeModal = () => {
+    if (estimateBusy) return;
+    setEstimateOpen(false);
     setSelectedComplaint(null);
     setActionError("");
     setActionLoading("");
@@ -267,107 +283,22 @@ function AvailableComplaints() {
   const handleDecision = async (action) => {
     if (!selectedComplaint || actionLoading) return;
 
+    if (action === "accept") { setEstimateOpen(true); return; }
     const complaintId = selectedComplaint.id;
-    const isAccept = action === "accept";
-
     setActionLoading(action);
     setActionError("");
-
     try {
-      const response = await fetch(
-        `${API}/complaints/${complaintId}/${
-          isAccept ? "sp-interest" : "sp-reject"
-        }`,
-        {
-          method: "PATCH",
-          headers: {
-            role: "service_provider",
-            "Content-Type": "application/json",
-            "x-user-id": String(providerId),
-          },
-          body: JSON.stringify(
-            isAccept
-              ? { providerId }
-              : {
-                  providerId,
-                  reason: "Declined by service provider",
-                }
-          ),
-        }
-      );
-
-      const data = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            `Could not ${
-              isAccept ? "register interest" : "reject complaint"
-            }.`
-        );
-      }
-
-      setComplaints((current) =>
-        current.map((item) => {
-          if (String(item.id) !== String(complaintId)) return item;
-
-          const interestedProviders = [
-            ...(item.interestedProviders || []),
-          ].filter((id) => Number(id) !== providerId);
-
-          const rejectedProviders = [
-            ...(item.rejectedProviders || []),
-          ].filter((id) => Number(id) !== providerId);
-
-          if (isAccept) interestedProviders.push(providerId);
-          else rejectedProviders.push(providerId);
-
-          return {
-            ...item,
-            interestedProviders,
-            rejectedProviders,
-          };
-        })
-      );
-
-      setSelectedComplaint((current) => {
-        if (!current || String(current.id) !== String(complaintId)) {
-          return current;
-        }
-
-        const interestedProviders = [
-          ...(current.interestedProviders || []),
-        ].filter((id) => Number(id) !== providerId);
-
-        const rejectedProviders = [
-          ...(current.rejectedProviders || []),
-        ].filter((id) => Number(id) !== providerId);
-
-        if (isAccept) interestedProviders.push(providerId);
-        else rejectedProviders.push(providerId);
-
-        return {
-          ...current,
-          interestedProviders,
-          rejectedProviders,
-        };
+      const response = await fetch(`${API}/complaints/${complaintId}/sp-reject`, {
+        method: "PATCH",
+        headers: { role: "service_provider", "Content-Type": "application/json", "x-user-id": String(providerId) },
+        body: JSON.stringify({ providerId, reason: "Declined by service provider" }),
       });
-
-      // The original workflow keeps the complaint visible after
-      // registering interest or declining it.
-      if (isAccept && data.queue) {
-        setSelectedComplaint((current) =>
-          current
-            ? { ...current, interestedProviders: data.queue }
-            : current
-        );
-      }
-    } catch (err) {
-      console.error("Complaint action failed:", err);
-      setActionError(err.message || "The request failed.");
-    } finally {
-      setActionLoading("");
-    }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.message || "Could not reject complaint.");
+      setSelectedComplaint(current => ({ ...current, rejectedProviders: data.rejectedProviders }));
+      await loadComplaints();
+    } catch (err) { setActionError(err.message || "The request failed."); }
+    finally { setActionLoading(""); }
   };
 
   const categories = [
@@ -411,7 +342,7 @@ function AvailableComplaints() {
     <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
-          <PageHeader title="Available Complaints" description="View available complaints and register your interest. The Maintenance Manager will select a provider." />
+          <PageHeader title="Available Complaints" description="Submit an estimate to accept an available complaint. The Maintenance Manager will compare estimates and select a provider." />
 
           {error && <ErrorMessage onRetry={loadComplaints} style={{ padding: 16, marginBottom: 20, background: "#FEE2E2", color: "#991B1B", borderRadius: 8 }}>
             {error}
@@ -532,6 +463,17 @@ function AvailableComplaints() {
             )}
           </div>
 
+          {applications.length > 0 && <section className="card" style={{ marginTop: 24 }}>
+            <div className="card-body">
+              <h2>My Submitted Estimates</h2>
+              {applications.map(({ estimate, complaint }) => <div className="estimate-notes" key={estimate.id}>
+                <p><strong>C-{complaint.id}: {complaint.title}</strong> · ₹{Number(estimate.estimatedCost).toLocaleString("en-IN")}</p>
+                <p>{estimateStatus(estimate)}</p>
+                <button className="btn btn-ghost" onClick={() => { openComplaint(complaint); setEstimateOpen(true); }}>View Submitted Estimate</button>
+              </div>)}
+            </div>
+          </section>}
+
           {selectedComplaint && (
             <div
               className="modal-backdrop open"
@@ -651,7 +593,12 @@ function AvailableComplaints() {
                       </div>
 
                       <div className="modal-action-area">
-                        {alreadyInterested ? (
+                        {selectedComplaint.assignedProviderId || applications.some(a => a.estimate.complaintId === selectedComplaint.id && a.estimate.approved === false) ? (
+                          <div className="modal-accepted">
+                            <p>{estimateStatus(applications.find(a => a.estimate.complaintId === selectedComplaint.id)?.estimate || {})}</p>
+                            <button className="btn btn-ghost" onClick={() => setEstimateOpen(true)}>View Submitted Estimate</button>
+                          </div>
+                        ) : alreadyInterested && applications.some(a => a.estimate.complaintId === selectedComplaint.id) ? (
                           <div className="modal-accepted">
                             <p
                               className="main"
@@ -660,10 +607,10 @@ function AvailableComplaints() {
                                 fontWeight: 700,
                               }}
                             >
-                              ✓ Interest Registered!
+                              ✓ Estimate Submitted — Awaiting Manager Selection
                             </p>
                             <p className="sub" style={{ marginTop: 6 }}>
-                              You have been added to the provider queue.
+                              Your estimate has been submitted for manager selection.
                             </p>
                             <p className="sub" style={{ marginTop: 4 }}>
                               {selectedComplaint.interestedProviders
@@ -671,6 +618,7 @@ function AvailableComplaints() {
                               provider(s) in queue. The Maintenance
                               Manager will select one.
                             </p>
+                            <button className="btn btn-ghost btn-full" onClick={() => setEstimateOpen(true)}>View Submitted Estimate</button>
                           </div>
                         ) : alreadyRejected ? (
                           <div
@@ -720,17 +668,17 @@ function AvailableComplaints() {
 
                             <button
                               className="btn btn-accent btn-full"
-                              disabled={Boolean(actionLoading)}
+                              disabled={Boolean(actionLoading) || estimateBusy || estimateOpen}
                               onClick={() => handleDecision("accept")}
                             >
                               {actionLoading === "accept"
-                                ? "Registering Interest..."
+                                ? "Submitting Estimate..."
                                 : "Accept Complaint"}
                             </button>
 
                             <button
                               className="btn btn-red btn-full"
-                              disabled={Boolean(actionLoading)}
+                              disabled={Boolean(actionLoading) || estimateBusy || estimateOpen}
                               onClick={() => handleDecision("reject")}
                             >
                               {actionLoading === "reject"
@@ -742,6 +690,12 @@ function AvailableComplaints() {
                       </div>
                     </div>
                   </div>
+                  {estimateOpen && <EstimateForm key={selectedComplaint.id} embedded complaintId={selectedComplaint.id}
+                    onCancel={() => setEstimateOpen(false)} onBusyChange={setEstimateBusy}
+                    onSubmitted={() => {
+                      loadComplaints();
+                      setSelectedComplaint(current => ({ ...current, interestedProviders: [...new Set([...(current.interestedProviders || []), providerId])] }));
+                    }} />}
                 </div>
               </section>
             </div>

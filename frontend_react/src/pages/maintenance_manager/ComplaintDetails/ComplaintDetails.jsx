@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
+import ProviderSelection from "../AssignProvider/components/ProviderSelection";
+import PendingEstimateCard from "../ServiceEstimate/components/PendingEstimateCard";
 import ComplaintStepper from "./components/ComplaintStepper";
 import ComplaintInfoCard from "./components/ComplaintInfoCard";
 import LifecycleCard from "./components/LifecycleCard";
@@ -28,17 +30,20 @@ export default function ComplaintDetails() {
   const load = useCallback(async () => {
     if (!id) return setError("No complaint ID provided.");
     try {
-      setC(await fetchComplaint(id));
+      const [complaint, estimates] = await Promise.all([fetchComplaint(id), fetchEstimates(id)]);
+      setC(complaint);
+      setEstimates(estimates);
+      setError("");
     } catch {
       return setError(`Could not load complaint #${id}. Make sure the backend is running.`);
     }
-    fetchEstimates(id).then(setEstimates).catch(() => {});
     fetchBills().then((all) => setBills(all.filter((b) => Number(b.complaintId) === Number(id)))).catch(() => {});
     fetchProviders().then(setProviders).catch(() => {});
   }, [id]);
 
   useEffect(() => {
-    load();
+    const timer = setTimeout(load, 0);
+    return () => clearTimeout(timer);
   }, [load]);
 
   // after approve / reject go back to the list (same as the HTML page)
@@ -54,12 +59,12 @@ export default function ComplaintDetails() {
 
   const provider = providers.find((p) => Number(p.id) === Number(c.assignedProviderId));
   const providerName = c.assignedProviderId ? provider?.name || `Provider #${c.assignedProviderId}` : "";
-  const latestEstimate = estimates[estimates.length - 1];
+  const latestEstimate = estimates.find(e => e.providerId === c.assignedProviderId && e.approved === true) || estimates.find(e => e.providerId === c.assignedProviderId);
 
   return (
     <ManagerLayout backTo={MM_PATHS.complaints} backLabel="Back to Complaints">
       <PageHeader title="Complaint Details" subtitle="Review the complaint, its progress and the provider's documents." />
-      <ComplaintStepper status={c.status} />
+      <ComplaintStepper status={c.status} applicationWorkflow={estimates.some(e => e.selectionStatus)} hasApplications={estimates.some(e => e.selectionStatus === "candidate")} />
       <div className="two-col-grid" style={{ alignItems: "start" }}>
         <div>
           <ComplaintInfoCard
@@ -79,6 +84,9 @@ export default function ComplaintDetails() {
         </div>
         <LifecycleCard status={c.status} submittedAt={c.submittedAt} />
       </div>
+      {c.status === "approved" ? <ProviderSelection complaintId={id} onUpdated={load} /> : estimates.map(e =>
+        <PendingEstimateCard key={e.id} estimate={e} issue={c.title}
+          provider={providers.find(p => p.id === e.providerId)?.name || `Provider #${e.providerId}`} />)}
       {modals}
     </ManagerLayout>
   );

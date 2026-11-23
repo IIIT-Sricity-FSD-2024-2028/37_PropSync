@@ -1,16 +1,19 @@
 import {
   BadRequestException,
   Injectable,
+  ForbiddenException,
   NotFoundException,
   Optional,
 } from '@nestjs/common';
 import {
+  AssignProviderDto,
   ComplaintCategory,
   ComplaintPriority,
   ComplaintStatus,
   CreateComplaintDto,
   UpdateComplaintStatusDto,
 } from './dto/complaint.dto';
+import { EstimatesRepository } from '../estimates/estimates.repository';
 import { ComplaintsRepository } from './complaints.repository';
 import { UsersService, type User } from '../users/users.service';
 import { UserRole } from '../users/dto/user.dto';
@@ -51,6 +54,7 @@ export class ComplaintsService {
     private readonly complaintsRepository: ComplaintsRepository,
     private readonly usersService: UsersService,
     @Optional() private readonly notificationsService?: NotificationsService,
+    @Optional() private readonly estimatesRepository?: EstimatesRepository,
   ) {}
 
   findAll(
@@ -218,6 +222,7 @@ export class ComplaintsService {
     id: number,
     dto: UpdateComplaintStatusDto,
     role?: string,
+    actorId?: number,
   ): Complaint {
     const complaint = this.findById(id);
 
@@ -227,6 +232,9 @@ export class ComplaintsService {
     };
 
     if (role === 'service_provider') {
+      if (!actorId || complaint.assignedProviderId !== actorId) {
+        throw new ForbiddenException('Only the assigned provider can update work status');
+      }
       const allowed = spAllowed[complaint.status] || [];
       if (!allowed.includes(dto.status)) {
         const message =
@@ -289,6 +297,10 @@ export class ComplaintsService {
       }
     }
 
+    if (dto.status === ComplaintStatus.Assigned ||
+        (dto.status === ComplaintStatus.InProgress && !complaint.estimateApproved)) {
+      throw new BadRequestException('Select a provider and approve their estimate before starting work');
+    }
     complaint.status = dto.status;
     complaint.updatedAt = new Date().toISOString().split('T')[0];
     if (dto.rejectionReason) complaint.rejectionReason = dto.rejectionReason;
@@ -327,46 +339,126 @@ export class ComplaintsService {
     return complaint;
   }
 
-  assignProvider(id: number, providerId: number): Complaint {
+  // Transaction boundary for the existing synchronous in-memory persistence.
+  // A database-backed repository must replace this with a database transaction.
+  atomic<T>(id: number, operation: () => T): T {
     const complaint = this.findById(id);
-    if (complaint.status !== ComplaintStatus.Approved) {
-      throw new BadRequestException(
-        'Complaint must be Approved before assigning a provider',
-      );
+    const snapshot = structuredClone(complaint);
+    const estimates = this.estimatesRepository?.findAll().filter(e => e.complaintId === id) || [];
+    const previous = estimates.map(e => structuredClone(e));
+    const notificationIds = new Set(this.notificationsService?.findAll().map(n => n.id));
+    try { return operation(); }
+    catch (error) {
+      for (const key of Object.keys(complaint)) delete complaint[key];
+      Object.assign(complaint, snapshot);
+      for (const e of this.estimatesRepository?.findAll().filter(e => e.complaintId === id) || []) {
+        if (!previous.some(old => old.id === e.id)) this.estimatesRepository?.remove(e.id);
+      }
+      estimates.forEach((e, i) => {
+        for (const key of Object.keys(e)) delete e[key];
+        Object.assign(e, previous[i]);
+      });
+      for (const n of this.notificationsService?.findAll() || []) {
+        if (!notificationIds.has(n.id)) this.notificationsService?.remove(n.id);
+      }
+      throw error;
     }
+  }
 
-    if (!complaint.interestedProviders) complaint.interestedProviders = [];
-    if (complaint.interestedProviders.length === 0) {
-      throw new BadRequestException(
-        'No providers are in the interest queue for this complaint yet',
-      );
+  assertManager(complaintId: number, managerId?: number): Complaint {
+    const complaint = this.findById(complaintId);
+    const manager = managerId ? this.usersService.findRawById(managerId) : undefined;
+    if (!manager || manager.role !== UserRole.MaintenanceManager || manager.approvalStatus !== 'approved' || complaint.managerId !== managerId) {
+      throw new ForbiddenException('You can only manage complaints assigned to your account');
     }
-    if (!complaint.interestedProviders.includes(providerId)) {
-      throw new BadRequestException(
-        `Provider ${providerId} is not in the interest queue for this complaint. Queue contains: [${complaint.interestedProviders.join(', ')}]`,
-      );
-    }
-
-    complaint.assignedProviderId = providerId;
-    complaint.status = ComplaintStatus.Assigned;
-    complaint.spAccepted = true;
-    complaint.interestedProviders = [providerId];
-    complaint.updatedAt = new Date().toISOString().split('T')[0];
-    this.notify(
-      providerId,
-      complaint.id,
-      NotificationType.ProviderAssigned,
-      NotificationRecipient.ServiceProvider,
-      `You have been assigned complaint #${complaint.id}, "${complaint.title}".`,
-    );
-    this.notify(
-      complaint.ownerId,
-      complaint.id,
-      NotificationType.ProviderAssigned,
-      NotificationRecipient.Owner,
-      `A service provider has been assigned to your complaint #${complaint.id}.`,
-    );
     return complaint;
+  }
+
+  assertEstimateReader(id: number, role: string, userId: number): void {
+    const user = this.usersService.findRawById(userId);
+    if (!user || user.role !== role || user.approvalStatus !== 'approved') {
+      throw new ForbiddenException('A matching approved user session is required');
+    }
+    if (role === 'maintenance_manager') this.assertManager(id, userId);
+    if (role === 'admin') {
+      const complaint = this.findById(id);
+      const owner = this.usersService.findRawById(complaint.ownerId);
+      if (!user.communityName || user.communityName.trim().toLowerCase() !== owner?.communityName?.trim().toLowerCase()) {
+        throw new ForbiddenException('You can only view estimates for your community');
+      }
+    }
+  }
+
+  validateEstimateSubmission(id: number, providerId: number): Complaint {
+    const complaint = this.findById(id);
+    const provider = this.usersService.findRawById(providerId);
+    if (!provider || provider.role !== UserRole.ServiceProvider || provider.approvalStatus !== 'approved') {
+      throw new ForbiddenException('An approved service provider account is required');
+    }
+    if (complaint.status === ComplaintStatus.Approved && !complaint.assignedProviderId) {
+      if (complaint.rejectedProviders?.includes(providerId)) {
+        throw new BadRequestException('This complaint has already been declined or this estimate rejected');
+      }
+      return complaint;
+    }
+    if (complaint.assignedProviderId === providerId &&
+        [ComplaintStatus.Assigned, ComplaintStatus.EstimatingCost].includes(complaint.status) &&
+        !complaint.estimateApproved) return complaint;
+    throw new BadRequestException('This complaint is not open for estimate submissions');
+  }
+
+  assignProvider(id: number, providerId: number, dto: AssignProviderDto = {}): Complaint {
+    const complaint = this.findById(id);
+    const estimate = this.estimatesRepository?.findAll().find(e =>
+      e.complaintId === id && e.providerId === providerId && e.approved === null &&
+      (!e.selectionStatus || e.selectionStatus === 'candidate'));
+    if (complaint.status !== ComplaintStatus.Approved || complaint.assignedProviderId) {
+      throw new BadRequestException('Complaint must be approved and unassigned before selecting a provider');
+    }
+    if (!complaint.interestedProviders?.includes(providerId) || !estimate) {
+      throw new BadRequestException('Select an interested provider with a pending estimate');
+    }
+    this.validateEstimateSubmission(id, providerId);
+    if (!Number.isFinite(estimate.estimatedCost) || estimate.estimatedCost <= 0 ||
+        (estimate.selectionStatus === 'candidate' && (!estimate.notes?.trim() || !estimate.documentUrl))) {
+      throw new BadRequestException('The selected provider must have a valid estimate');
+    }
+    const deadline = dto.deadline || complaint.deadline;
+    if (!deadline || !/^\d{4}-\d{2}-\d{2}$/.test(deadline) || Number.isNaN(Date.parse(deadline)) || new Date(deadline).toISOString().slice(0, 10) !== deadline) {
+      throw new BadRequestException('A valid assignment deadline is required');
+    }
+    // All repositories are synchronous, so validation and this commit cannot interleave
+    // with another request. Restore both records if a collaborator fails.
+    const estimates = this.estimatesRepository!.findAll().filter(e => e.complaintId === id);
+    return this.atomic(id, () => {
+      complaint.assignedProviderId = providerId;
+      complaint.deadline = deadline;
+      complaint.spAccepted = true;
+      complaint.estimateSubmitted = true;
+      complaint.estimateApproved = true;
+      complaint.status = ComplaintStatus.InProgress;
+      complaint.updatedAt = new Date().toISOString();
+      estimate.approved = true;
+      estimate.selectionStatus = 'selected';
+      estimate.managerNote = dto.managerNote;
+      estimate.reviewedAt = complaint.updatedAt;
+      for (const other of estimates) {
+        if (other.id !== estimate.id && other.approved === null) {
+          other.selectionStatus = 'not_selected';
+          other.reviewedAt = complaint.updatedAt;
+        }
+      }
+      this.notify(providerId, id, NotificationType.ProviderAssigned, NotificationRecipient.ServiceProvider,
+        `You have been assigned complaint #${id}, "${complaint.title}". Your estimate is approved; work can begin.`);
+      this.notify(complaint.ownerId, id, NotificationType.ProviderAssigned, NotificationRecipient.Owner,
+        `A service provider and estimate have been approved for your complaint #${id}.`);
+      for (const other of estimates) {
+        if (other.selectionStatus === 'not_selected') this.notify(other.providerId, id,
+          NotificationType.Custom, NotificationRecipient.ServiceProvider,
+          `Another provider was selected for complaint #${id}. Your submitted estimate remains in history.`);
+      }
+      return complaint;
+    });
   }
 
   remove(id: number): { message: string } {
@@ -381,49 +473,31 @@ export class ComplaintsService {
     providerId: number,
   ): { message: string; queue: number[] } {
     const complaint = this.findById(complaintId);
-
-    if (complaint.status !== ComplaintStatus.Approved) {
-      throw new BadRequestException(
-        `Only approved complaints are open for provider interest. Current status: "${complaint.status}"`,
-      );
-    }
-
-    if (!complaint.interestedProviders) complaint.interestedProviders = [];
-    if (!complaint.rejectedProviders) complaint.rejectedProviders = [];
-
-    // Idempotent: If already in queue, return existing queue without error or duplicate record
-    if (complaint.interestedProviders.includes(providerId)) {
-      return {
-        message: `Provider ${providerId} already added to queue for complaint ${complaintId}`,
-        queue: [...complaint.interestedProviders],
-      };
-    }
-
-    // Remove from rejected list if previously rejected
-    complaint.rejectedProviders = complaint.rejectedProviders.filter((id) => id !== providerId);
-
-    complaint.interestedProviders.push(providerId);
-    complaint.updatedAt = new Date().toISOString().split('T')[0];
-    this.notify(
-      complaint.managerId,
-      complaint.id,
-      NotificationType.Custom,
-      NotificationRecipient.MaintenanceManager,
-      `A service provider expressed interest in complaint #${complaint.id}.`,
-    );
-
-    return {
-      message: `Provider ${providerId} added to queue for complaint ${complaintId}`,
-      queue: [...complaint.interestedProviders],
-    };
+    const estimate = this.estimatesRepository?.findAll().find(e =>
+      e.complaintId === complaintId && e.providerId === providerId && e.approved === null &&
+      (!e.selectionStatus || e.selectionStatus === 'candidate'));
+    if (!estimate) throw new BadRequestException('Accept this complaint by submitting an estimate document, cost and description');
+    this.validateEstimateSubmission(complaintId, providerId);
+    if (!complaint.interestedProviders.includes(providerId)) complaint.interestedProviders.push(providerId);
+    return { message: 'Estimate submitted - awaiting manager selection', queue: [...complaint.interestedProviders] };
   }
 
-  getInterestedProviders(complaintId: number): {
-    complaintId: number;
-    queue: number[];
-  } {
+  getInterestedProviders(complaintId: number) {
     const complaint = this.findById(complaintId);
-    return { complaintId, queue: complaint.interestedProviders || [] };
+    const estimates = this.estimatesRepository?.findAll().filter(e => e.complaintId === complaintId) || [];
+    return {
+      complaintId,
+      queue: complaint.interestedProviders || [],
+      legacyProviders: (complaint.interestedProviders || []).filter(providerId => !estimates.some(e => e.providerId === providerId)).map(providerId => {
+        const provider = this.usersService.findRawById(providerId);
+        return { id: providerId, name: provider?.name || `Provider #${providerId}`, category: provider?.category };
+      }),
+      applications: estimates.map(estimate => {
+        const provider = this.usersService.findRawById(estimate.providerId);
+        return { provider: { id: estimate.providerId, name: provider?.name || `Provider #${estimate.providerId}`,
+          category: provider?.category, phone: provider?.phone }, estimate };
+      }),
+    };
   }
 
   spAcceptAssignment(id: number, providerId?: number): Complaint {
@@ -443,6 +517,12 @@ export class ComplaintsService {
   ): Complaint | { message: string; rejectedProviders: number[] } {
     const complaint = this.findById(id);
 
+    if (complaint.assignedProviderId && complaint.status !== ComplaintStatus.Assigned) {
+      throw new BadRequestException('This complaint is no longer open for declining');
+    }
+    if (!complaint.assignedProviderId && complaint.status !== ComplaintStatus.Approved) {
+      throw new BadRequestException('Only approved complaints can be declined');
+    }
     // If complaint was assigned to this provider, handle assignment rejection
     if (
       complaint.status === ComplaintStatus.Assigned &&
@@ -450,6 +530,9 @@ export class ComplaintsService {
     ) {
       complaint.assignedProviderId = undefined;
       complaint.status = ComplaintStatus.Approved;
+      complaint.estimateSubmitted = false;
+      complaint.estimateApproved = false;
+      complaint.spAccepted = false;
       complaint.rejectionReason = reason || 'Assignment rejected by service provider';
       if (providerId) {
         if (!complaint.rejectedProviders) complaint.rejectedProviders = [];
@@ -487,7 +570,13 @@ export class ComplaintsService {
         (p) => p !== providerId,
       );
     }
-    if (reason) complaint.rejectionReason = reason;
+    const estimate = this.estimatesRepository?.findAll().find(e => e.complaintId === id && e.providerId === providerId && e.approved === null);
+    if (estimate) {
+      estimate.selectionStatus = 'rejected';
+      estimate.approved = false;
+      estimate.managerNote = reason || 'Declined by service provider';
+      estimate.reviewedAt = new Date().toISOString();
+    }
     complaint.updatedAt = new Date().toISOString().split('T')[0];
 
     return {
@@ -497,33 +586,23 @@ export class ComplaintsService {
   }
 
   markEstimateSubmitted(id: number, providerId: number): Complaint {
-    const complaint = this.findById(id);
-    if (complaint.assignedProviderId !== providerId) {
-      throw new BadRequestException(
-        'Estimate can only be submitted by the assigned provider',
-      );
+    const complaint = this.validateEstimateSubmission(id, providerId);
+    if (!complaint.assignedProviderId) {
+      this.spExpressInterest(id, providerId);
+    } else {
+      complaint.estimateSubmitted = true;
+      complaint.estimateApproved = false;
+      complaint.status = ComplaintStatus.EstimatingCost;
     }
-    if (
-      complaint.status !== ComplaintStatus.Assigned &&
-      complaint.status !== ComplaintStatus.EstimatingCost
-    ) {
-      throw new BadRequestException(
-        `Cannot submit an estimate while complaint is in "${complaint.status}" status`,
-      );
-    }
-
-    complaint.estimateSubmitted = true;
-    complaint.estimateApproved = false;
-    complaint.status = ComplaintStatus.EstimatingCost;
-    complaint.updatedAt = new Date().toISOString().split('T')[0];
-    this.notify(
-      complaint.managerId,
-      complaint.id,
-      NotificationType.EstimateSubmitted,
-      NotificationRecipient.MaintenanceManager,
-      `A service estimate was submitted for complaint #${complaint.id}.`,
-    );
+    complaint.updatedAt = new Date().toISOString();
+    this.notify(complaint.managerId, id, NotificationType.EstimateSubmitted,
+      NotificationRecipient.MaintenanceManager, `An estimate was submitted for complaint #${id}; review it from the complaint.`);
     return complaint;
+  }
+
+  notifyEstimateRejected(id: number, providerId: number, note?: string): void {
+    this.notify(providerId, id, NotificationType.Custom, NotificationRecipient.ServiceProvider,
+      `Your estimate for complaint #${id} was rejected.${note ? ` ${note}` : ''}`);
   }
 
   markEstimateReviewed(id: number, approved: boolean): Complaint {
@@ -602,6 +681,7 @@ export class ComplaintsService {
       (c) =>
         c.status === ComplaintStatus.InProgress ||
         c.status === ComplaintStatus.Assigned ||
+        c.status === ComplaintStatus.EstimatingCost ||
         c.status === ComplaintStatus.Billed,
     ).length;
     const resolved = complaints.filter(

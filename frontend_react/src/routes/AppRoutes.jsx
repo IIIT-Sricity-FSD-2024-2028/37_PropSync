@@ -3,6 +3,7 @@ import {
   Route,
   Routes,
   useLocation,
+  useParams,
 } from "react-router-dom";
 
 // Landing
@@ -91,6 +92,18 @@ function LegacyRoleRoute() {
   }
 
   return <Navigate to={`${prefix}/${page}`} replace />;
+}
+
+// Keep old complaint links on the current role's supported workflow.
+function LegacyComplaintRoute() {
+  const params = useParams();
+  const { search } = useLocation();
+  const query = new URLSearchParams(search);
+  const id = params.id || query.get("id") || query.get("complaint") || query.get("task");
+  const role = getCurrentRole();
+  if (role === "maintenance_manager") return <Navigate replace to={id ? `/maintenance_manager/complaint-details?id=${id}` : "/maintenance_manager/complaints"} />;
+  if (role === "service_provider") return <Navigate replace to={id ? `/service-provider/submit-estimate?task=${id}` : "/service-provider/available-complaints"} />;
+  return <ComplaintDetails />;
 }
 
 // Redirect legacy Super User URLs
@@ -372,9 +385,9 @@ function AppRouteDefinitions() {
       {/* Legacy role-based routes */}
       <Route path="/participants" element={<LegacyRoleRoute />} />
       <Route path="/complaints" element={<LegacyRoleRoute />} />
-      <Route path="/complaint-details" element={<ComplaintDetails />} />
-      <Route path="/complaint-details/:id" element={<ComplaintDetails />} />
-      <Route path="/complaints/:id" element={<ComplaintDetails />} />
+      <Route path="/complaint-details" element={<LegacyComplaintRoute />} />
+      <Route path="/complaint-details/:id" element={<LegacyComplaintRoute />} />
+      <Route path="/complaints/:id" element={<LegacyComplaintRoute />} />
       <Route path="/notifications" element={<LegacyRoleRoute />} />
       <Route path="/provider-performance" element={<LegacyRoleRoute />} />
       <Route path="/service-estimate" element={<LegacyRoleRoute />} />
