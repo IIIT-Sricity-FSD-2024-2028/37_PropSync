@@ -34,7 +34,7 @@ import { existsSync, mkdirSync, unlinkSync } from 'fs';
 import { extname, join } from 'path';
 import { appConfig } from '../../config/app.config';
 
-const billUploadPath = join(process.cwd(), 'uploads', 'bills');
+const billUploadPath = join(appConfig.uploadsPath, 'bills');
 
 @ApiTags('Service Bills')
 @ApiSecurity('role')

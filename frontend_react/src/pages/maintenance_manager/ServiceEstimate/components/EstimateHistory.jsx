@@ -8,7 +8,7 @@ const TABS = [{ id: "all", label: "All History" }, { id: "approved", label: "App
 
 /* "Estimate History" – tabs + table of reviewed estimates.
    history = estimates with approved === true/false (newest first) */
-export default function EstimateHistory({ history, issueOf, providerOf }) {
+export default function EstimateHistory({ history, issueOf, providerOf, onDelete }) {
   const [tab, setTab] = useState("all");
   const rows = history.filter((e) => tab === "all" || (tab === "approved" ? e.approved === true : e.approved === false));
 
@@ -32,7 +32,18 @@ export default function EstimateHistory({ history, issueOf, providerOf }) {
                   <td>{e.submittedAt || "—"}</td>
                   <td>{e.selectionStatus === "not_selected" ? <span className="badge badge-gray">Not Selected</span> : e.approved ? <span className="badge badge-approved">Approved</span> : <span className="badge badge-rejected">Rejected</span>}</td>
                   <td>{e.reviewedAt || "—"}</td>
-                  <td><Link className="btn-link" to={MM_PATHS.complaintDetails(e.complaintId)}>View</Link></td>
+                  <td>
+                    <Link className="btn-link" to={MM_PATHS.complaintDetails(e.complaintId)}>View</Link>
+                    {onDelete && (
+                      <button
+                        className="btn-link"
+                        style={{ marginLeft: 8, color: "#ef4444", background: "none", border: "none", cursor: "pointer" }}
+                        onClick={() => onDelete(e.id)}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

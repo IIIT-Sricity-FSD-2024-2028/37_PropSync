@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import ProviderSelection from "../AssignProvider/components/ProviderSelection";
@@ -14,18 +15,32 @@ import ProviderDocumentsCard from "./components/ProviderDocumentsCard";
 import PhotoCard from "./components/PhotoCard";
 import useComplaintActions from "../shared/useComplaintActions";
 import { MM_PATHS } from "../shared/paths";
-import { fetchBills, fetchComplaint, fetchEstimates, fetchProviders, toApiImageUrl } from "../../../services/managerService";
+import { fetchBills, fetchComplaint, fetchEstimates, fetchProviders, toApiImageUrl, deleteEstimate as deleteEstimateApi } from "../../../services/managerService";
+import { deleteEstimate as deleteEstimateAction } from "../../../redux/features/estimates/estimatesSlice";
 
 /* complaint-details.html?id=… */
 export default function ComplaintDetails() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const id = params.get("id");
   const [c, setC] = useState(null);
   const [estimates, setEstimates] = useState([]);
   const [bills, setBills] = useState([]);
   const [providers, setProviders] = useState([]);
   const [error, setError] = useState("");
+
+  const handleDeleteEstimate = async (estimateId) => {
+    if (!window.confirm(`Are you sure you want to delete estimate #${estimateId}?`)) return;
+    try {
+      await deleteEstimateApi(estimateId);
+      dispatch(deleteEstimateAction(estimateId));
+      await load();
+    } catch {
+      dispatch(deleteEstimateAction(estimateId));
+      await load();
+    }
+  };
 
   const load = useCallback(async () => {
     if (!id) return setError("No complaint ID provided.");
@@ -86,7 +101,8 @@ export default function ComplaintDetails() {
       </div>
       {c.status === "approved" ? <ProviderSelection complaintId={id} onUpdated={load} /> : estimates.map(e =>
         <PendingEstimateCard key={e.id} estimate={e} issue={c.title}
-          provider={providers.find(p => p.id === e.providerId)?.name || `Provider #${e.providerId}`} />)}
+          provider={providers.find(p => p.id === e.providerId)?.name || `Provider #${e.providerId}`}
+          onDelete={() => handleDeleteEstimate(e.id)} />)}
       {modals}
     </ManagerLayout>
   );

@@ -52,8 +52,7 @@ import { extname, join } from 'path';
 // ======================================================
 
 const uploadPath = join(
-  process.cwd(),
-  'uploads',
+  appConfig.uploadsPath,
   'complaints',
 );
 

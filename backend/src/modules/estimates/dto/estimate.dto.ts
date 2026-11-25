@@ -1,4 +1,4 @@
-import { IsBoolean, IsNumber, IsOptional, IsString, IsNotEmpty, Min } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, IsNotEmpty, Min, Max } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 
@@ -16,10 +16,11 @@ export class CreateEstimateDto {
   @Min(1)
   providerId: number;
 
-  @ApiProperty({ example: 3500.00, description: 'Estimated cost in INR' })
+  @ApiProperty({ example: 3500.00, description: 'Estimated cost in INR (max 50,000)' })
   @Type(() => Number)
   @IsNumber()
   @Min(0.01)
+  @Max(50000)
   estimatedCost: number;
 
   @ApiPropertyOptional({ example: 'Includes parts + labour for pipe replacement' })

@@ -21,6 +21,8 @@ export interface ServiceEstimate {
   managerNote?: string;
   submittedAt: string;
   reviewedAt?: string;
+  updatedAt?: string;
+  isEdited?: boolean;
   selectionStatus?: 'candidate' | 'selected' | 'rejected' | 'not_selected';
 }
 
@@ -54,15 +56,12 @@ export class EstimatesService {
   }
 
   assertAccess(estimate: ServiceEstimate, role: string, userId: number): void {
-    this.complaintsService.assertEstimateReader(estimate.complaintId, role, userId);
+    if (['super_user', 'admin', 'maintenance_manager'].includes(role)) return;
     if (role === 'service_provider' && userId === estimate.providerId) return;
-    if (role === 'maintenance_manager') {
-      this.complaintsService.assertManager(estimate.complaintId, userId);
+    try {
+      this.complaintsService.assertEstimateReader(estimate.complaintId, role, userId);
       return;
-    }
-    if (role === 'admin' && userId) {
-      return;
-    }
+    } catch {}
     throw new ForbiddenException('You cannot view another provider’s estimate');
   }
 
@@ -77,8 +76,8 @@ export class EstimatesService {
 
   create(dto: CreateEstimateDto): ServiceEstimate {
     const complaint = this.complaintsService.validateEstimateSubmission(dto.complaintId, dto.providerId);
-    if (!Number.isFinite(dto.estimatedCost) || dto.estimatedCost <= 0 || !dto.notes?.trim() || !dto.documentUrl) {
-      throw new BadRequestException('A positive estimated cost, description of work and estimate document are required');
+    if (!Number.isFinite(dto.estimatedCost) || dto.estimatedCost <= 0 || dto.estimatedCost > 50000 || !dto.notes?.trim() || !dto.documentUrl) {
+      throw new BadRequestException('A positive estimated cost (up to ₹50,000), description of work and estimate document are required');
     }
     if (this.findByProvider(dto.providerId).some(e => e.complaintId === dto.complaintId)) {
       throw new BadRequestException('An estimate for this complaint has already been submitted by this provider');
@@ -132,13 +131,61 @@ export class EstimatesService {
     });
   }
 
-  remove(id: number): { message: string } {
+  update(id: number, dto: Partial<CreateEstimateDto>, role?: string, userId?: number): ServiceEstimate {
     const estimate = this.findById(id);
-    const complaint = this.complaintsService.findById(estimate.complaintId);
-    if (estimate.selectionStatus === 'candidate' || estimate.selectionStatus === 'selected' ||
-        complaint.assignedProviderId === estimate.providerId || complaint.interestedProviders?.includes(estimate.providerId)) {
-      throw new BadRequestException('An estimate linked to an active application or assignment cannot be deleted');
+    if (role === 'service_provider' && userId && estimate.providerId !== userId) {
+      throw new ForbiddenException('You can only update your own estimate');
     }
+    if (dto.estimatedCost !== undefined) {
+      const cost = Number(dto.estimatedCost);
+      if (!Number.isFinite(cost) || cost <= 0 || cost > 50000) {
+        throw new BadRequestException('Estimated cost must be greater than zero and cannot exceed ₹50,000');
+      }
+    }
+    const updated = this.estimatesRepository.update(id, {
+      ...(dto.estimatedCost !== undefined ? { estimatedCost: Number(dto.estimatedCost) } : {}),
+      ...(dto.notes !== undefined ? { notes: dto.notes.trim() } : {}),
+      ...(dto.documentName ? { documentName: dto.documentName } : {}),
+      ...(dto.documentUrl ? { documentUrl: dto.documentUrl } : {}),
+      isEdited: true,
+      updatedAt: new Date().toISOString(),
+      approved: null,
+      selectionStatus: 'candidate',
+    });
+
+    try {
+      const complaint = this.complaintsService.findById(estimate.complaintId);
+      if (complaint) {
+        complaint.rejectedProviders = (complaint.rejectedProviders || []).filter(p => p !== estimate.providerId);
+        if (!complaint.interestedProviders) complaint.interestedProviders = [];
+        if (!complaint.interestedProviders.includes(estimate.providerId)) complaint.interestedProviders.push(estimate.providerId);
+        complaint.estimateSubmitted = true;
+        complaint.estimateApproved = false;
+        if (complaint.status === ComplaintStatus.Assigned && complaint.assignedProviderId === estimate.providerId) {
+          complaint.status = ComplaintStatus.EstimatingCost;
+        }
+      }
+    } catch {}
+
+    return updated!;
+  }
+
+  remove(id: number, role?: string, userId?: number): { message: string } {
+    const estimate = this.estimatesRepository.findById(id);
+    if (!estimate) return { message: `Estimate ${id} deleted` };
+    if (role === 'service_provider' && userId && estimate.providerId !== userId) {
+      throw new ForbiddenException('You can only delete your own estimate');
+    }
+    try {
+      const complaint = this.complaintsService.findById(estimate.complaintId);
+      if (complaint) {
+        complaint.estimateSubmitted = false;
+        complaint.estimateApproved = false;
+        complaint.interestedProviders = (complaint.interestedProviders || []).filter(p => p !== estimate.providerId);
+        complaint.rejectedProviders = (complaint.rejectedProviders || []).filter(p => p !== estimate.providerId);
+        if (complaint.status === ComplaintStatus.EstimatingCost) complaint.status = ComplaintStatus.Assigned;
+      }
+    } catch {}
     this.estimatesRepository.remove(id);
     return { message: `Estimate ${id} deleted` };
   }

@@ -176,6 +176,19 @@ export const reviewEstimate = (estimateId, approved, managerNote) =>
     ),
   });
 
+export const updateEstimate = (estimateId, data) =>
+  request(`/estimates/${estimateId}`, {
+    method: "PATCH",
+    headers: headers(true),
+    body: JSON.stringify(data),
+  });
+
+export const deleteEstimate = (estimateId) =>
+  request(`/estimates/${estimateId}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+
 /* ================= BILLS ================= */
 export const fetchBills = () => request(`/bills`, { headers: headers() });
 
