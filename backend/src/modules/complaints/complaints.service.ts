@@ -485,6 +485,17 @@ export class ComplaintsService {
     if (actor?.role === 'owner' && actor.id && complaint.ownerId !== actor.id) {
       throw new ForbiddenException('Owners can only delete their own complaints');
     }
+    const status = (complaint.status || '').toLowerCase();
+    const canDelete =
+      status === ComplaintStatus.Pending ||
+      status === ComplaintStatus.Rejected ||
+      status === ComplaintStatus.Resolved ||
+      status === ComplaintStatus.Closed;
+    if (!canDelete) {
+      throw new BadRequestException(
+        `Complaint cannot be deleted in "${complaint.status}" status. It can only be deleted before manager acceptance or after being resolved.`,
+      );
+    }
     if (!this.complaintsRepository.remove(id)) {
       throw new NotFoundException(`Complaint with id ${id} not found`);
     }

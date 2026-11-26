@@ -27,7 +27,6 @@ export default function ServiceEstimate() {
   const dispatch = useDispatch();
   const showToast = useToast();
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const reduxEstimates = useSelector((state) => state.estimates);
   const [complaintsById, setComplaintsById] = useState({});
   const [providersById, setProvidersById] = useState({});

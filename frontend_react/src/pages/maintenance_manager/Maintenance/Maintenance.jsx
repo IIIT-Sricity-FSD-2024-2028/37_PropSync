@@ -22,7 +22,6 @@ const fee = (p) => Number(p.platformFee) || Number(p.amount || 0) * 0.05;
 export default function Maintenance() {
   const dispatch = useDispatch();
   const showToast = useToast();
-  const dispatch = useDispatch();
   const { getState } = useStore();
   const managerId = getManagerId();
   const session = { role: "maintenance_manager", id: managerId };

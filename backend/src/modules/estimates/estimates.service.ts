@@ -56,13 +56,16 @@ export class EstimatesService {
   }
 
   assertAccess(estimate: ServiceEstimate, role: string, userId: number): void {
-    if (['super_user', 'admin', 'maintenance_manager'].includes(role)) return;
-    if (role === 'service_provider' && userId === estimate.providerId) return;
-    try {
-      this.complaintsService.assertEstimateReader(estimate.complaintId, role, userId);
+    if (['super_user', 'admin'].includes(role)) return;
+    if (role === 'service_provider') {
+      if (userId === estimate.providerId) return;
+      throw new ForbiddenException('You cannot view another provider’s estimate');
+    }
+    if (role === 'maintenance_manager') {
+      this.complaintsService.assertManager(estimate.complaintId, userId);
       return;
-    } catch {}
-    throw new ForbiddenException('You cannot view another provider’s estimate');
+    }
+    this.complaintsService.assertEstimateReader(estimate.complaintId, role, userId);
   }
 
   findVisible(role: string, userId: number, complaintId?: number): ServiceEstimate[] {
@@ -136,6 +139,14 @@ export class EstimatesService {
     if (role === 'service_provider' && userId && estimate.providerId !== userId) {
       throw new ForbiddenException('You can only update your own estimate');
     }
+    const complaint = this.complaintsService.findById(estimate.complaintId);
+    if (
+      estimate.approved === true ||
+      estimate.selectionStatus === 'selected' ||
+      (complaint && complaint.assignedProviderId === estimate.providerId && complaint.estimateApproved)
+    ) {
+      throw new BadRequestException('Cannot edit estimate once it has been accepted by the manager');
+    }
     if (dto.estimatedCost !== undefined) {
       const cost = Number(dto.estimatedCost);
       if (!Number.isFinite(cost) || cost <= 0 || cost > 50000) {
@@ -154,7 +165,6 @@ export class EstimatesService {
     });
 
     try {
-      const complaint = this.complaintsService.findById(estimate.complaintId);
       if (complaint) {
         complaint.rejectedProviders = (complaint.rejectedProviders || []).filter(p => p !== estimate.providerId);
         if (!complaint.interestedProviders) complaint.interestedProviders = [];
@@ -176,8 +186,15 @@ export class EstimatesService {
     if (role === 'service_provider' && userId && estimate.providerId !== userId) {
       throw new ForbiddenException('You can only delete your own estimate');
     }
+    const complaint = this.complaintsService.findById(estimate.complaintId);
+    if (!role && (estimate.selectionStatus === 'candidate' || estimate.selectionStatus === 'selected' ||
+        complaint?.assignedProviderId === estimate.providerId || complaint?.interestedProviders?.includes(estimate.providerId))) {
+      throw new BadRequestException('An estimate linked to an active application or assignment cannot be deleted');
+    }
+    if (estimate.approved === true || estimate.selectionStatus === 'selected' || (complaint && complaint.assignedProviderId === estimate.providerId && complaint.estimateApproved)) {
+      throw new BadRequestException('Cannot delete an estimate once it has been accepted by the manager');
+    }
     try {
-      const complaint = this.complaintsService.findById(estimate.complaintId);
       if (complaint) {
         complaint.estimateSubmitted = false;
         complaint.estimateApproved = false;

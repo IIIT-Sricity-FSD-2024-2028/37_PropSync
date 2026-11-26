@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
-import { useDispatch, useSelector, useStore } from 'react-redux';
 import { selectMaintenance, selectMaintenanceRequest, selectMaintenanceSummary } from '../../redux/features/maintenance/maintenanceSlice';
 import { fetchMaintenance, fetchMaintenanceSummary, getOwnerMaintenanceSession, submitMaintenanceTransaction } from '../../services/maintenanceService';
 import { createNotification } from '../../services/notificationService';
@@ -15,7 +14,6 @@ export default function PaymentHistory() {
   const { currentUser } = useAuth();
   const { ownerProfile, refreshNotifications } = useOwner();
 
-  const dispatch = useDispatch();
   const { getState } = useStore();
   const { role, id } = getOwnerMaintenanceSession(currentUser);
   const session = { role, id };

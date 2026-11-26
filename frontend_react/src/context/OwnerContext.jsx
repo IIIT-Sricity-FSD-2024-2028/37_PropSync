@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from './AuthContext';
-import { getOwnerComplaints, getOwnerPayments, deleteComplaint as apiDeleteComplaint } from '../services/ownerService';
+import { getOwnerComplaints, deleteComplaint as apiDeleteComplaint } from '../services/ownerService';
 import { getNotifications, deleteNotification } from '../services/notificationService';
 import {
   setComplaints as setComplaintsAction,
@@ -70,10 +70,19 @@ export function OwnerProvider({ children }) {
   };
 
   const removeComplaint = async (id) => {
+    const target = complaints.find((c) => String(c.id) === String(id));
+    if (target) {
+      const s = (target.status || "").toLowerCase();
+      const canDelete = s === "pending" || s === "rejected" || s === "resolved" || s === "closed";
+      if (!canDelete) {
+        throw new Error(`Complaint cannot be deleted in "${target.status}" status.`);
+      }
+    }
     try {
       await apiDeleteComplaint(id, currentUser);
     } catch (err) {
       console.warn('API delete complaint failed:', err);
+      throw err;
     }
 
     dispatch(deleteComplaintAction(id));

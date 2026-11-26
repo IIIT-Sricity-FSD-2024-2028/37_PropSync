@@ -2,7 +2,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { useDispatch } from "react-redux";
 import "../../pages/service_provider/styles.css";
 import EstimateDocumentLink from "./EstimateDocumentLink";
 import { estimateStatus, estimateFileError, validateEstimate, MAX_ESTIMATE_COST } from "../../services/estimateWorkflow";
@@ -307,6 +306,9 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
 
   async function handleUpdateEstimate(e) {
     e.preventDefault();
+    if (existingEstimate?.approved === true || existingEstimate?.selectionStatus === "selected" || (task && Number(task.assignedProviderId) === Number(providerId) && task.estimateApproved)) {
+      return setError("This estimate has already been accepted and assigned by the manager and cannot be edited.");
+    }
     const parsed = Number(editCost);
     if (!parsed || parsed <= 0) return setError("Please enter a valid positive cost.");
     if (parsed > MAX_ESTIMATE_COST) return setError(`Estimated cost cannot exceed ₹${MAX_ESTIMATE_COST.toLocaleString("en-IN")}.`);
@@ -438,7 +440,7 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
                       </p>
                     </div>
 
-                    {isEditing ? (
+                    {isEditing && !(existingEstimate?.approved === true || existingEstimate?.selectionStatus === "selected" || (task && Number(task.assignedProviderId) === Number(providerId) && (task.estimateApproved || task.status === "in_progress" || task.status === "assigned"))) ? (
                       <form onSubmit={handleUpdateEstimate} style={{ marginTop: 16 }}>
                         <div style={{ marginBottom: 16 }}>
                           <label className="estimate-field-label">Estimated Cost (₹) * (Max ₹50,000)</label>
@@ -531,31 +533,37 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
 
                         {existingEstimate.documentUrl && <EstimateDocumentLink estimate={existingEstimate} />}
 
-                        <div style={{ display: "flex", gap: 10, marginTop: 16, marginBottom: 8 }}>
-                          <button
-                            className="btn btn-dark"
-                            type="button"
-                            onClick={() => {
-                              setIsEditing(true);
-                              setEditCost(String(existingEstimate.estimatedCost || ""));
-                              setEditDescription(existingEstimate.notes || "");
-                              setEditFile(null);
-                            }}
-                          >
-                            Edit Estimate & File
-                          </button>
-                          {(!existingEstimate.approved || existingEstimate.approved === false) && (
+                        {existingEstimate?.approved === true || existingEstimate?.selectionStatus === "selected" || (task && Number(task.assignedProviderId) === Number(providerId) && (task.estimateApproved || task.status === "in_progress" || task.status === "assigned")) ? (
+                          <div style={{ marginTop: 16, marginBottom: 8, padding: "10px 14px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px", color: "#166534", fontSize: "13px", fontWeight: 600 }}>
+                            ✓ Estimate Accepted &amp; Assigned by Manager — Locked
+                          </div>
+                        ) : (
+                          <div style={{ display: "flex", gap: 10, marginTop: 16, marginBottom: 8 }}>
                             <button
-                              className="btn btn-danger"
-                              style={{ background: "#ef4444", color: "#fff" }}
+                              className="btn btn-dark"
                               type="button"
-                              onClick={handleDeleteEstimate}
-                              disabled={submitting}
+                              onClick={() => {
+                                setIsEditing(true);
+                                setEditCost(String(existingEstimate.estimatedCost || ""));
+                                setEditDescription(existingEstimate.notes || "");
+                                setEditFile(null);
+                              }}
                             >
-                              {submitting ? "Deleting..." : "Delete Estimate"}
+                              Edit Estimate & File
                             </button>
-                          )}
-                        </div>
+                            {(!existingEstimate.approved || existingEstimate.approved === false) && (
+                              <button
+                                className="btn btn-danger"
+                                style={{ background: "#ef4444", color: "#fff" }}
+                                type="button"
+                                onClick={handleDeleteEstimate}
+                                disabled={submitting}
+                              >
+                                {submitting ? "Deleting..." : "Delete Estimate"}
+                              </button>
+                            )}
+                          </div>
+                        )}
 
                         <button
                           className="btn btn-ghost btn-full"

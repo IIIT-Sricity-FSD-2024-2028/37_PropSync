@@ -47,6 +47,12 @@ const complaintsSlice = createSlice({
 
     deleteComplaint: (state, action) => {
       const id = typeof action.payload === "object" ? action.payload?.id : action.payload;
+      const complaint = state.find((c) => String(c.id) === String(id));
+      const status = (complaint?.status || (typeof action.payload === "object" ? action.payload?.status : "") || "").toLowerCase();
+      if (status) {
+        const allowed = status === "pending" || status === "rejected" || status === "resolved" || status === "closed";
+        if (!allowed) return state;
+      }
       return state.filter((c) => String(c.id) !== String(id));
     },
 

@@ -3,7 +3,6 @@ import { useDispatch, useSelector, useStore } from 'react-redux';
 import { selectMaintenance } from '../../redux/features/maintenance/maintenanceSlice';
 import { fetchMaintenance, getOwnerMaintenanceSession } from '../../services/maintenanceService';
 import { Link, useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
 import {
@@ -22,7 +21,6 @@ export default function Dashboard() {
   const { currentUser } = useAuth();
   const { complaints, notifications, ownerProfile, refreshComplaints, refreshNotifications, removeComplaint } = useOwner();
 
-  const dispatch = useDispatch();
   const { getState } = useStore();
   const { role, id } = getOwnerMaintenanceSession(currentUser);
   const payments = useSelector((state) => selectMaintenance(state, { role, id }));
@@ -454,34 +452,41 @@ export default function Dashboard() {
                       <div className={`status ${statusClass}`}>
                         {displayStatus(c.status)}
                       </div>
-                      <button
-                        className="delete-complaint-btn"
-                        type="button"
-                        style={{
-                          background: '#fee2e2',
-                          color: '#dc2626',
-                          border: '1px solid #fca5a5',
-                          borderRadius: '6px',
-                          padding: '4px 10px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                        }}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (!window.confirm(`Are you sure you want to delete complaint "${c.title}"?`)) return;
-                          try {
-                            dispatch(cancelComplaintNotifications(c.id));
-                            if (removeComplaint) {
-                              await removeComplaint(c.id);
-                            }
-                          } catch (err) {
-                            alert(err.message || 'Failed to delete complaint');
-                          }
-                        }}
-                      >
-                        Delete
-                      </button>
+                      {(() => {
+                        const s = (c.status || "").toLowerCase();
+                        const canDelete = s === "pending" || s === "rejected" || s === "resolved" || s === "closed";
+                        if (!canDelete) return null;
+                        return (
+                          <button
+                            className="delete-complaint-btn"
+                            type="button"
+                            style={{
+                              background: '#fee2e2',
+                              color: '#dc2626',
+                              border: '1px solid #fca5a5',
+                              borderRadius: '6px',
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                            }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (!window.confirm(`Are you sure you want to delete complaint "${c.title}"?`)) return;
+                              try {
+                                dispatch(cancelComplaintNotifications(c.id));
+                                if (removeComplaint) {
+                                  await removeComplaint(c.id);
+                                }
+                              } catch (err) {
+                                alert(err.message || 'Failed to delete complaint');
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 );

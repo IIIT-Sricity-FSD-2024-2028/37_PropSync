@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { useDispatch } from "react-redux";
 import { useToast } from "../../shared/Toast";
 import RejectModal from "../../shared/RejectModal";
 import ComplaintSummaryCard from "./ComplaintSummaryCard";
@@ -23,7 +22,6 @@ import { createNotification } from "../../../../services/notificationService";
 
 export default function ProviderSelection({ complaintId, onUpdated }) {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
   const dispatch = useDispatch();
   const showToast = useToast();
   const [complaint, setComplaint] = useState(null);

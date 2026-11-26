@@ -554,19 +554,25 @@ export default function TaskDetails() {
                       </div>
                     </div>
 
-                    <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                      <button className="btn btn-dark" type="button" onClick={goToEstimate}>
-                        Edit Estimate & File
-                      </button>
-                      <button
-                        className="btn btn-danger"
-                        type="button"
-                        style={{ background: "#ef4444", color: "#fff" }}
-                        onClick={handleDeleteEstimate}
-                      >
-                        Delete Estimate
-                      </button>
-                    </div>
+                    {task.estimateApproved || task.estimate?.approved === true || task.estimate?.selectionStatus === "selected" ? (
+                      <div style={{ marginTop: 16, padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px", color: "#166534", fontSize: "13px", fontWeight: 600 }}>
+                        ✓ Estimate Accepted by Manager — Locked from Editing
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                        <button className="btn btn-dark" type="button" onClick={goToEstimate}>
+                          Edit Estimate & File
+                        </button>
+                        <button
+                          className="btn btn-danger"
+                          type="button"
+                          style={{ background: "#ef4444", color: "#fff" }}
+                          onClick={handleDeleteEstimate}
+                        >
+                          Delete Estimate
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : !task.estimateSubmitted ? (

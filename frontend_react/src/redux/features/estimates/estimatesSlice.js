@@ -19,6 +19,9 @@ const estimatesSlice = createSlice({
         (e) => String(e.id) === String(action.payload?.id)
       );
       if (index !== -1) {
+        if (state[index].approved === true || state[index].selectionStatus === "selected") {
+          return;
+        }
         state[index] = { ...state[index], ...action.payload };
       }
     },

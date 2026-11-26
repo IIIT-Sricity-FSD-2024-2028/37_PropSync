@@ -299,34 +299,41 @@ export default function ComplaintDetails() {
               Back to Complaints
             </a>
 
-            <button
-              className="delete-complaint-btn"
-              type="button"
-              style={{
-                background: '#fee2e2',
-                color: '#dc2626',
-                border: '1px solid #fca5a5',
-                borderRadius: '8px',
-                padding: '6px 14px',
-                fontSize: '13px',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
-              onClick={async () => {
-                if (!window.confirm(`Are you sure you want to delete complaint "${complaint?.title}"?`)) return;
-                try {
-                  dispatch(cancelComplaintNotifications(complaint?.id));
-                  if (removeComplaint) {
-                    await removeComplaint(complaint.id);
-                  }
-                  navigate('/owner/dashboard');
-                } catch (err) {
-                  alert(err.message || 'Failed to delete complaint');
-                }
-              }}
-            >
-              Delete Complaint
-            </button>
+            {(() => {
+              const s = (complaint?.status || "").toLowerCase();
+              const canDelete = s === "pending" || s === "rejected" || s === "resolved" || s === "closed";
+              if (!canDelete) return null;
+              return (
+                <button
+                  className="delete-complaint-btn"
+                  type="button"
+                  style={{
+                    background: '#fee2e2',
+                    color: '#dc2626',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '8px',
+                    padding: '6px 14px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                  onClick={async () => {
+                    if (!window.confirm(`Are you sure you want to delete complaint "${complaint?.title}"?`)) return;
+                    try {
+                      dispatch(cancelComplaintNotifications(complaint?.id));
+                      if (removeComplaint) {
+                        await removeComplaint(complaint.id);
+                      }
+                      navigate('/owner/dashboard');
+                    } catch (err) {
+                      alert(err.message || 'Failed to delete complaint');
+                    }
+                  }}
+                >
+                  Delete Complaint
+                </button>
+              );
+            })()}
           </div>
 
           {/* Dynamic page title */}
