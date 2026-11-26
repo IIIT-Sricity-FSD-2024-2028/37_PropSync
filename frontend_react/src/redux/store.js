@@ -1,6 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
-// import billsReducer from "./features/bills/billsSlice.js";
-// import paymentsReducer from "./features/payments/paymentsSlice.js";
+import billsReducer from "./features/bills/billsSlice.js";
+import paymentsReducer from "./features/payments/paymentsSlice.js";
 import complaintsReducer from "./features/complaints/complaintsSlice.js";
 import estimatesReducer from "./features/estimates/estimatesSlice.js";
 import ratingsReducer from "./features/ratings/ratingsSlice.js";
@@ -10,8 +10,8 @@ import usersReducer from "./features/users/usersSlice.js";
 
 export const store = configureStore({
   reducer: {
-    // bills: billsReducer,
-    // payments: paymentsReducer,
+    bills: billsReducer,
+    payments: paymentsReducer,
     complaints: complaintsReducer,
     estimates: estimatesReducer,
     ratings: ratingsReducer,
