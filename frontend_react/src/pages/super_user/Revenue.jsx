@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector, useStore } from "react-redux";
+import { fetchMaintenanceRevenue } from "../../services/maintenanceService";
+import { selectMaintenanceRevenue, selectMaintenanceRequest } from "../../redux/features/maintenance/maintenanceSlice";
 import { FiCheckCircle, FiFileText, FiRefreshCw, FiShield, FiTool } from "react-icons/fi";
-import { formatMoney, getRoleSession, roleRequest } from "../../services/roleApi";
+import { formatMoney, getRoleSession } from "../../services/roleApi";
 import "./SuperUserPages.css";
 
 function monthKey(value) {
@@ -27,22 +30,23 @@ function buildMonthlyTimeline(breakdown = []) {
 
 export default function SuperUserRevenue() {
   const session = getRoleSession("super_user");
-  const [data, setData] = useState(null);
+  const dispatch = useDispatch();
+  const { getState } = useStore();
+  const data = useSelector((state) => selectMaintenanceRevenue(state, session));
+  const request = useSelector((state) => selectMaintenanceRequest(state, session, "revenue"));
+  const loading = request.status === "idle" || request.status === "loading";
   const [search, setSearch] = useState("");
-  const [state, setState] = useState({ loading: true, error: "" });
+  const { id } = session;
 
-  const load = useCallback(async () => {
-    setState({ loading: true, error: "" });
-    try {
-      const result = await roleRequest("super_user", session.id, "/maintenance/revenue");
-      setData(result);
-      setState({ loading: false, error: "" });
-    } catch (error) {
-      setState({ loading: false, error: error.message });
-    }
-  }, [session.id]);
+  const load = useCallback((signal) => fetchMaintenanceRevenue({ dispatch, getState }, {
+    session: { role: "super_user", id }, signal,
+  }).catch(() => { /* Redux exposes the request error. */ }), [dispatch, getState, id]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    const controller = new AbortController();
+    load(controller.signal);
+    return () => controller.abort();
+  }, [load]);
 
   const rows = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -59,9 +63,9 @@ export default function SuperUserRevenue() {
   ];
 
   return <main className="role-page superuser-role-page superuser-revenue">
-    <header className="role-head"><div><h1>Platform Revenue</h1><p>Real-time platform revenue monetization derived from settled monthly maintenance platform fees.</p></div><div className="role-actions"><span className="su-settled-pill">5% Platform Fee · Settled Only</span><button className="role-button secondary" onClick={load} disabled={state.loading}><FiRefreshCw /> Refresh Data</button></div></header>
-    {state.error && <div className="role-alert" role="alert">Revenue data unavailable: {state.error}</div>}
-    {state.loading ? <div className="role-empty">Loading settled revenue...</div> : data && <>
+    <header className="role-head"><div><h1>Platform Revenue</h1><p>Real-time platform revenue monetization derived from settled monthly maintenance platform fees.</p></div><div className="role-actions"><span className="su-settled-pill">5% Platform Fee · Settled Only</span><button className="role-button secondary" onClick={() => load()} disabled={loading}><FiRefreshCw /> Refresh Data</button></div></header>
+    {request.error && <div className="role-alert" role="alert">Revenue data unavailable: {request.error}</div>}
+    {loading ? <div className="role-empty">Loading settled revenue...</div> : data && <>
       <section className="su-revenue-grid">{metrics.map(({ label, value, icon: Icon, tone }) => <article className={`su-stat-card ${tone}`} key={label}><div className="su-stat-icon"><Icon /></div><div className="su-stat-body"><strong>{value}</strong><span>{label}</span></div></article>)}</section>
       <section className="role-panel role-section su-revenue-chart-panel"><h2>Platform Fee Received — Month over Month</h2><p>Only settled (actually remitted) platform fees are counted as revenue here. Months with no settlements show as an empty dashed bar, not a skipped gap.</p>
         <div className="su-revenue-chart">{months.map((month) => {

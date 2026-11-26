@@ -278,7 +278,10 @@ export class UsersService {
     const user = this.usersRepository.findById(id);
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
 
-    Object.assign(user, dto);
+    const changes = Object.fromEntries(
+      Object.entries(dto).filter(([, value]) => value !== undefined),
+    );
+    Object.assign(user, changes);
     const { password, ...rest } = user;
     return rest;
   }

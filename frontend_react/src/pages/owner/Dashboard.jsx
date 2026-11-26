@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useDispatch, useSelector, useStore } from 'react-redux';
+import { selectMaintenance } from '../../redux/features/maintenance/maintenanceSlice';
+import { fetchMaintenance, getOwnerMaintenanceSession } from '../../services/maintenanceService';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
@@ -9,7 +12,21 @@ import './owner.css';
 export default function Dashboard() {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { complaints, notifications, payments, ownerProfile, refreshComplaints, refreshNotifications, refreshPayments, removeComplaint } = useOwner();
+  const { complaints, notifications, ownerProfile, refreshComplaints, refreshNotifications, removeComplaint } = useOwner();
+
+  const dispatch = useDispatch();
+  const { getState } = useStore();
+  const { role, id } = getOwnerMaintenanceSession(currentUser);
+  const payments = useSelector((state) => selectMaintenance(state, { role, id }));
+  const refreshPayments = useCallback((signal) => fetchMaintenance({ dispatch, getState }, {
+    session: { role, id }, signal,
+  }).catch(() => { /* The payment history page displays the request error. */ }), [dispatch, getState, role, id]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    refreshPayments(controller.signal);
+    return () => controller.abort();
+  }, [refreshPayments]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All Status');
@@ -23,7 +40,7 @@ export default function Dashboard() {
     const interval = setInterval(() => {
       refreshComplaints();
       refreshNotifications();
-      if (refreshPayments) refreshPayments();
+      refreshPayments();
     }, 15000);
     return () => clearInterval(interval);
   }, [refreshComplaints, refreshNotifications, refreshPayments]);

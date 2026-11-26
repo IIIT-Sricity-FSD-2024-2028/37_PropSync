@@ -1,9 +1,14 @@
 import { createContext, useContext, useState } from 'react';
+import { useDispatch } from 'react-redux';
 import { loginUser } from '../services/authService';
+import { clearUsers } from '../redux/features/users/usersSlice';
+
+import { clearMaintenance } from '../redux/features/maintenance/maintenanceSlice';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
+  const dispatch = useDispatch();
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const saved = localStorage.getItem('currentUser');
@@ -22,6 +27,8 @@ export function AuthProvider({ children }) {
       const response = await loginUser(email, password, role);
       // Backend returns either user object or { user, ... }
       const user = response.user || response;
+      dispatch(clearUsers());
+      dispatch(clearMaintenance());
       setCurrentUser(user);
       localStorage.setItem('currentUser', JSON.stringify(user));
       return user;
@@ -31,6 +38,8 @@ export function AuthProvider({ children }) {
   };
 
   const logout = () => {
+    dispatch(clearUsers());
+    dispatch(clearMaintenance());
     setCurrentUser(null);
     localStorage.removeItem('currentUser');
     localStorage.removeItem('token');

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from './AuthContext';
-import { getOwnerComplaints, getOwnerPayments, deleteComplaint as apiDeleteComplaint } from '../services/ownerService';
+import { getOwnerComplaints, deleteComplaint as apiDeleteComplaint } from '../services/ownerService';
 import { getNotifications } from '../services/notificationService';
 import {
   setComplaints as setComplaintsAction,
@@ -16,7 +16,6 @@ export function OwnerProvider({ children }) {
   const reduxComplaints = useSelector((state) => state.complaints);
   const [complaints, setComplaints] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -80,21 +79,10 @@ export function OwnerProvider({ children }) {
     }
   };
 
-  const refreshPayments = async () => {
-    if (!currentUser) return;
-    try {
-      const ownerId = currentUser.id || 1;
-      const data = await getOwnerPayments(ownerId, currentUser);
-      setPayments(data || []);
-    } catch (err) {
-      console.warn('Error fetching owner payments:', err);
-    }
-  };
-
   useEffect(() => {
     if (currentUser) {
       setLoading(true);
-      Promise.all([refreshComplaints(), refreshNotifications(), refreshPayments()]).finally(() => {
+      Promise.all([refreshComplaints(), refreshNotifications()]).finally(() => {
         setLoading(false);
       });
     }
@@ -105,13 +93,11 @@ export function OwnerProvider({ children }) {
       value={{
         complaints: reduxComplaints.length > 0 ? reduxComplaints : complaints,
         notifications,
-        payments,
         ownerProfile,
         updateProfile,
         refreshComplaints,
         removeComplaint,
         refreshNotifications,
-        refreshPayments,
         loading,
         error
       }}
