@@ -1,13 +1,12 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { FiActivity, FiArrowDown, FiBriefcase, FiEdit2, FiEye, FiMail, FiTrash2, FiUser, FiX } from "react-icons/fi";
 import { formatRole, getRoleSession } from "../../services/roleApi";
 import {
-  clearUserMutation,
+  clearUserMutation, createUser, fetchUserById, fetchUsers, removeUser, saveUser,
   selectUserById, selectUserDetailStatus, selectUserMutation, selectUsers,
   selectUsersListStatus,
 } from "../../redux/features/users/usersSlice";
-import { createUser, fetchUserById, fetchUsers, removeUser, saveUser } from "../../services/usersService";
 import "./AdminPages.css";
 
 const emptyForm = { name: "", email: "", password: "", phone: "", role: "owner", propertyUnit: "", block: "", category: "" };
@@ -15,7 +14,6 @@ const emptyForm = { name: "", email: "", password: "", phone: "", role: "owner",
 export default function AdministratorParticipants() {
   const session = getRoleSession("admin");
   const dispatch = useDispatch();
-  const { getState } = useStore();
   const users = useSelector((state) => selectUsers(state, session));
   const list = useSelector((state) => selectUsersListStatus(state, session));
   const detail = useSelector((state) => selectUserDetailStatus(state, session));
@@ -35,12 +33,11 @@ export default function AdministratorParticipants() {
   const [formError, setFormError] = useState("");
   const { role: sessionRole, id: sessionId } = session;
   useEffect(() => {
-    const controller = new AbortController();
-    fetchUsers({ dispatch, getState }, {
-      session: { role: sessionRole, id: sessionId }, signal: controller.signal,
-    }).catch(() => { /* Redux exposes the request error. */ });
-    return () => controller.abort();
-  }, [dispatch, getState, sessionRole, sessionId]);
+    const request = dispatch(fetchUsers({
+      session: { role: sessionRole, id: sessionId }
+    }));
+    return () => request.abort();
+  }, [dispatch, sessionRole, sessionId]);
 
   const resetFeedback = () => {
     dispatch(clearUserMutation(session));
@@ -51,7 +48,7 @@ export default function AdministratorParticipants() {
     resetFeedback();
     setEditing(false);
     setSelectedId(user.id);
-    fetchUserById({ dispatch, getState }, { session, id: user.id })
+    dispatch(fetchUserById({ session, id: user.id })).unwrap()
       .catch(() => { /* Redux exposes the request error. */ });
   };
   const error = formError || mutation.error || (selected && !editing ? detail.error : null) || list.error;
@@ -75,12 +72,12 @@ export default function AdministratorParticipants() {
           setFormError("Your session does not include a community name; participant signup cannot be scoped safely.");
           return;
         }
-        await createUser({ dispatch, getState }, { session, data: payload });
+        await dispatch(createUser({ session, data: payload })).unwrap();
         setForm(emptyForm);
         setSuccess("Signup request created. It will appear after approval.");
       } else {
         const payload = Object.fromEntries(Object.entries(form).filter(([key]) => ["name", "phone", "propertyUnit", "block"].includes(key)));
-        await saveUser({ dispatch, getState }, { session, id: selected.id, data: payload });
+        await dispatch(saveUser({ session, id: selected.id, data: payload })).unwrap();
         closeModal();
         setSuccess("Participant updated.");
       }
@@ -90,14 +87,14 @@ export default function AdministratorParticipants() {
     if (saving || !window.confirm(`Delete ${user.name}? This removes the participant account.`)) return;
     resetFeedback();
     try {
-      await removeUser({ dispatch, getState }, { session, id: user.id });
+      await dispatch(removeUser({ session, id: user.id })).unwrap();
       setSuccess("Participant deleted.");
     } catch { /* Redux exposes the request error. */ }
   };
   return <main className="role-page admin-role-page admin-participants">
     <header className="role-head"><div><h1>Manage Participants</h1><p>Participants visible to your community administrator account.</p></div><button className="role-button" onClick={openCreate}>Add Participant</button></header>
     {error && <div className="role-alert" role="alert">{error}</div>}{success && <div className="role-alert success" role="status">{success}</div>}
-    <div className="admin-participant-toolbar"><input className="role-input" aria-label="Search participants" placeholder="Search by name, ID, or email..." value={search} onChange={(e)=>setSearch(e.target.value)} /><select className="role-select" aria-label="Filter by role" value={role} onChange={(e)=>setRole(e.target.value)}><option value="all">All Roles</option>{["owner","service_provider","maintenance_manager"].map((item)=><option value={item} key={item}>{formatRole(item)}</option>)}</select><select className="role-select" aria-label="Sort participants" value={`${sort}:${sortDir}`} onChange={(e)=>{const [field,direction]=e.target.value.split(":");setSort(field);setSortDir(direction);}}><option value="name:asc">Sort By: Name (A–Z)</option><option value="name:desc">Name (Z–A)</option><option value="id:asc">ID (A–Z)</option><option value="email:asc">Email (A–Z)</option></select><span className="role-muted">{filtered.length} participants</span><button className="role-button secondary" onClick={() => fetchUsers({ dispatch, getState }, { session }).catch(() => { /* Redux exposes the request error. */ })} disabled={loading}>Refresh</button></div>
+    <div className="admin-participant-toolbar"><input className="role-input" aria-label="Search participants" placeholder="Search by name, ID, or email..." value={search} onChange={(e)=>setSearch(e.target.value)} /><select className="role-select" aria-label="Filter by role" value={role} onChange={(e)=>setRole(e.target.value)}><option value="all">All Roles</option>{["owner","service_provider","maintenance_manager"].map((item)=><option value={item} key={item}>{formatRole(item)}</option>)}</select><select className="role-select" aria-label="Sort participants" value={`${sort}:${sortDir}`} onChange={(e)=>{const [field,direction]=e.target.value.split(":");setSort(field);setSortDir(direction);}}><option value="name:asc">Sort By: Name (A–Z)</option><option value="name:desc">Name (Z–A)</option><option value="id:asc">ID (A–Z)</option><option value="email:asc">Email (A–Z)</option></select><span className="role-muted">{filtered.length} participants</span><button className="role-button secondary" onClick={() => dispatch(fetchUsers({ session })).unwrap().catch(() => { /* Redux exposes the request error. */ })} disabled={loading}>Refresh</button></div>
     <div className="role-table-wrap admin-participants-table"><table className="role-table"><thead><tr><th><button onClick={()=>changeSort("id")}>Participant ID <FiArrowDown aria-hidden="true" />{sort==="id"?` (${sortDir})`:""}</button></th><th><button onClick={()=>changeSort("name")}>Name <FiArrowDown aria-hidden="true" />{sort==="name"?` (${sortDir})`:""}</button></th><th><button onClick={()=>changeSort("email")}>Email <FiArrowDown aria-hidden="true" />{sort==="email"?` (${sortDir})`:""}</button></th><th>Role</th><th>Access Status</th><th>Actions</th></tr></thead><tbody>{filtered.map((user)=><tr key={user.id}><td className="admin-id-cell">P{String(user.id).padStart(3,"0")}</td><td className="admin-name-cell"><strong>{user.name}</strong>{user.communityName&&<small>{user.communityName}</small>}</td><td>{user.email}</td><td><span className={`admin-role-badge ${user.role}`}>{formatRole(user.role)}</span></td><td><span className="admin-access-badge">{user.approvalStatus === "approved" ? "Active" : user.approvalStatus || "Active"}</span></td><td><div className="admin-icon-actions"><button className="edit" disabled={saving} title="Edit participant" aria-label="Edit participant" onClick={()=>openEdit(user)}><FiEdit2 /></button><button className="view" disabled={saving} title="View participant" aria-busy={selectedId === user.id && detail.status === "loading"} aria-label="View participant" onClick={()=>viewUser(user)}><FiEye /></button><button className="delete" disabled={saving} title="Delete participant" aria-label="Delete participant" onClick={()=>remove(user)}><FiTrash2 /></button></div></td></tr>)}</tbody></table>{loading&&<div className="role-empty">Loading community participants...</div>}{list.status==="succeeded"&&filtered.length===0&&<div className="role-empty">No participants match this search and role filter.</div>}</div>
     {(creating||editing)&&<div className="role-modal admin-participant-form-modal" role="presentation" onMouseDown={(e)=>{if(e.target===e.currentTarget)closeModal();}}><section className="role-modal-card participant-form-card" role="dialog" aria-modal="true" aria-labelledby="participant-form-title"><div className="participant-form-header"><div><h2 id="participant-form-title">{creating?"Add participant signup":"Edit Participant"}</h2>{editing&&<p>Update participant details</p>}</div><button className="participant-close" type="button" aria-label="Close" onClick={closeModal}><FiX /></button></div>{creating&&<p className="participant-create-note">New accounts are created as pending signup requests and follow the backend approval workflow.</p>}<form onSubmit={submit} className="role-stack"><div className="participant-form-fields">
       <label className="participant-field">Full Name <span>*</span><input required className="role-input" value={form.name} onChange={(e)=>setForm({...form,name:e.target.value})}/></label>

@@ -1,68 +1,47 @@
-import { createContext, useContext, useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { loginUser } from '../services/authService';
-import { clearUsers } from '../redux/features/users/usersSlice';
-
+import { createContext, useContext } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import {
+  currentUserUpdated, loggedOut, loginUser, selectAuthStatus, selectCurrentUser,
+} from '../redux/features/users/usersSlice';
 import { clearMaintenance } from '../redux/features/maintenance/maintenanceSlice';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const dispatch = useDispatch();
-  const [currentUser, setCurrentUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('currentUser');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const currentUser = useSelector(selectCurrentUser);
+  const { status } = useSelector(selectAuthStatus);
 
-  const [loading, setLoading] = useState(false);
-
-  // Authenticate user against the backend API
+  // Authenticate user against the backend API (Redux is updated only after success)
   const login = async (email, password, role) => {
-    setLoading(true);
-    try {
-      const response = await loginUser(email, password, role);
-      // Backend returns either user object or { user, ... }
-      const user = response.user || response;
-      dispatch(clearUsers());
-      dispatch(clearMaintenance());
-      setCurrentUser(user);
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      return user;
-    } finally {
-      setLoading(false);
-    }
+    const user = await dispatch(loginUser({ email, password, role })).unwrap();
+    dispatch(clearMaintenance()); // maintenance lists belong to the previous session
+    return user;
   };
 
   const logout = () => {
-    dispatch(clearUsers());
+    dispatch(loggedOut());
     dispatch(clearMaintenance());
-    setCurrentUser(null);
     localStorage.removeItem('currentUser');
     localStorage.removeItem('token');
   };
 
+  // Call after the backend has saved the profile
   const updateUser = (updated) => {
-    setCurrentUser((prev) => {
-      if (!prev) return updated;
-      const next = { ...prev, ...updated };
-      localStorage.setItem('currentUser', JSON.stringify(next));
-      return next;
-    });
+    dispatch(currentUserUpdated(updated));
+    const next = currentUser ? { ...currentUser, ...updated } : updated;
+    localStorage.setItem('currentUser', JSON.stringify(next));
   };
 
   return (
     <AuthContext.Provider
       value={{
         currentUser,
-        loading,
+        loading: status === 'loading',
         login,
         logout,
         updateUser,
-        isAuthenticated: !!currentUser
+        isAuthenticated: !!currentUser,
       }}
     >
       {children}
