@@ -1,11 +1,16 @@
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { FiBell } from "react-icons/fi";
 import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
 import { fetchNotifications } from "../../services/notificationService";
+import {
+  setNotifications as setNotificationsAction,
+  selectServiceProviderNotifications,
+} from "../../redux/features/notifications/notificationsSlice";
 import { StatusBadge } from "../../components/service_provider/FeatureStates";
 import PageHeader from "../../components/service_provider/PageHeader";
 
@@ -151,6 +156,8 @@ function DashboardIcon({ type }) {
 
 function Dashboard() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const reduxNotifications = useSelector((state) => state.notifications);
   const providerId = getProviderId();
   const providerName = getProviderName();
 
@@ -232,7 +239,9 @@ function Dashboard() {
 
     try {
       const data = await fetchNotifications("service_provider", providerId);
-      setNotifications(Array.isArray(data) ? data : []);
+      const safeData = Array.isArray(data) ? data : [];
+      setNotifications(safeData);
+      dispatch(setNotificationsAction(safeData));
     } catch (err) {
       console.error("Failed to load provider notifications:", err);
       setNotifications([]);
@@ -240,7 +249,7 @@ function Dashboard() {
     } finally {
       setNotificationsLoading(false);
     }
-  }, [providerId]);
+  }, [providerId, dispatch]);
 
   useEffect(() => {
     fetchProviderNotifications();
@@ -385,9 +394,19 @@ function Dashboard() {
 
   const recentComplaints = tasks.slice(0, 3);
   const tableTasks = tasks.slice(0, 4);
-  const unreadNotificationCount = notifications.filter(
-    (notification) => notification.status === "unread"
-  ).length;
+
+  // Whatever notifications present in service provider notifications page, those only are visible on the dashboard
+  const providerNotifications = useMemo(() => {
+    const source = (reduxNotifications && reduxNotifications.length > 0)
+      ? reduxNotifications
+      : notifications;
+    return selectServiceProviderNotifications(source, providerId);
+  }, [reduxNotifications, notifications, providerId]);
+
+  const unreadNotificationCount = useMemo(
+    () => providerNotifications.filter((n) => n.status === "unread").length,
+    [providerNotifications]
+  );
   const averageRating = feedback.length
     ? feedback.reduce((total, item) => total + item.rating, 0) / feedback.length
     : 0;
@@ -604,12 +623,12 @@ function Dashboard() {
                       Retry
                     </button>
                   </p>
-                ) : notifications.length === 0 ? (
+                ) : providerNotifications.length === 0 ? (
                   <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
                     You’re all caught up. No notifications yet.
                   </p>
                 ) : (
-                  notifications.slice(0, 3).map((notification, index) => (
+                  providerNotifications.slice(0, 3).map((notification, index) => (
                     <Link
                       className="notif-item"
                       key={notification.id ?? `${notification.createdAt}-${index}`}

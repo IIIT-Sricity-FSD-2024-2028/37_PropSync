@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { notifyStatusAndBillSubmitted } from "../../redux/features/notifications/notificationsSlice";
+import { createNotification } from "../../services/notificationService";
 import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
@@ -121,6 +124,7 @@ function Icon({ type }) {
 
 export default function UpdateStatus() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const taskId = searchParams.get("task");
   const providerId = getProviderId();
@@ -370,6 +374,26 @@ export default function UpdateStatus() {
         throw new Error(`Could not submit bill: ${message}`);
       }
 
+      dispatch(notifyStatusAndBillSubmitted({
+        complaintId: numericId,
+        title: task?.title || `Complaint #${numericId}`,
+        ownerId: task?.ownerId || 1,
+        providerId,
+        amount: Number(amount),
+        managerId: task?.managerId || 5,
+      }));
+
+      // Notify Maintenance Manager using role "maintenance_manager" so backend RolesGuard accepts it
+      await createNotification({
+        userId: Number(task?.managerId || 5),
+        complaintId: Number(numericId),
+        message: `Service Provider #${providerId} submitted a bill of ₹${amount} for Complaint #${numericId}.`,
+        type: "payment_due",
+        recipient: "maintenance_manager",
+      }, "maintenance_manager").catch(() => {});
+
+      // Note: Backend POST /bills already notifies the owner directly, avoiding duplicate notification.
+
       setToast("Bill submitted for manager payment review!");
       window.setTimeout(() => navigate(taskUrl), 1200);
     } catch (error) {
@@ -581,9 +605,8 @@ export default function UpdateStatus() {
                       </label>
 
                       <div
-                        className={`upload-zone ${
-                          dragging ? "update-status-upload-dragging" : ""
-                        }`}
+                        className={`upload-zone ${dragging ? "update-status-upload-dragging" : ""
+                          }`}
                         onClick={() => fileInputRef.current?.click()}
                         onDragOver={(event) => {
                           event.preventDefault();

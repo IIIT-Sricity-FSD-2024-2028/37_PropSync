@@ -143,9 +143,9 @@ export default function Ratings() {
           taskIds.has(Number(rating.complaintId))
         );
         console.log("Provider ID:", providerId);
-    console.log("Provider complaints:", safeTasks);
-    console.log("All ratings:", safeRatings);
-    console.log("Complaint IDs:", [...taskIds]);
+        console.log("Provider complaints:", safeTasks);
+        console.log("All ratings:", safeRatings);
+        console.log("Complaint IDs:", [...taskIds]);
 
         const mappedFeedback = providerRatings.map((rating) => {
           const complaint = taskMap.get(Number(rating.complaintId)) || {};

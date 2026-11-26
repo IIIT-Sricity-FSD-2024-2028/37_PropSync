@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
+import {
+  cancelComplaintNotifications,
+  extractComplaintId,
+  isComplaintRejected,
+  isEstimateRejected,
+} from '../../redux/features/notifications/notificationsSlice';
 import { API_BASE_URL } from '../../services/api';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { currentUser } = useAuth();
   const { complaints, notifications, payments, ownerProfile, refreshComplaints, refreshNotifications, refreshPayments, removeComplaint } = useOwner();
 
@@ -95,14 +103,66 @@ export default function Dashboard() {
     .sort((a, b) => (b.id || 0) - (a.id || 0))
     .slice(0, 3);
 
-  const paymentNotifs = (notifications || []).filter(n =>
-    n.type === 'payment_due' ||
-    String(n.title || '').toLowerCase().includes('payment') ||
-    String(n.message || '').toLowerCase().includes('maintenance')
-  ).slice(0, 3);
+  // Deduplicate notifications so a rejected complaint or estimate is not shown twice
+  const uniqueNotifications = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    for (const n of notifications || []) {
+      const cId = extractComplaintId(n);
+      const isRej = isComplaintRejected(n);
+      const isEstRej = isEstimateRejected(n);
 
-  const recentNotifications = notifications.slice(0, 3);
-  const unreadNotifCount = recentNotifications.filter((n) => n.status === 'unread').length;
+      const rejectKey = isRej && cId ? `reject-${cId}` : null;
+      const estRejectKey = isEstRej && cId ? `est-reject-${cId}` : null;
+      const key = `${cId || n.id}-${n.type || ''}-${(n.message || '').trim().toLowerCase()}`;
+      if (seen.has(key) || (rejectKey && seen.has(rejectKey)) || (estRejectKey && seen.has(estRejectKey))) {
+        continue;
+      }
+      seen.add(key);
+      if (rejectKey) seen.add(rejectKey);
+      if (estRejectKey) seen.add(estRejectKey);
+      result.push(n);
+    }
+    return result;
+  }, [notifications]);
+
+  // In payment history, ONLY monthly maintenance cost notifications should appear; complaint notifications must NOT be included
+  const paymentNotifs = uniqueNotifications.filter((n) => {
+    const cId = extractComplaintId(n);
+    const title = String(n?.title || '').toLowerCase();
+    const msg = String(n?.message || '').toLowerCase();
+
+    // 1. MUST NOT be related to any complaint, service bill, estimate, or task work
+    if (
+      n.complaintId ||
+      cId ||
+      title.includes('complaint') ||
+      msg.includes('complaint') ||
+      title.includes('bill') ||
+      msg.includes('bill') ||
+      title.includes('estimate') ||
+      msg.includes('estimate') ||
+      msg.includes('service provider') ||
+      msg.includes('status updated') ||
+      title.includes('status')
+    ) {
+      return false;
+    }
+
+    // 2. MUST be explicitly a monthly maintenance cost notification
+    const isMonthlyMaintenance =
+      title.includes('monthly maintenance') ||
+      title.includes('maintenance due') ||
+      msg.includes('monthly maintenance') ||
+      msg.includes('maintenance cost') ||
+      msg.includes('maintenance fee') ||
+      (n.type === 'payment_due' && msg.includes('maintenance') && !msg.includes('complaint'));
+
+    return isMonthlyMaintenance;
+  }).slice(0, 3);
+
+  const recentNotifications = uniqueNotifications.slice(0, 3);
+  const unreadNotifCount = uniqueNotifications.filter((n) => n.status === 'unread').length;
 
   return (
     <OwnerLayout>
@@ -394,6 +454,7 @@ export default function Dashboard() {
                           e.stopPropagation();
                           if (!window.confirm(`Are you sure you want to delete complaint "${c.title}"?`)) return;
                           try {
+                            dispatch(cancelComplaintNotifications(c.id));
                             if (removeComplaint) {
                               await removeComplaint(c.id);
                             }

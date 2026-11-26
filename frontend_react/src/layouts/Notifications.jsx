@@ -1,5 +1,18 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
+import {
+  setNotifications as setNotificationsAction,
+  markNotificationAsRead as markNotificationAsReadAction,
+  markAllNotificationsAsRead as markAllNotificationsAsReadAction,
+  deleteNotification as deleteNotificationAction,
+  clearAllNotifications as clearAllNotificationsAction,
+  createNotification as createNotificationAction,
+  extractComplaintId,
+  isComplaintRejected,
+  isEstimateRejected,
+  selectServiceProviderNotifications,
+} from "../redux/features/notifications/notificationsSlice";
 import "./Notifications.css";
 import Navbar from "../components/Navbar";
 import {
@@ -313,26 +326,61 @@ function Notifications({ role = "admin", userId, name }) {
   const activeUserId = userId || currentUser?.id || profile.userId;
   const displayName = name || currentUser?.name || profile.name;
 
+  const dispatch = useDispatch();
+  const reduxNotifications = useSelector((state) => state.notifications);
+
   const [notificationList, setNotificationList] = useState([]);
   const [serviceProviders, setServiceProviders] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
 
+  // Compute effective notifications from Redux store, deduplicating so rejections are not shown twice
+  const displayedList = useMemo(() => {
+    const source = (reduxNotifications && reduxNotifications.length > 0)
+      ? reduxNotifications
+      : notificationList;
+
+    if (currentRole === "service_provider") {
+      return selectServiceProviderNotifications(source, activeUserId);
+    }
+
+    const seen = new Set();
+    const result = [];
+    for (const n of source || []) {
+      const isForUser = !n.userId || String(n.userId) === String(activeUserId) || n.recipient === currentRole || n.recipient === "all";
+      if (!isForUser) continue;
+
+      const cId = extractComplaintId(n);
+      const isRej = isComplaintRejected(n);
+      const isEstRej = isEstimateRejected(n);
+
+      const rejectKey = isRej && cId ? `reject-${cId}` : null;
+      const estRejectKey = isEstRej && cId ? `est-reject-${cId}` : null;
+      const key = `${cId || n.id}-${n.type || ""}-${(n.message || "").trim().toLowerCase()}`;
+      if (seen.has(key) || (rejectKey && seen.has(rejectKey)) || (estRejectKey && seen.has(estRejectKey))) continue;
+      seen.add(key);
+      if (rejectKey) seen.add(rejectKey);
+      if (estRejectKey) seen.add(estRejectKey);
+      result.push(n);
+    }
+    return result;
+  }, [reduxNotifications, notificationList, activeUserId, currentRole]);
+
   const loadNotifications = useCallback(async () => {
     setIsLoading(true);
     try {
       const data = await fetchNotifications(currentRole, activeUserId);
-      setNotificationList(
-        Array.isArray(data)
-          ? data.map((item) => ({ ...item, time: item.time || formatTimeAgo(item.createdAt) }))
-          : []
-      );
+      const safeData = Array.isArray(data)
+        ? data.map((item) => ({ ...item, time: item.time || formatTimeAgo(item.createdAt) }))
+        : [];
+      setNotificationList(safeData);
+      dispatch(setNotificationsAction(safeData));
     } catch {
       setNotificationList([]);
     } finally {
       setIsLoading(false);
     }
-  }, [currentRole, activeUserId]);
+  }, [currentRole, activeUserId, dispatch]);
 
   const loadProviders = useCallback(async () => {
     if (currentRole !== "maintenance_manager") return;
@@ -350,6 +398,7 @@ function Notifications({ role = "admin", userId, name }) {
   }, [loadNotifications, loadProviders]);
 
   const handleMarkRead = async (id) => {
+    dispatch(markNotificationAsReadAction(id));
     setNotificationList((prev) => prev.map((n) => (n.id === id ? { ...n, status: "read" } : n)));
     if (!isNaN(Number(id))) {
       try {
@@ -361,6 +410,7 @@ function Notifications({ role = "admin", userId, name }) {
   };
 
   const handleDelete = async (id) => {
+    dispatch(deleteNotificationAction(id));
     setNotificationList((prev) => prev.filter((n) => n.id !== id));
     if (!isNaN(Number(id))) {
       try {
@@ -372,6 +422,7 @@ function Notifications({ role = "admin", userId, name }) {
   };
 
   const handleMarkAllRead = async () => {
+    dispatch(markAllNotificationsAsReadAction({ userId: activeUserId }));
     setNotificationList((prev) => prev.map((n) => ({ ...n, status: "read" })));
     try {
       await markAllNotificationsAsRead(activeUserId, currentRole);
@@ -381,6 +432,7 @@ function Notifications({ role = "admin", userId, name }) {
   };
 
   const handleClearAll = async () => {
+    dispatch(clearAllNotificationsAction({ userId: activeUserId }));
     setNotificationList([]);
     try {
       await clearAllNotifications(activeUserId, currentRole);
@@ -402,34 +454,36 @@ function Notifications({ role = "admin", userId, name }) {
 
     try {
       const res = await createNotification(payload, currentRole, activeUserId);
-      setNotificationList((prev) => [
-        {
-          id: res?.id || Date.now(),
-          title: t,
-          category: cat || "Maintenance",
-          message: `${m}${ref ? ` (Ref: ${ref})` : ""}`,
-          time: "Just now",
-          status: "unread",
-          type: tp,
-        },
-        ...prev,
-      ]);
+      const newNotifItem = {
+        id: res?.id || Date.now(),
+        title: t,
+        category: cat || "Maintenance",
+        message: `${m}${ref ? ` (Ref: ${ref})` : ""}`,
+        time: "Just now",
+        status: "unread",
+        type: tp,
+        userId: targetUserId,
+        recipient: rec,
+        complaintId: match ? Number(match[0]) : undefined,
+      };
+      dispatch(createNotificationAction(newNotifItem));
+      setNotificationList((prev) => [newNotifItem, ...prev]);
       return true;
     } catch {
       return false;
     }
   };
 
-  const unreadCount = useMemo(() => notificationList.filter((n) => n.status === "unread").length, [notificationList]);
+  const unreadCount = useMemo(() => displayedList.filter((n) => n.status === "unread").length, [displayedList]);
 
   const filteredNotifications = useMemo(() => {
-    return notificationList.filter((item) => {
+    return displayedList.filter((item) => {
       if (activeFilter === "all") return true;
       if (activeFilter === "unread") return item.status === "unread";
       if (activeFilter === "read") return item.status === "read";
       return getNotificationMeta(item).category.toLowerCase() === activeFilter.toLowerCase();
     });
-  }, [notificationList, activeFilter]);
+  }, [displayedList, activeFilter]);
 
   return (
     <div>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import ConfirmModal from "../shared/ConfirmModal";
@@ -10,11 +11,14 @@ import { MM_PATHS } from "../shared/paths";
 import {
   createMaintenanceCharges, deleteMaintenancePayment, fetchMaintenancePayments, getCurrentManager, markMaintenancePaid, settlePlatformFees,
 } from "../../../services/managerService";
+import { notifyMonthlyMaintenanceSubmitted } from "../../../redux/features/notifications/notificationsSlice";
+import { createNotification } from "../../../services/notificationService";
 
 const fee = (p) => Number(p.platformFee) || Number(p.amount || 0) * 0.05;
 
 /* maintenance.html */
 export default function Maintenance() {
+  const dispatch = useDispatch();
   const showToast = useToast();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -56,6 +60,18 @@ export default function Maintenance() {
   const createCharges = async (month, amount) => {
     try {
       const res = await createMaintenanceCharges(month, amount);
+      dispatch(notifyMonthlyMaintenanceSubmitted({
+        month,
+        amount,
+        ownerIds: [1],
+      }));
+      createNotification({
+        userId: 1,
+        message: `Monthly maintenance fee of ₹${Number(amount || 0).toLocaleString("en-IN")} for ${month} has been published. Please check Payment History in your Owner Dashboard.`,
+        type: "payment_due",
+        recipient: "owner",
+      }, "maintenance_manager").catch(() => {});
+
       const block = getCurrentManager().block;
       showToast(block ? `Maintenance charges created successfully for Block ${block} owners` : "Maintenance charges created successfully for block owners.");
       load();

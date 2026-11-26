@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { useToast } from "../../shared/Toast";
 import RejectModal from "../../shared/RejectModal";
 import ComplaintSummaryCard from "./ComplaintSummaryCard";
@@ -8,9 +9,15 @@ import ProviderNotesCard from "./ProviderNotesCard";
 import ProviderQueue from "./ProviderQueue";
 import { MM_PATHS } from "../../shared/paths";
 import { assignProvider, fetchComplaint, fetchProviderQueue, reviewEstimate } from "../../../../services/managerService";
+import {
+  notifyEstimateApproved,
+  notifyEstimateRejected,
+} from "../../../../redux/features/notifications/notificationsSlice";
+import { createNotification } from "../../../../services/notificationService";
 
 export default function ProviderSelection({ complaintId, onUpdated }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const showToast = useToast();
   const [complaint, setComplaint] = useState(null);
   const [queue, setQueue] = useState([]);
@@ -45,6 +52,27 @@ export default function ProviderSelection({ complaintId, onUpdated }) {
     setBusy(true);
     try {
       await assignProvider(complaintId, selectedId, { deadline: dueDate, managerNote: notes });
+      dispatch(notifyEstimateApproved({
+        complaintId,
+        title: complaint?.title || `Complaint #${complaintId}`,
+        ownerId: complaint?.ownerId || 1,
+        providerId: selectedId,
+      }));
+      createNotification({
+        userId: Number(selectedId),
+        complaintId: Number(complaintId),
+        message: `Your estimate for Complaint #${complaintId} has been approved and assigned to you. Work can begin.`,
+        type: "estimate_approved",
+        recipient: "service_provider",
+      }, "maintenance_manager").catch(() => {});
+      createNotification({
+        userId: Number(complaint?.ownerId || 1),
+        complaintId: Number(complaintId),
+        message: `Service provider #${selectedId} has been assigned to your complaint #${complaintId} and estimate approved.`,
+        type: "provider_assigned",
+        recipient: "owner",
+      }, "maintenance_manager").catch(() => {});
+
       showToast("Provider and estimate approved. Work can begin.");
       setSelectedId(null);
       await load();
@@ -59,6 +87,14 @@ export default function ProviderSelection({ complaintId, onUpdated }) {
     setBusy(true);
     try {
       await reviewEstimate(rejecting.id, false, reason);
+      dispatch(notifyEstimateRejected({
+        complaintId: rejecting.complaintId || complaintId,
+        title: complaint?.title || `Complaint #${complaintId}`,
+        providerId: rejecting.providerId,
+        reason,
+      }));
+      // Note: Backend reviewEstimate already calls notifyEstimateRejected, so we do not call createNotification to prevent duplicate notifications.
+
       if (selectedId === rejecting.providerId) setSelectedId(null);
       setRejecting(null);
       showToast("Estimate rejected. Other candidates remain available.");

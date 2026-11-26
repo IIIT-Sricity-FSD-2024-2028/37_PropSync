@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import Icon from "../shared/Icon";
@@ -9,9 +10,15 @@ import PendingEstimateCard from "./components/PendingEstimateCard";
 import EstimateHistory from "./components/EstimateHistory";
 import { MM_PATHS } from "../shared/paths";
 import { fetchComplaints, fetchEstimates, fetchProviders, reviewEstimate } from "../../../services/managerService";
+import {
+  notifyEstimateApproved,
+  notifyEstimateRejected,
+} from "../../../redux/features/notifications/notificationsSlice";
+import { createNotification } from "../../../services/notificationService";
 
 /* service-estimate.html */
 export default function ServiceEstimate() {
+  const dispatch = useDispatch();
   const showToast = useToast();
   const navigate = useNavigate();
   const [estimates, setEstimates] = useState([]);
@@ -49,6 +56,27 @@ export default function ServiceEstimate() {
     setBusyId(e.id);
     try {
       await reviewEstimate(e.id, true);
+      dispatch(notifyEstimateApproved({
+        complaintId: e.complaintId,
+        title: issueOf(e),
+        ownerId: complaintsById[e.complaintId]?.ownerId || 1,
+        providerId: e.providerId,
+      }));
+      createNotification({
+        userId: Number(e.providerId),
+        complaintId: Number(e.complaintId),
+        message: `Your estimate for Complaint #${e.complaintId} has been approved.`,
+        type: "estimate_approved",
+        recipient: "service_provider",
+      }, "maintenance_manager").catch(() => {});
+      createNotification({
+        userId: Number(complaintsById[e.complaintId]?.ownerId || 1),
+        complaintId: Number(e.complaintId),
+        message: `Estimate for complaint #${e.complaintId} has been approved by the Maintenance Manager.`,
+        type: "estimate_approved",
+        recipient: "owner",
+      }, "maintenance_manager").catch(() => {});
+
       showToast(`Estimate ${e.id} approved. Provider notified.`);
       await load();
     } catch (err) {
@@ -61,6 +89,14 @@ export default function ServiceEstimate() {
   const reject = async (reason) => {
     try {
       await reviewEstimate(rejecting.id, false, reason);
+      dispatch(notifyEstimateRejected({
+        complaintId: rejecting.complaintId,
+        title: issueOf(rejecting),
+        providerId: rejecting.providerId,
+        reason,
+      }));
+      // Note: Backend reviewEstimate already calls notifyEstimateRejected, so we do not call createNotification to avoid duplicate notifications.
+
       showToast(`Estimate ${rejecting.id} rejected.`);
       setRejecting(null);
       await load();

@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
 import { getComplaintDetails, getOwnerRatings, submitOwnerRating } from '../../services/ownerService';
+import { createNotification } from '../../services/notificationService';
+import { createRating as createRatingAction } from '../../redux/features/ratings/ratingsSlice';
+import {
+  cancelComplaintNotifications,
+  notifyRatingSubmitted,
+} from '../../redux/features/notifications/notificationsSlice';
 import { API_BASE_URL } from '../../services/api';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
@@ -10,6 +17,8 @@ import './owner.css';
 export default function ComplaintDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const reduxRatings = useSelector((state) => state.ratings);
   const { currentUser } = useAuth();
   const { removeComplaint } = useOwner();
 
@@ -30,11 +39,18 @@ export default function ComplaintDetails() {
       setComplaint(data);
       document.title = `PropSync – ${data.title || 'Complaint Detail'}`;
 
-      // Check existing rating if complaint has assignedProviderId
-      const ownerId = currentUser?.id || data.ownerId || 1;
-      const ratings = await getOwnerRatings(ownerId, id, currentUser);
-      if (ratings && ratings.length > 0) {
-        setExistingRating(ratings[0]);
+      // Check existing rating from Redux store first, otherwise fetch from API
+      const foundInRedux = reduxRatings.find(
+        (r) => String(r.complaintId) === String(id) && String(r.ownerId) === String(ownerId)
+      );
+      if (foundInRedux) {
+        setExistingRating(foundInRedux);
+      } else {
+        const ratings = await getOwnerRatings(ownerId, id, currentUser);
+        if (ratings && ratings.length > 0) {
+          setExistingRating(ratings[0]);
+          dispatch(createRatingAction(ratings[0]));
+        }
       }
     } catch (err) {
       console.error('Failed to load complaint details:', err);
@@ -42,7 +58,7 @@ export default function ComplaintDetails() {
     } finally {
       setLoading(false);
     }
-  }, [id, currentUser]);
+  }, [id, currentUser, reduxRatings, dispatch]);
 
   useEffect(() => {
     fetchDetails();
@@ -102,6 +118,33 @@ export default function ComplaintDetails() {
         currentUser
       );
       setExistingRating(result);
+      dispatch(createRatingAction(result));
+
+      // Notify the service provider about the new rating
+      const providerId = complaint.assignedProviderId || result?.providerId || 10;
+      const feedbackStr = ratingFeedback.trim();
+      const notifMessage = `Owner submitted a rating of ${ratingScore}/5 for closed Complaint #${complaint.id} ("${complaint.title || 'Task'}").${feedbackStr ? ` Feedback: "${feedbackStr}"` : ''}`;
+
+      dispatch(
+        notifyRatingSubmitted({
+          complaintId: complaint.id,
+          title: complaint.title,
+          providerId: Number(providerId),
+          score: ratingScore,
+          feedback: feedbackStr,
+        })
+      );
+
+      createNotification(
+        {
+          userId: Number(providerId),
+          complaintId: Number(complaint.id),
+          type: 'custom',
+          recipient: 'service_provider',
+          message: notifMessage,
+        },
+        'maintenance_manager'
+      ).catch(() => {});
     } catch (err) {
       alert(err.message || 'Error submitting rating');
     } finally {
@@ -272,6 +315,7 @@ export default function ComplaintDetails() {
               onClick={async () => {
                 if (!window.confirm(`Are you sure you want to delete complaint "${complaint?.title}"?`)) return;
                 try {
+                  dispatch(cancelComplaintNotifications(complaint?.id));
                   if (removeComplaint) {
                     await removeComplaint(complaint.id);
                   }

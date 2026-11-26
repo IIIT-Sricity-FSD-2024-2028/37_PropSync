@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useDispatch } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
 import {
@@ -7,10 +8,20 @@ import {
   deleteNotification,
   clearAllNotifications
 } from '../../services/notificationService';
+import {
+  markNotificationAsRead as markNotificationAsReadAction,
+  deleteNotification as deleteNotificationAction,
+  markAllNotificationsAsRead as markAllNotificationsAsReadAction,
+  clearAllNotifications as clearAllNotificationsAction,
+  extractComplaintId,
+  isComplaintRejected,
+  isEstimateRejected,
+} from '../../redux/features/notifications/notificationsSlice';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
 export default function Alerts() {
+  const dispatch = useDispatch();
   const { currentUser } = useAuth();
   const { notifications, refreshNotifications } = useOwner();
 
@@ -21,9 +32,31 @@ export default function Alerts() {
     document.title = 'PropSync – Alerts & Notifications';
   }, []);
 
-  const unreadCount = notifications.filter((n) => n.status === 'unread').length;
+  // Deduplicate notifications so a rejected complaint or estimate is not shown twice
+  const uniqueNotifications = useMemo(() => {
+    const seen = new Set();
+    const result = [];
+    for (const n of notifications || []) {
+      const cId = extractComplaintId(n);
+      const isRej = isComplaintRejected(n);
+      const isEstRej = isEstimateRejected(n);
+
+      const rejectKey = isRej && cId ? `reject-${cId}` : null;
+      const estRejectKey = isEstRej && cId ? `est-reject-${cId}` : null;
+      const key = `${cId || n.id}-${n.type || ''}-${(n.message || '').trim().toLowerCase()}`;
+      if (seen.has(key) || (rejectKey && seen.has(rejectKey)) || (estRejectKey && seen.has(estRejectKey))) continue;
+      seen.add(key);
+      if (rejectKey) seen.add(rejectKey);
+      if (estRejectKey) seen.add(estRejectKey);
+      result.push(n);
+    }
+    return result;
+  }, [notifications]);
+
+  const unreadCount = uniqueNotifications.filter((n) => n.status === 'unread').length;
 
   const handleMarkAsRead = async (id) => {
+    dispatch(markNotificationAsReadAction(id));
     try {
       await markNotificationAsRead(id, currentUser);
       refreshNotifications();
@@ -33,6 +66,7 @@ export default function Alerts() {
   };
 
   const handleDelete = async (id) => {
+    dispatch(deleteNotificationAction(id));
     try {
       await deleteNotification(id, currentUser);
       refreshNotifications();
@@ -42,6 +76,7 @@ export default function Alerts() {
   };
 
   const handleMarkAllRead = async () => {
+    dispatch(markAllNotificationsAsReadAction({ userId: currentUser?.id }));
     try {
       await markAllNotificationsRead(currentUser);
       refreshNotifications();
@@ -51,6 +86,7 @@ export default function Alerts() {
   };
 
   const handleClearAll = async () => {
+    dispatch(clearAllNotificationsAction({ userId: currentUser?.id }));
     try {
       await clearAllNotifications(currentUser);
       refreshNotifications();
@@ -59,12 +95,14 @@ export default function Alerts() {
     }
   };
 
-  const filteredNotifications = notifications.filter((n) => {
+  const filteredNotifications = uniqueNotifications.filter((n) => {
     if (statusFilter === 'unread' && n.status !== 'unread') return false;
     if (statusFilter === 'read' && n.status !== 'read') return false;
 
     if (typeFilter === 'payment') {
-      const isPay = n.type === 'payment_due' || String(n.title || '').toLowerCase().includes('payment') || String(n.message || '').toLowerCase().includes('maintenance');
+      const isComp = Boolean(n.complaintId) || String(n.title || '').toLowerCase().includes('complaint');
+      if (isComp) return false;
+      const isPay = n.type === 'payment_due' || String(n.title || '').toLowerCase().includes('payment') || String(n.message || '').toLowerCase().includes('maintenance fee') || String(n.message || '').toLowerCase().includes('maintenance cost');
       if (!isPay) return false;
     } else if (typeFilter === 'complaint') {
       const isComp = String(n.type || '').includes('complaint') || String(n.title || '').toLowerCase().includes('complaint');

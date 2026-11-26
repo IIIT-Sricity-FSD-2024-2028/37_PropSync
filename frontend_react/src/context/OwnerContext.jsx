@@ -2,11 +2,16 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from './AuthContext';
 import { getOwnerComplaints, getOwnerPayments, deleteComplaint as apiDeleteComplaint } from '../services/ownerService';
-import { getNotifications } from '../services/notificationService';
+import { getNotifications, deleteNotification } from '../services/notificationService';
 import {
   setComplaints as setComplaintsAction,
   deleteComplaint as deleteComplaintAction,
 } from '../redux/features/complaints/complaintsSlice';
+import {
+  setNotifications as setNotificationsAction,
+  cancelComplaintNotifications,
+  isComplaintNotification,
+} from '../redux/features/notifications/notificationsSlice';
 
 const OwnerContext = createContext(null);
 
@@ -14,6 +19,7 @@ export function OwnerProvider({ children }) {
   const { currentUser } = useAuth();
   const dispatch = useDispatch();
   const reduxComplaints = useSelector((state) => state.complaints);
+  const reduxNotifications = useSelector((state) => state.notifications);
   const [complaints, setComplaints] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -65,9 +71,25 @@ export function OwnerProvider({ children }) {
   };
 
   const removeComplaint = async (id) => {
-    await apiDeleteComplaint(id, currentUser);
+    try {
+      await apiDeleteComplaint(id, currentUser);
+    } catch (err) {
+      console.warn('API delete complaint failed:', err);
+    }
+
     dispatch(deleteComplaintAction(id));
+    dispatch(cancelComplaintNotifications(id));
+
+    // When the owner deletes the complaint, delete any matching notifications from backend so they are wiped
+    const notifsToDelete = (notifications || []).filter((n) => isComplaintNotification(n, id));
+    for (const notif of notifsToDelete) {
+      if (notif?.id) {
+        deleteNotification(notif.id, currentUser).catch(() => {});
+      }
+    }
+
     setComplaints((prev) => prev.filter((c) => String(c.id) !== String(id)));
+    setNotifications((prev) => prev.filter((n) => !isComplaintNotification(n, id)));
   };
 
   const refreshNotifications = async () => {
@@ -75,6 +97,9 @@ export function OwnerProvider({ children }) {
     try {
       const data = await getNotifications(currentUser);
       setNotifications(data);
+      if (Array.isArray(data)) {
+        dispatch(setNotificationsAction(data));
+      }
     } catch (err) {
       console.warn('Error fetching notifications:', err);
     }
@@ -104,7 +129,7 @@ export function OwnerProvider({ children }) {
     <OwnerContext.Provider
       value={{
         complaints: reduxComplaints.length > 0 ? reduxComplaints : complaints,
-        notifications,
+        notifications: reduxNotifications.length > 0 ? reduxNotifications : notifications,
         payments,
         ownerProfile,
         updateProfile,

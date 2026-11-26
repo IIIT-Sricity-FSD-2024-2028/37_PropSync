@@ -1,9 +1,12 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import "../../pages/service_provider/styles.css";
 import EstimateDocumentLink from "./EstimateDocumentLink";
 import { estimateStatus, estimateFileError, validateEstimate } from "../../services/estimateWorkflow";
+import { notifyEstimateSubmitted } from "../../redux/features/notifications/notificationsSlice";
+import { createNotification } from "../../services/notificationService";
 
 import { API_BASE_URL as API } from "../../services/api";
 
@@ -74,6 +77,7 @@ function Icon({ type }) {
 export default function EstimateForm({ complaintId, embedded = false, onCancel, onSubmitted, onBusyChange }) {
   const Layout = embedded ? "div" : "main";
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const taskId = complaintId || searchParams.get("task");
   const submitLock = useRef(false);
@@ -237,6 +241,29 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
       if (response.ok) {
         const estimate = await response.json();
         setExistingEstimate(estimate);
+        dispatch(notifyEstimateSubmitted({
+          complaintId: numericId,
+          title: task?.title || `Complaint #${numericId}`,
+          ownerId: task?.ownerId || 1,
+          providerId,
+          cost: Number(cost),
+          managerId: 5,
+        }));
+        createNotification({
+          userId: 5,
+          complaintId: Number(numericId),
+          message: `Service Provider #${providerId} submitted an estimate of ₹${cost} for Complaint #${numericId}.`,
+          type: "estimate_submitted",
+          recipient: "maintenance_manager",
+        }, "service_provider").catch(() => {});
+        createNotification({
+          userId: Number(task?.ownerId || 1),
+          complaintId: Number(numericId),
+          message: `An estimate of ₹${cost} has been submitted for your complaint #${numericId}.`,
+          type: "estimate_submitted",
+          recipient: "owner",
+        }, "service_provider").catch(() => {});
+
         setToast("Estimate submitted \u2014 awaiting manager selection");
         onSubmitted?.(estimate);
       } else {

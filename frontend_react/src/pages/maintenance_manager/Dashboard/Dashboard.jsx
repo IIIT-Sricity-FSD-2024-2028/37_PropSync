@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import ManagerLayout, { getManagerName } from "../shared/ManagerLayout";
 import KpiCard from "../shared/KpiCard";
@@ -10,6 +11,7 @@ import StatusOverview from "./components/StatusOverview";
 import MaintenanceShortcutCard from "./components/MaintenanceShortcutCard";
 import TopProviderCard from "./components/TopProviderCard";
 import useComplaintActions from "../shared/useComplaintActions";
+import { setNotifications as setNotificationsAction } from "../../../redux/features/notifications/notificationsSlice";
 import { MM_PATHS } from "../shared/paths";
 import {
   fetchComplaints, fetchEstimates, fetchProviders, getCurrentManager, getManagerId, mapComplaint, today,
@@ -20,6 +22,8 @@ const DONE = ["Completed", "Paid", "Closed"];
 
 /* dashboard.html */
 export default function Dashboard() {
+  const dispatch = useDispatch();
+  const reduxNotifications = useSelector((state) => state.notifications);
   const user = getCurrentManager();
   const [complaints, setComplaints] = useState([]);
   const [estimates, setEstimates] = useState([]);
@@ -43,11 +47,25 @@ export default function Dashboard() {
     const timer = setTimeout(loadComplaints, 0);
     fetchProviders().then(setProviders).catch(() => {});
     fetchNotifications("maintenance_manager", getManagerId())
-      .then((list) => setNotifications(Array.isArray(list) ? list.slice(0, 5) : []))
+      .then((list) => {
+        const safeList = Array.isArray(list) ? list : [];
+        setNotifications(safeList.slice(0, 5));
+        dispatch(setNotificationsAction(safeList));
+      })
       .catch(() => setNotifications([]));
     const t = setInterval(loadComplaints, 15000); // same 15s refresh as the HTML version
     return () => { clearTimeout(timer); clearInterval(t); };
-  }, [loadComplaints]);
+  }, [loadComplaints, dispatch]);
+
+  const activeManagerNotifs = useMemo(() => {
+    if (reduxNotifications && reduxNotifications.length > 0) {
+      const managerId = String(getManagerId());
+      return reduxNotifications.filter(
+        (n) => n.recipient === "maintenance_manager" || !n.recipient || String(n.userId) === managerId
+      ).slice(0, 5);
+    }
+    return notifications;
+  }, [reduxNotifications, notifications]);
 
   const { askApprove, askReject, modals } = useComplaintActions(loadComplaints);
   const pendingEstimates = useMemo(() => estimates.filter((e) => e.approved === null && e.selectionStatus !== "not_selected" && complaints.some((c) => String(c.id) === String(e.complaintId))).length, [complaints, estimates]);
@@ -103,7 +121,7 @@ export default function Dashboard() {
           onApprove={askApprove}
           onReject={askReject}
         />
-        <RecentNotifications notifications={notifications} />
+        <RecentNotifications notifications={activeManagerNotifs} />
       </div>
 
       <div className="grid-3">

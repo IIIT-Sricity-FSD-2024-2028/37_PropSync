@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
 import { getOwnerPayments, getOwnerPaymentsSummary, submitTransactionId } from '../../services/ownerService';
 import { createNotification } from '../../services/notificationService';
+import { notifyOwnerPaymentCompleted } from '../../redux/features/notifications/notificationsSlice';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
 export default function PaymentHistory() {
+  const dispatch = useDispatch();
   const { currentUser } = useAuth();
   const { ownerProfile, refreshNotifications } = useOwner();
 
@@ -109,13 +112,21 @@ export default function PaymentHistory() {
       // Notify Maintenance Manager
       const managerId = activePayment.managerId || 5;
       const unit = userUnit || 'A-101';
+      dispatch(notifyOwnerPaymentCompleted({
+        ownerId: currentUser?.id || 1,
+        unit,
+        month: activePayment.month,
+        amount: activePayment.amount,
+        transactionId: cleanId,
+        managerId: Number(managerId),
+      }));
       try {
         await createNotification({
           userId: Number(managerId),
           message: `Owner of Unit ${unit} submitted payment proof (${cleanId}) for ${activePayment.month} (₹${Number(activePayment.amount || 0).toLocaleString('en-IN')}).`,
           type: 'custom',
           recipient: 'maintenance_manager'
-        }, currentUser);
+        }, 'maintenance_manager');
       } catch (notifErr) {
         console.warn('Could not notify manager of transaction proof:', notifErr);
       }

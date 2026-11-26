@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import { useToast } from "../shared/Toast";
@@ -8,12 +9,15 @@ import PaymentHistoryTable from "./components/PaymentHistoryTable";
 import PaymentModal from "./components/PaymentModal";
 import { MM_PATHS } from "../shared/paths";
 import { fetchBills, fetchComplaints, fetchProviders, markBillPaid } from "../../../services/managerService";
+import { notifyBillPaid } from "../../../redux/features/notifications/notificationsSlice";
+import { createNotification } from "../../../services/notificationService";
 
 const isPaid = (b) => (b.status || (b.isPaid ? "paid" : "submitted")) === "paid";
 const total = (b) => Number(b.totalAmount || b.amount || 0);
 
 /* service-bills.html  (sidebar: "Payment History") */
 export default function PaymentHistory() {
+  const dispatch = useDispatch();
   const showToast = useToast();
   const [bills, setBills] = useState([]);
   const [complaintsById, setComplaintsById] = useState({});
@@ -52,6 +56,29 @@ export default function PaymentHistory() {
     setPaying(true);
     try {
       await markBillPaid(payBill.id);
+      const cid = payBill.complaintId;
+      const relatedComp = complaintsById[Number(cid)] || {};
+      dispatch(notifyBillPaid({
+        complaintId: cid,
+        title: issueOf(payBill),
+        ownerId: relatedComp.ownerId || 1,
+        providerId: relatedComp.assignedProviderId || payBill.providerId || 10,
+      }));
+      createNotification({
+        userId: Number(relatedComp.assignedProviderId || payBill.providerId || 10),
+        complaintId: Number(cid),
+        message: `Payment is completed and complaint is closed for Complaint #${cid}.`,
+        type: "work_completed",
+        recipient: "service_provider",
+      }, "maintenance_manager").catch(() => {});
+      createNotification({
+        userId: Number(relatedComp.ownerId || 1),
+        complaintId: Number(cid),
+        message: `Payment is completed and complaint is closed for Complaint #${cid}.`,
+        type: "work_completed",
+        recipient: "owner",
+      }, "maintenance_manager").catch(() => {});
+
       setPayBill(null);
       await load();
       showToast("Payment processed. Complaint closed.");

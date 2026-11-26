@@ -8,6 +8,8 @@ import {
   createComplaint as createComplaintAction,
   checkDuplicateComplaint,
 } from '../../redux/features/complaints/complaintsSlice';
+import { notifyComplaintSubmitted } from '../../redux/features/notifications/notificationsSlice';
+import { createNotification } from '../../services/notificationService';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
@@ -91,6 +93,19 @@ export default function NewComplaint() {
       const created = await createComplaint(formData, currentUser);
       if (created) {
         dispatch(createComplaintAction(created));
+        dispatch(notifyComplaintSubmitted({
+          complaintId: created.id,
+          title: created.title || title.trim(),
+          ownerId: currentUser?.id || 1,
+          managerId: 5,
+        }));
+        createNotification({
+          userId: 5,
+          complaintId: Number(created.id),
+          message: `New complaint submitted for approval: "${created.title || title.trim()}" (Ref: #${created.id}).`,
+          type: 'complaint_submitted',
+          recipient: 'maintenance_manager',
+        }, currentUser).catch(() => {});
       }
       await refreshComplaints();
 
