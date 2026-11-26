@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
-import { fetchMaintenanceRevenue } from "../../services/maintenanceService";
-import { selectMaintenanceRevenue, selectMaintenanceRequest } from "../../redux/features/maintenance/maintenanceSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { fetchMaintenanceRevenue, selectMaintenanceRevenue, selectMaintenanceRequest } from "../../redux/features/maintenance/maintenanceSlice";
 import { FiCheckCircle, FiFileText, FiRefreshCw, FiShield, FiTool } from "react-icons/fi";
 import { formatMoney, getRoleSession } from "../../services/roleApi";
 import "./SuperUserPages.css";
@@ -31,21 +30,18 @@ function buildMonthlyTimeline(breakdown = []) {
 export default function SuperUserRevenue() {
   const session = getRoleSession("super_user");
   const dispatch = useDispatch();
-  const { getState } = useStore();
   const data = useSelector((state) => selectMaintenanceRevenue(state, session));
   const request = useSelector((state) => selectMaintenanceRequest(state, session, "revenue"));
   const loading = request.status === "idle" || request.status === "loading";
   const [search, setSearch] = useState("");
   const { id } = session;
 
-  const load = useCallback((signal) => fetchMaintenanceRevenue({ dispatch, getState }, {
-    session: { role: "super_user", id }, signal,
-  }).catch(() => { /* Redux exposes the request error. */ }), [dispatch, getState, id]);
+  // READ: the request status and data are read back from Redux (selectors above)
+  const load = useCallback(() => dispatch(fetchMaintenanceRevenue({ session: { role: "super_user", id } })), [dispatch, id]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
-    return () => controller.abort();
+    const request = load();
+    return () => request.abort();
   }, [load]);
 
   const rows = useMemo(() => {

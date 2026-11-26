@@ -2,12 +2,12 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "../context/AuthContext";
 import {
-  setNotifications as setNotificationsAction,
-  markNotificationAsRead as markNotificationAsReadAction,
-  markAllNotificationsAsRead as markAllNotificationsAsReadAction,
-  deleteNotification as deleteNotificationAction,
-  clearAllNotifications as clearAllNotificationsAction,
-  createNotification as createNotificationAction,
+  fetchNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  deleteNotification,
+  clearAllNotifications,
+  createNotification,
   extractComplaintId,
   isComplaintRejected,
   isEstimateRejected,
@@ -34,15 +34,7 @@ import {
   FiSend,
   FiRotateCcw,
 } from "react-icons/fi";
-import {
-  fetchNotifications,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  deleteNotification,
-  clearAllNotifications,
-  createNotification,
-  fetchServiceProviders,
-} from "../services/notificationService";
+import { fetchUsers, selectUsers } from "../redux/features/users/usersSlice";
 
 const ROLE_PROFILES = {
   admin: {
@@ -327,18 +319,21 @@ function Notifications({ role = "admin", userId, name }) {
   const displayName = name || currentUser?.name || profile.name;
 
   const dispatch = useDispatch();
+  const viewer = useMemo(() => ({ role: currentRole, id: activeUserId }), [currentRole, activeUserId]);
+  // all notification data comes from the Redux store
   const reduxNotifications = useSelector((state) => state.notifications);
+  // service providers (for the manager's composer) come from the users slice
+  const usersSession = useMemo(() => ({ role: "maintenance_manager", id: activeUserId }), [activeUserId]);
+  const users = useSelector((state) => selectUsers(state, usersSession));
+  const serviceProviders = useMemo(() => users.filter((u) => u.role === "service_provider"), [users]);
 
-  const [notificationList, setNotificationList] = useState([]);
-  const [serviceProviders, setServiceProviders] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [actionError, setActionError] = useState("");
 
-  // Compute effective notifications from Redux store, deduplicating so rejections are not shown twice
+  // Deduplicate so rejections are not shown twice
   const displayedList = useMemo(() => {
-    const source = (reduxNotifications && reduxNotifications.length > 0)
-      ? reduxNotifications
-      : notificationList;
+    const source = (reduxNotifications || []).map((item) => ({ ...item, time: item.time || formatTimeAgo(item.createdAt) }));
 
     if (currentRole === "service_provider") {
       return selectServiceProviderNotifications(source, activeUserId);
@@ -346,7 +341,7 @@ function Notifications({ role = "admin", userId, name }) {
 
     const seen = new Set();
     const result = [];
-    for (const n of source || []) {
+    for (const n of source) {
       const isForUser = !n.userId || String(n.userId) === String(activeUserId) || n.recipient === currentRole || n.recipient === "all";
       if (!isForUser) continue;
 
@@ -364,84 +359,41 @@ function Notifications({ role = "admin", userId, name }) {
       result.push(n);
     }
     return result;
-  }, [reduxNotifications, notificationList, activeUserId, currentRole]);
+  }, [reduxNotifications, activeUserId, currentRole]);
 
-  const loadNotifications = useCallback(async () => {
+  // READ: backend -> Redux
+  useEffect(() => {
     setIsLoading(true);
-    try {
-      const data = await fetchNotifications(currentRole, activeUserId);
-      const safeData = Array.isArray(data)
-        ? data.map((item) => ({ ...item, time: item.time || formatTimeAgo(item.createdAt) }))
-        : [];
-      setNotificationList(safeData);
-      dispatch(setNotificationsAction(safeData));
-    } catch {
-      setNotificationList([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentRole, activeUserId, dispatch]);
-
-  const loadProviders = useCallback(async () => {
-    if (currentRole !== "maintenance_manager") return;
-    try {
-      const list = await fetchServiceProviders("maintenance_manager", activeUserId);
-      if (Array.isArray(list)) setServiceProviders(list);
-    } catch {
-      setServiceProviders([]);
-    }
-  }, [currentRole, activeUserId]);
+    const request = dispatch(fetchNotifications({ viewer }));
+    request.finally(() => setIsLoading(false));
+    return () => request.abort();
+  }, [dispatch, viewer]);
 
   useEffect(() => {
-    loadNotifications();
-    loadProviders();
-  }, [loadNotifications, loadProviders]);
+    if (currentRole !== "maintenance_manager") return undefined;
+    const request = dispatch(fetchUsers({ session: usersSession }));
+    return () => request.abort();
+  }, [dispatch, currentRole, usersSession]);
 
-  const handleMarkRead = async (id) => {
-    dispatch(markNotificationAsReadAction(id));
-    setNotificationList((prev) => prev.map((n) => (n.id === id ? { ...n, status: "read" } : n)));
-    if (!isNaN(Number(id))) {
-      try {
-        await markNotificationAsRead(Number(id), currentRole, activeUserId);
-      } catch (err) {
-        console.warn(err);
-      }
-    }
-  };
-
-  const handleDelete = async (id) => {
-    dispatch(deleteNotificationAction(id));
-    setNotificationList((prev) => prev.filter((n) => n.id !== id));
-    if (!isNaN(Number(id))) {
-      try {
-        await deleteNotification(Number(id), currentRole);
-      } catch (err) {
-        console.warn(err);
-      }
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    dispatch(markAllNotificationsAsReadAction({ userId: activeUserId }));
-    setNotificationList((prev) => prev.map((n) => ({ ...n, status: "read" })));
+  // UPDATE / DELETE: Redux changes only after the backend succeeds
+  const run = async (thunkAction) => {
+    setActionError("");
     try {
-      await markAllNotificationsAsRead(activeUserId, currentRole);
+      await dispatch(thunkAction).unwrap();
+      return true;
     } catch (err) {
-      console.warn(err);
+      setActionError(err.message || "The change could not be saved.");
+      return false;
     }
   };
 
-  const handleClearAll = async () => {
-    dispatch(clearAllNotificationsAction({ userId: activeUserId }));
-    setNotificationList([]);
-    try {
-      await clearAllNotifications(activeUserId, currentRole);
-    } catch (err) {
-      console.warn(err);
-    }
-  };
+  const handleMarkRead = (id) => run(markNotificationAsRead({ id: Number(id), viewer }));
+  const handleDelete = (id) => run(deleteNotification({ id: Number(id), viewer }));
+  const handleMarkAllRead = () => run(markAllNotificationsAsRead({ viewer }));
+  const handleClearAll = () => run(clearAllNotifications({ viewer }));
 
-  const handleSendNotification = async ({ title: t, message: m, complaintRef: ref, type: tp, categoryName: cat, recipient: rec, providerId: pId }) => {
+  // CREATE: backend first, then the saved notification is added to Redux
+  const handleSendNotification = async ({ title: t, message: m, complaintRef: ref, type: tp, recipient: rec, providerId: pId }) => {
     const targetUserId = rec === "service_provider" ? (pId === "all" ? 10 : Number(pId)) : rec === "admin" ? 13 : rec === "maintenance_manager" ? 5 : 1;
     const match = ref?.match(/\d+/);
     const payload = {
@@ -451,27 +403,7 @@ function Notifications({ role = "admin", userId, name }) {
       message: `${t}: ${m}${ref ? ` (Ref: ${ref})` : ""}`,
       ...(match ? { complaintId: Number(match[0]) } : {}),
     };
-
-    try {
-      const res = await createNotification(payload, currentRole, activeUserId);
-      const newNotifItem = {
-        id: res?.id || Date.now(),
-        title: t,
-        category: cat || "Maintenance",
-        message: `${m}${ref ? ` (Ref: ${ref})` : ""}`,
-        time: "Just now",
-        status: "unread",
-        type: tp,
-        userId: targetUserId,
-        recipient: rec,
-        complaintId: match ? Number(match[0]) : undefined,
-      };
-      dispatch(createNotificationAction(newNotifItem));
-      setNotificationList((prev) => [newNotifItem, ...prev]);
-      return true;
-    } catch {
-      return false;
-    }
+    return run(createNotification({ data: payload, sender: viewer }));
   };
 
   const unreadCount = useMemo(() => displayedList.filter((n) => n.status === "unread").length, [displayedList]);
@@ -491,6 +423,9 @@ function Notifications({ role = "admin", userId, name }) {
 
       <div className="notifications-page">
         <div className="notifications-content">
+          {actionError && (
+            <div className="card-box" role="alert" style={{ color: "#DC2626" }}>{actionError}</div>
+          )}
           {currentRole === "maintenance_manager" && (
             <ManagerComposer serviceProviders={serviceProviders} onSend={handleSendNotification} />
           )}

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { FiBell, FiCheck, FiCheckCircle, FiClock, FiRefreshCw, FiShield, FiUserPlus, FiAlertTriangle } from "react-icons/fi";
-import { getRoleSession, roleRequest } from "../../services/roleApi";
+import { getRoleSession } from "../../services/roleApi";
+import { fetchNotifications, markNotificationAsRead } from "../../redux/features/notifications/notificationsSlice";
+import { decideSignup, fetchPendingUsers, selectPendingUsers } from "../../redux/features/users/usersSlice";
 import "./SuperUserPages.css";
 
 const TYPE_LABELS = { complaint_submitted: "Complaints", complaint_approved: "Complaints", complaint_rejected: "Complaints", provider_assigned: "Service Assignment", estimate_submitted: "Estimates", estimate_approved: "Estimates", work_completed: "Maintenance", payment_due: "Payments", overdue: "Deadlines", custom: "System" };
@@ -23,41 +26,45 @@ function iconFor(type) {
 
 export default function SuperUserNotifications() {
   const session = getRoleSession("super_user");
-  const [items, setItems] = useState([]);
-  const [pending, setPending] = useState([]);
+  const dispatch = useDispatch();
+  const viewer = useMemo(() => ({ role: "super_user", id: session.id }), [session.id]);
+  // notifications and pending sign-ups come from the Redux store
+  const items = useSelector((state) => state.notifications);
+  const pending = useSelector((state) => selectPendingUsers(state, viewer));
   const [filter, setFilter] = useState("all");
   const [state, setState] = useState({ loading: true, busy: "", error: "", success: "" });
   const load = useCallback(async () => {
     setState((previous) => ({ ...previous, loading: true, error: "" }));
     try {
-      const [notifications, requests] = await Promise.all([roleRequest("super_user", session.id, "/notifications"), roleRequest("super_user", session.id, "/users/pending")]);
-      setItems(Array.isArray(notifications) ? notifications : []);
-      setPending(Array.isArray(requests) ? requests : []);
+      await Promise.all([
+        dispatch(fetchNotifications({ viewer })).unwrap(),
+        dispatch(fetchPendingUsers({ session: viewer })).unwrap(),
+      ]);
       setState((previous) => ({ ...previous, loading: false }));
     } catch (error) { setState((previous) => ({ ...previous, loading: false, error: error.message })); }
-  }, [session.id]);
+  }, [dispatch, viewer]);
   useEffect(() => { load(); }, [load]);
   const displayed = useMemo(() => items.filter((item) => filter === "all" || item.status === filter), [items, filter]);
+  // every action: backend first, Redux is updated by the thunk on success
   const decide = async (user, decision) => {
     setState((previous) => ({ ...previous, busy: `${decision}-${user.id}`, error: "", success: "" }));
     try {
-      await roleRequest("super_user", session.id, `/users/${user.id}/${decision}`, { method: "PATCH" });
-      setPending((list) => list.filter((entry) => entry.id !== user.id));
-      setItems((list) => list.map((entry) => entry.relatedUserId === user.id ? { ...entry, status: "read" } : entry));
+      await dispatch(decideSignup({ session: viewer, id: user.id, decision })).unwrap();
+      const related = items.filter((entry) => entry.relatedUserId === user.id && entry.status === "unread");
+      await Promise.all(related.map((entry) => dispatch(markNotificationAsRead({ id: entry.id, viewer })).unwrap()));
       setState((previous) => ({ ...previous, busy: "", success: `${user.name} ${decision === "approve" ? "approved" : "rejected"} successfully.` }));
     } catch (error) { setState((previous) => ({ ...previous, busy: "", error: error.message })); }
   };
   const markRead = async (item) => {
     try {
-      await roleRequest("super_user", session.id, `/notifications/${item.id}/read`, { method: "PATCH" });
-      setItems((list) => list.map((entry) => entry.id === item.id ? { ...entry, status: "read" } : entry));
+      await dispatch(markNotificationAsRead({ id: item.id, viewer })).unwrap();
     } catch (error) { setState((previous) => ({ ...previous, error: error.message })); }
   };
+  // the backend has no "mark all read" route for the super user, so each unread one is marked
   const markAll = async () => {
     setState((previous) => ({ ...previous, busy: "mark-all", error: "" }));
     try {
-      await Promise.all(items.filter((item) => item.status === "unread").map((item) => roleRequest("super_user", session.id, `/notifications/${item.id}/read`, { method: "PATCH" })));
-      setItems((list) => list.map((item) => ({ ...item, status: "read" })));
+      await Promise.all(items.filter((item) => item.status === "unread").map((item) => dispatch(markNotificationAsRead({ id: item.id, viewer })).unwrap()));
       setState((previous) => ({ ...previous, busy: "", success: "All notifications marked as read." }));
     } catch (error) { setState((previous) => ({ ...previous, busy: "", error: error.message })); }
   };
