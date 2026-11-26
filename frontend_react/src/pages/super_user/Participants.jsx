@@ -1,13 +1,12 @@
 ﻿import { useEffect, useMemo, useState } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { FiActivity, FiArrowDown, FiArrowUp, FiBriefcase, FiChevronDown, FiEdit2, FiEye, FiFilter, FiGlobe, FiHome, FiMail, FiPlus, FiSearch, FiTrash2, FiUser, FiX } from "react-icons/fi";
 import { formatRole, getRoleSession } from "../../services/roleApi";
 import {
-  clearUserMutation,
+  clearUserMutation, createUser, fetchUserById, fetchUsers, removeUser, saveUser,
   selectUserById, selectUserDetailStatus, selectUserMutation, selectUsers,
   selectUsersListStatus,
 } from "../../redux/features/users/usersSlice";
-import { createUser, fetchUserById, fetchUsers, removeUser, saveUser } from "../../services/usersService";
 import "./SuperUserPages.css";
 
 const EMPTY_FORM = { name: "", email: "", password: "", phone: "", role: "owner", communityName: "", propertyUnit: "", block: "", category: "" };
@@ -15,7 +14,6 @@ const EMPTY_FORM = { name: "", email: "", password: "", phone: "", role: "owner"
 export default function SuperUserParticipants() {
   const session = getRoleSession("super_user");
   const dispatch = useDispatch();
-  const { getState } = useStore();
   const users = useSelector((state) => selectUsers(state, session));
   const list = useSelector((state) => selectUsersListStatus(state, session));
   const detail = useSelector((state) => selectUserDetailStatus(state, session));
@@ -35,12 +33,11 @@ export default function SuperUserParticipants() {
   const [success, setSuccess] = useState("");
   const { role: sessionRole, id: sessionId } = session;
   useEffect(() => {
-    const controller = new AbortController();
-    fetchUsers({ dispatch, getState }, {
-      session: { role: sessionRole, id: sessionId }, signal: controller.signal,
-    }).catch(() => { /* Redux exposes the request error. */ });
-    return () => controller.abort();
-  }, [dispatch, getState, sessionRole, sessionId]);
+    const request = dispatch(fetchUsers({
+      session: { role: sessionRole, id: sessionId }
+    }));
+    return () => request.abort();
+  }, [dispatch, sessionRole, sessionId]);
 
   const resetFeedback = () => {
     dispatch(clearUserMutation(session));
@@ -50,7 +47,7 @@ export default function SuperUserParticipants() {
     resetFeedback();
     setEditing(false);
     setSelectedId(user.id);
-    fetchUserById({ dispatch, getState }, { session, id: user.id })
+    dispatch(fetchUserById({ session, id: user.id })).unwrap()
       .catch(() => { /* Redux exposes the request error. */ });
   };
   const error = mutation.error || (selected && !editing ? detail.error : null) || list.error;
@@ -79,7 +76,7 @@ export default function SuperUserParticipants() {
     if (payload.role !== "maintenance_manager") payload.block = undefined;
     if (payload.role !== "service_provider") payload.category = undefined;
     try {
-      await createUser({ dispatch, getState }, { session, data: payload });
+      await dispatch(createUser({ session, data: payload })).unwrap();
       closeCreate();
       setSuccess("Signup request created. It will appear after approval.");
     } catch { /* Redux exposes the request error. */ }
@@ -97,7 +94,7 @@ export default function SuperUserParticipants() {
     if (saving || !selected) return;
     resetFeedback();
     try {
-      await saveUser({ dispatch, getState }, { session, id: selected.id, data: editForm });
+      await dispatch(saveUser({ session, id: selected.id, data: editForm })).unwrap();
       setEditing(false);
       setSelectedId(null);
       setSuccess("Participant updated successfully.");
@@ -108,7 +105,7 @@ export default function SuperUserParticipants() {
     if (saving || !window.confirm(`Delete ${user.name}? This removes the participant account.`)) return;
     resetFeedback();
     try {
-      await removeUser({ dispatch, getState }, { session, id: user.id });
+      await dispatch(removeUser({ session, id: user.id })).unwrap();
       setSelectedId(null);
       setSuccess("Participant deleted successfully.");
     } catch { /* Redux exposes the request error. */ }

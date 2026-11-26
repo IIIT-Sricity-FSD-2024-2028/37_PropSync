@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../services/api";
+import { signupUser } from "../../redux/features/users/usersSlice";
 import "./LoginSignup.css";
 
 const HomeIcon = () => {
@@ -257,6 +258,7 @@ export default function LoginSignup({ initialMode }) {
 
   const [isLoginView, setIsLoginView] = useState(!isInitialSignup);
   const { login } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -335,24 +337,15 @@ export default function LoginSignup({ initialMode }) {
       if (communityName) newUser.communityName = communityName;
       if (role === "Service Provider") newUser.category = "General";
 
-      const response = await fetch(`${API_BASE_URL}/users`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", role: "admin" },
-        body: JSON.stringify(newUser),
-      });
-
-      if (response.ok) {
-        alert(
-          "Account request submitted. Please wait for admin approval before logging in.",
-        );
-        resetForm();
-        setIsLoginView(true);
-      } else {
-        const data = await response.json().catch(() => ({}));
-        setError(data.message || "Signup failed.");
-      }
-    } catch {
-      setError("Error connecting to server.");
+      // CREATE: sign-up request through the users slice (backend first)
+      await dispatch(signupUser({ data: newUser })).unwrap();
+      alert(
+        "Account request submitted. Please wait for admin approval before logging in.",
+      );
+      resetForm();
+      setIsLoginView(true);
+    } catch (error) {
+      setError(error.message || "Error connecting to server.");
     }
   };
 

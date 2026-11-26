@@ -1,26 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import UserProfile from "./UserProfile";
 import { useAuth } from "../context/AuthContext";
-import { formatRole, getRoleSession, roleRequest } from "../services/roleApi";
-import { API_BASE_URL } from "../services/api";
+import { formatRole, getRoleSession } from "../services/roleApi";
+import {
+  changeUserPassword, fetchUserById, saveUser, selectUserById,
+} from "../redux/features/users/usersSlice";
 
 export default function RoleProfilePage({ role }) {
   const { currentUser, updateUser } = useAuth();
   const session = getRoleSession(role);
   const storageKey = `roleProfile:${role}`;
-  const [repositoryUser, setRepositoryUser] = useState(null);
+  const dispatch = useDispatch();
+  const userSession = { role, id: session.id };
+  // the profile comes from the Redux users slice (loaded below)
+  const repositoryUser = useSelector((state) => selectUserById(state, userSession, session.id)) || null;
   const [savedProfile, setSavedProfile] = useState(() => {
     try { return JSON.parse(localStorage.getItem(storageKey) || "{}"); }
     catch { return {}; }
   });
   useEffect(() => {
     if (role !== "admin" && role !== "service_provider") return;
-    let active = true;
-    roleRequest(role, session.id, `/users/${session.id}`)
-      .then((user) => { if (active) setRepositoryUser(user); })
-      .catch(() => { if (active) setRepositoryUser(null); });
-    return () => { active = false; };
-  }, [role, session.id]);
+    const request = dispatch(fetchUserById({ session: { role, id: session.id }, id: session.id }));
+    return () => request.abort();
+  }, [dispatch, role, session.id]);
   const profile = useMemo(() => ({
     fullName: role === "admin"
       ? repositoryUser?.name || (String(currentUser?.id) === String(session.id) ? currentUser?.name : "") || session.name
@@ -53,11 +56,12 @@ export default function RoleProfilePage({ role }) {
   const handleUpdate = async (updated) => {
     if (role === "admin") {
       try {
-        const user = await roleRequest("admin", session.id, `/users/${session.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ name: updated.fullName, email: updated.email, phone: updated.phone, communityName: updated.location }),
-        });
-        setRepositoryUser(user);
+        // UPDATE: backend first; the slice stores the saved user
+        const user = await dispatch(saveUser({
+          session: userSession,
+          id: session.id,
+          data: { name: updated.fullName, email: updated.email, phone: updated.phone, communityName: updated.location },
+        })).unwrap();
         updateUser({ id: user.id, name: user.name, email: user.email, phone: user.phone, communityName: user.communityName });
       } catch (error) {
         window.alert(`Could not save profile: ${error.message}`);
@@ -66,11 +70,11 @@ export default function RoleProfilePage({ role }) {
     }
     if (role === "service_provider") {
       try {
-        const user = await roleRequest(role, session.id, `/users/${session.id}`, {
-          method: "PATCH",
-          body: JSON.stringify({ name: updated.fullName, phone: updated.phone, communityName: updated.location }),
-        });
-        setRepositoryUser(user);
+        const user = await dispatch(saveUser({
+          session: userSession,
+          id: session.id,
+          data: { name: updated.fullName, phone: updated.phone, communityName: updated.location },
+        })).unwrap();
         updateUser({ id: user.id, name: user.name, phone: user.phone, communityName: user.communityName, location: user.communityName });
       } catch (error) {
         window.alert(`Could not save profile: ${error.message}`);
@@ -89,13 +93,13 @@ export default function RoleProfilePage({ role }) {
     if (role !== "admin") {
       throw new Error("Password changes are only available for administrator accounts.");
     }
-    const response = await fetch(`${API_BASE_URL}/users/${profile.id}/password`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", role: "admin", "x-user-id": String(profile.id) },
-      body: JSON.stringify(passwords),
-    });
-    const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.message || "Unable to change password.");
+    try {
+      await dispatch(changeUserPassword({
+        session: { role: "admin", id: profile.id }, id: profile.id, passwords,
+      })).unwrap();
+    } catch (error) {
+      throw new Error(error.message || "Unable to change password.");
+    }
   };
 
   return <UserProfile user={profile} role={role} title="My Profile"
