@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import PerformanceSummary from "./components/PerformanceSummary";
 import ProviderPerformanceCard from "./components/ProviderPerformanceCard";
 import { MM_PATHS } from "../shared/paths";
-import { fetchBills, fetchComplaints, fetchEstimates, fetchProviders, fetchRatings } from "../../../services/managerService";
+import { fetchComplaints, fetchEstimates, fetchProviders, fetchRatings } from "../../../services/managerService";
+import { fetchBills, selectAllBills } from "../../../redux/features/bills/billsSlice";
 
 const DONE = ["completed", "billed", "paid", "closed"];
 const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null);
@@ -13,18 +15,21 @@ const avg = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length :
    (HTML used Math.random(); here: jobs = finished complaints, rating = /ratings,
     on-time = bills without penalty, avg cost = approved estimates) */
 export default function ProviderPerformance() {
+  const dispatch = useDispatch();
+  const bills = useSelector(selectAllBills); // bills come from the Redux store
   const [data, setData] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([fetchProviders(), fetchComplaints(), fetchRatings().catch(() => []), fetchBills().catch(() => []), fetchEstimates().catch(() => [])])
-      .then(([providers, complaints, ratings, bills, estimates]) => setData({ providers, complaints, ratings, bills, estimates }))
+    dispatch(fetchBills());
+    Promise.all([fetchProviders(), fetchComplaints(), fetchRatings().catch(() => []), fetchEstimates().catch(() => [])])
+      .then(([providers, complaints, ratings, estimates]) => setData({ providers, complaints, ratings, estimates }))
       .catch((e) => setError(e.message || "Could not load providers."));
-  }, []);
+  }, [dispatch]);
 
   const rows = useMemo(() => {
     if (!data) return [];
-    const { providers, complaints, ratings, bills, estimates } = data;
+    const { providers, complaints, ratings, estimates } = data;
     return providers.map((p) => {
       const mine = complaints.filter((c) => Number(c.assignedProviderId) === Number(p.id));
       const ids = new Set(mine.map((c) => Number(c.id)));
@@ -41,7 +46,7 @@ export default function ProviderPerformance() {
         reviews,
       };
     }).sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0) || b.jobs - a.jobs);
-  }, [data]);
+  }, [data, bills]);
 
   const kpis = useMemo(() => {
     const rated = rows.filter((r) => r.rating !== null).map((r) => r.rating);

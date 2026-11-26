@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { notifyStatusAndBillSubmitted } from "../../redux/features/notifications/notificationsSlice";
+import { createBill } from "../../redux/features/bills/billsSlice";
 import { createNotification } from "../../services/notificationService";
 import "./styles.css";
 
@@ -352,26 +353,13 @@ export default function UpdateStatus() {
       );
       files.forEach((file) => formData.append("attachments", file));
 
-      // Do not manually set Content-Type for FormData. The browser adds
-      // the multipart boundary automatically.
-      const response = await fetch(`${API}/bills`, {
-        method: "POST",
-        headers: { role: "service_provider", "x-user-id": String(providerId) },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        let message = "Unknown error";
-        try {
-          const result = await response.json();
-          message = Array.isArray(result.message)
-            ? result.message.join(", ")
-            : result.message || message;
-        } catch {
-          // Use fallback message.
-        }
-
-        throw new Error(`Could not submit bill: ${message}`);
+      // CREATE: the bills slice posts the bill and adds it to the Redux store
+      try {
+        await dispatch(
+          createBill({ formData, auth: { role: "service_provider", userId: providerId } })
+        ).unwrap();
+      } catch (error) {
+        throw new Error(`Could not submit bill: ${error.message || "Unknown error"}`);
       }
 
       dispatch(notifyStatusAndBillSubmitted({

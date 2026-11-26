@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { API_BASE_URL as API } from "../../services/api";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  fetchPaidBillsByProvider, filterPaidBills, selectAllBills, selectBillsError, selectBillsLoading,
+} from "../../redux/features/bills/billsSlice";
 import PageHeader from "../../components/service_provider/PageHeader";
 import { EmptyState, ErrorMessage, LoadingState } from "../../components/service_provider/FeatureStates";
 import "./styles.css";
@@ -27,44 +30,18 @@ function formatAmount(value) {
 
 export default function Earnings() {
   const providerId = getProviderId();
-  const [bills, setBills] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const dispatch = useDispatch();
+  // READ: paid bills come from the Redux store
+  const allBills = useSelector(selectAllBills);
+  const bills = useMemo(() => filterPaidBills(allBills), [allBills]);
+  const loading = useSelector(selectBillsLoading);
+  const storeError = useSelector(selectBillsError);
+  const error = storeError ? `Could not load your earnings. ${storeError}` : "";
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
-    let active = true;
-
-    async function loadEarnings() {
-      setLoading(true);
-      setError("");
-      try {
-        const response = await fetch(`${API}/bills/provider/${providerId}/paid`, {
-          headers: {
-            role: "service_provider",
-            "Content-Type": "application/json",
-            "x-user-id": String(providerId),
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`Could not load earnings (HTTP ${response.status}).`);
-        }
-        const data = await response.json();
-        if (!Array.isArray(data)) throw new Error("Unexpected response from the server.");
-        if (active) setBills(data);
-      } catch (loadError) {
-        if (active) {
-          setBills([]);
-          setError(loadError.message || "Could not load your earnings.");
-        }
-      } finally {
-        if (active) setLoading(false);
-      }
-    }
-
-    loadEarnings();
-    return () => { active = false; };
-  }, [providerId, reloadKey]);
+    dispatch(fetchPaidBillsByProvider(providerId));
+  }, [dispatch, providerId, reloadKey]);
 
   const totalReceived = useMemo(
     () => bills.reduce((total, bill) => total + Number(bill.totalAmount ?? bill.amount ?? 0), 0),

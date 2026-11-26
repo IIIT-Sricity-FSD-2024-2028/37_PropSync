@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import ProviderSelection from "../AssignProvider/components/ProviderSelection";
@@ -15,7 +15,8 @@ import ProviderDocumentsCard from "./components/ProviderDocumentsCard";
 import PhotoCard from "./components/PhotoCard";
 import useComplaintActions from "../shared/useComplaintActions";
 import { MM_PATHS } from "../shared/paths";
-import { fetchBills, fetchComplaint, fetchEstimates, fetchProviders, toApiImageUrl, deleteEstimate as deleteEstimateApi } from "../../../services/managerService";
+import { fetchComplaint, fetchEstimates, fetchProviders, toApiImageUrl, deleteEstimate as deleteEstimateApi } from "../../../services/managerService";
+import { fetchBills, filterBillsByComplaint, selectAllBills } from "../../../redux/features/bills/billsSlice";
 import { deleteEstimate as deleteEstimateAction } from "../../../redux/features/estimates/estimatesSlice";
 
 /* complaint-details.html?id=… */
@@ -26,7 +27,8 @@ export default function ComplaintDetails() {
   const id = params.get("id");
   const [c, setC] = useState(null);
   const [estimates, setEstimates] = useState([]);
-  const [bills, setBills] = useState([]);
+  const allBills = useSelector(selectAllBills); // bills come from the Redux store
+  const bills = useMemo(() => filterBillsByComplaint(allBills, id), [allBills, id]);
   const [providers, setProviders] = useState([]);
   const [error, setError] = useState("");
 
@@ -52,9 +54,9 @@ export default function ComplaintDetails() {
     } catch {
       return setError(`Could not load complaint #${id}. Make sure the backend is running.`);
     }
-    fetchBills().then((all) => setBills(all.filter((b) => Number(b.complaintId) === Number(id)))).catch(() => {});
+    dispatch(fetchBills({ complaintId: id }));
     fetchProviders().then(setProviders).catch(() => {});
-  }, [id]);
+  }, [id, dispatch]);
 
   useEffect(() => {
     const timer = setTimeout(load, 0);

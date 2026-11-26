@@ -190,10 +190,4 @@ export const deleteEstimate = (estimateId) =>
   });
 
 /* ================= BILLS ================= */
-export const fetchBills = () => request(`/bills`, { headers: headers() });
-
-export const markBillPaid = (billId) =>
-  request(`/bills/${billId}/mark-paid`, {
-    method: "PATCH",
-    headers: headers(true),
-  });
+// Bills are read/updated through Redux: redux/features/bills/billsSlice.js
