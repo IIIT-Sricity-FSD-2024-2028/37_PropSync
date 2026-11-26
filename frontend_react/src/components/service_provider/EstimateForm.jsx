@@ -1,9 +1,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import "../../pages/service_provider/styles.css";
 import EstimateDocumentLink from "./EstimateDocumentLink";
-import { estimateStatus, estimateFileError, validateEstimate } from "../../services/estimateWorkflow";
+import { estimateStatus, estimateFileError, validateEstimate, MAX_ESTIMATE_COST } from "../../services/estimateWorkflow";
+import {
+  createEstimate as createEstimateAction,
+  setEstimates as setEstimatesAction,
+  updateEstimate as updateEstimateAction,
+  deleteEstimate as deleteEstimateAction,
+  checkDuplicateEstimate as checkDuplicateEstimateAction,
+} from "../../redux/features/estimates/estimatesSlice";
 
 import { API_BASE_URL as API } from "../../services/api";
 
@@ -71,9 +79,11 @@ function Icon({ type }) {
   );
 }
 
-export default function EstimateForm({ complaintId, embedded = false, onCancel, onSubmitted, onBusyChange }) {
+export default function EstimateForm({ complaintId, embedded = false, onCancel, onSubmitted, onDeleted, onBusyChange }) {
   const Layout = embedded ? "div" : "main";
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const reduxEstimates = useSelector((state) => state.estimates);
   const [searchParams] = useSearchParams();
   const taskId = complaintId || searchParams.get("task");
   const submitLock = useRef(false);
@@ -92,6 +102,10 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
   const [error, setError] = useState("");
   const [estimateLoadFailed, setEstimateLoadFailed] = useState(false);
   const [toast, setToast] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [editCost, setEditCost] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editFile, setEditFile] = useState(null);
 
   const providerId = getProviderId();
   const numericId = String(taskId || "").replace(/^C-/i, "");
@@ -144,6 +158,7 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
 
         if (estimateResponse.ok) {
           const estimates = await estimateResponse.json();
+          dispatch(setEstimatesAction(estimates));
           const matchingEstimate = estimates
             .filter(
               (estimate) =>
@@ -211,7 +226,13 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
     setCostError(errors.cost);
     setDescriptionError(errors.description);
     setFileError(errors.file);
-    if (Object.values(errors).some(Boolean)) return;
+    if (!file) {
+      setFileError("Please upload the estimate document before submitting.");
+    }
+    if (Object.values(errors).some(Boolean) || !file) {
+      setError(errors.cost || errors.file || errors.description || "Please upload an estimate document and enter a valid cost.");
+      return;
+    }
 
     const formData = new FormData();
     formData.append("complaintId", numericId);
@@ -223,6 +244,7 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
     submitLock.current = true;
     setSubmitting(true);
     onBusyChange?.(true);
+    dispatch(checkDuplicateEstimateAction({ complaintId: numericId, providerId }));
 
     try {
       const response = await fetch(`${API}/estimates`, {
@@ -236,6 +258,7 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
 
       if (response.ok) {
         const estimate = await response.json();
+        dispatch(createEstimateAction(estimate));
         setExistingEstimate(estimate);
         setToast("Estimate submitted \u2014 awaiting manager selection");
         onSubmitted?.(estimate);
@@ -254,6 +277,64 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
       setSubmitting(false);
       onBusyChange?.(false);
     }
+  }
+
+  async function handleUpdateEstimate(e) {
+    e.preventDefault();
+    const parsed = Number(editCost);
+    if (!parsed || parsed <= 0) return setError("Please enter a valid positive cost.");
+    if (parsed > MAX_ESTIMATE_COST) return setError(`Estimated cost cannot exceed ₹${MAX_ESTIMATE_COST.toLocaleString("en-IN")}.`);
+    if (!existingEstimate?.documentUrl && !editFile) return setError("An estimate document file is required. Please upload a file.");
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("estimatedCost", String(parsed));
+      formData.append("notes", editDescription.trim());
+      if (editFile) formData.append("document", editFile);
+
+      const response = await fetch(`${API}/estimates/${existingEstimate.id}`, {
+        method: "PATCH",
+        headers: { role: "service_provider", "x-user-id": String(providerId) },
+        body: formData,
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        dispatch(updateEstimateAction(updated));
+        setExistingEstimate(updated);
+        setIsEditing(false);
+        setEditFile(null);
+        setToast("Estimate and document updated successfully!");
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.message || "Failed to update estimate");
+      }
+    } catch {
+      setError("Network error updating estimate.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDeleteEstimate() {
+    if (!existingEstimate || !window.confirm("Are you sure you want to delete this estimate?")) return;
+    setSubmitting(true);
+    const estId = existingEstimate.id;
+    try {
+      await fetch(`${API}/estimates/${estId}`, {
+        method: "DELETE",
+        headers: { role: "service_provider", "x-user-id": String(providerId) },
+      });
+    } catch {}
+    dispatch(deleteEstimateAction(estId));
+    setExistingEstimate(null);
+    setCost("");
+    setDescription("");
+    setFile(null);
+    setToast("Estimate deleted successfully.");
+    onDeleted?.(estId);
+    setSubmitting(false);
+    if (embedded) await loadTask();
+    else goToDetails();
   }
 
   if (loading) {
@@ -319,52 +400,146 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
                 </div>
 
                 <div className="card">
-                  <div className="colored-card-header green">
+                  <div className={`colored-card-header ${existingEstimate.approved === false ? "red" : "green"}`}>
                     <h2>Submitted Estimate</h2>
                   </div>
 
                   <div className="card-body">
-                    <div className="alert-box green estimate-alert">
-                      <Icon type="success" />
-                      <p>
+                    <div className={`alert-box ${existingEstimate.approved === false ? "red" : "green"} estimate-alert`}>
+                      <Icon type={existingEstimate.approved === false ? "warning" : "success"} />
+                      <p style={existingEstimate.approved === false ? { color: "#b91c1c", fontWeight: 600 } : undefined}>
                         {estimateStatus(existingEstimate)}
                       </p>
                     </div>
 
-                    <div className="info-grid-2 estimate-summary-grid">
-                      <div>
-                        <label className="estimate-field-label">Cost</label>
-                        <p className="estimate-cost">
-                          ₹{existingEstimate.estimatedCost}
-                        </p>
-                      </div>
+                    {isEditing ? (
+                      <form onSubmit={handleUpdateEstimate} style={{ marginTop: 16 }}>
+                        <div style={{ marginBottom: 16 }}>
+                          <label className="estimate-field-label">Estimated Cost (₹) * (Max ₹50,000)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={editCost}
+                            onChange={(e) => setEditCost(e.target.value)}
+                            required
+                            min="1"
+                            max={MAX_ESTIMATE_COST}
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px" }}
+                          />
+                        </div>
+                        <div style={{ marginBottom: 16 }}>
+                          <label className="estimate-field-label">Notes / Description of Work</label>
+                          <textarea
+                            className="form-control"
+                            rows={3}
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px" }}
+                          />
+                        </div>
+                        <div style={{ marginBottom: 16 }}>
+                          <label className="estimate-field-label">Update Uploaded File</label>
+                          {existingEstimate.documentName && (
+                            <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 6 }}>
+                              Current file: <strong>{existingEstimate.documentName}</strong>
+                            </p>
+                          )}
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.xls,.xlsx"
+                            onChange={(e) => setEditFile(e.target.files?.[0] || null)}
+                            style={{ width: "100%", padding: "8px 12px", border: "1px solid #d1d5db", borderRadius: "6px" }}
+                          />
+                          {editFile ? (
+                            <p style={{ fontSize: 13, color: "#16a34a", marginTop: 4 }}>
+                              Selected replacement: {editFile.name} ({(editFile.size / 1024).toFixed(1)} KB)
+                            </p>
+                          ) : (
+                            <p style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
+                              Choose a new PDF, Word, or Excel document to replace the uploaded file.
+                            </p>
+                          )}
+                        </div>
+                        <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                          <button className="btn btn-dark" type="submit" disabled={submitting}>
+                            {submitting ? "Saving..." : "Save Changes"}
+                          </button>
+                          <button className="btn btn-ghost" type="button" onClick={() => { setIsEditing(false); setEditFile(null); }}>
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <>
+                        <div className="info-grid-2 estimate-summary-grid">
+                          <div>
+                            <label className="estimate-field-label">Cost</label>
+                            <p className="estimate-cost">
+                              ₹{existingEstimate.estimatedCost}
+                              {existingEstimate.isEdited && (
+                                <span style={{ marginLeft: 8, fontSize: 12, padding: "2px 8px", borderRadius: 4, background: "#eff6ff", color: "#2563eb", border: "1px solid #93c5fd", fontWeight: 600 }}>
+                                  Edited &bull; New
+                                </span>
+                              )}
+                            </p>
+                          </div>
 
-                      <div>
-                        <label className="estimate-field-label">
-                          Submitted By
-                        </label>
-                        <p className="estimate-provider">
-                          Provider ID: {existingEstimate.providerId}
-                        </p>
-                      </div>
-                    </div>
+                          <div>
+                            <label className="estimate-field-label">
+                              Submitted By
+                            </label>
+                            <p className="estimate-provider">
+                              Provider ID: {existingEstimate.providerId}
+                            </p>
+                          </div>
+                        </div>
 
-                    <div className="estimate-notes">
-                      <label className="estimate-field-label">
-                        Notes / Description
-                      </label>
-                      <p>
-                        {existingEstimate.notes || "No notes provided."}
-                      </p>
-                    </div>
+                        <div className="estimate-notes">
+                          <label className="estimate-field-label">
+                            Notes / Description
+                          </label>
+                          <p>
+                            {existingEstimate.notes || "No notes provided."}
+                          </p>
+                        </div>
 
-                    {existingEstimate.documentUrl && <EstimateDocumentLink estimate={existingEstimate} />}
-                    <button
-                      className="btn btn-ghost btn-full"
-                      onClick={goToDetails}
-                    >
-                      {embedded ? "Close Estimate" : "View Full Task Details"}
-                    </button>
+                        {existingEstimate.documentUrl && <EstimateDocumentLink estimate={existingEstimate} />}
+
+                        <div style={{ display: "flex", gap: 10, marginTop: 16, marginBottom: 8 }}>
+                          <button
+                            className="btn btn-dark"
+                            type="button"
+                            onClick={() => {
+                              setIsEditing(true);
+                              setEditCost(String(existingEstimate.estimatedCost || ""));
+                              setEditDescription(existingEstimate.notes || "");
+                              setEditFile(null);
+                            }}
+                          >
+                            Edit Estimate & File
+                          </button>
+                          {(!existingEstimate.approved || existingEstimate.approved === false) && (
+                            <button
+                              className="btn btn-danger"
+                              style={{ background: "#ef4444", color: "#fff" }}
+                              type="button"
+                              onClick={handleDeleteEstimate}
+                              disabled={submitting}
+                            >
+                              {submitting ? "Deleting..." : "Delete Estimate"}
+                            </button>
+                          )}
+                        </div>
+
+                        <button
+                          className="btn btn-ghost btn-full"
+                          style={{ marginTop: 8 }}
+                          onClick={goToDetails}
+                        >
+                          {embedded ? "Close Estimate" : "View Full Task Details"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </>
@@ -450,13 +625,14 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
                     <div className="form-field">
                       <label className="form-label" htmlFor="cost-input">
                         <Icon type="money" />
-                        Estimated Cost (₹) *
+                        Estimated Cost (₹) * (Max ₹50,000)
                       </label>
 
                       <input
                         id="cost-input"
                         type="number"
                         min="0.01"
+                        max={MAX_ESTIMATE_COST}
                         step="0.01"
                         className="form-input"
                         placeholder="e.g., 4500"
@@ -498,7 +674,7 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
 
                     <div className="form-field">
                       <label className="form-label">
-                        Upload Estimate Document *
+                        Upload Estimate Document * (Mandatory)
                       </label>
 
                       <div

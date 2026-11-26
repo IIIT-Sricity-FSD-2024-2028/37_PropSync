@@ -1,7 +1,16 @@
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+import { existsSync } from 'fs';
+import { join } from 'path';
+
+const backendRoot = existsSync(join(process.cwd(), 'backend'))
+  ? join(process.cwd(), 'backend')
+  : process.cwd();
 
 export const appConfig = {
   port: Number(process.env.PORT) || 3000,
+  backendRoot,
+  uploadsPath: join(backendRoot, 'uploads'),
+  logsPath: join(backendRoot, 'logs'),
 };
 
 export const corsConfig: CorsOptions = {

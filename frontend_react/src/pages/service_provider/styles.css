@@ -844,6 +844,15 @@ tr.clickable:hover { background: #F9FAFB; }
   padding: 16px;
   text-align: center;
 }
+.modal-accepted.rejected {
+  background: #fef2f2;
+  border: 2px solid #dc2626;
+  color: #dc2626;
+}
+.modal-accepted.rejected p {
+  color: #dc2626;
+  font-weight: 700;
+}
 .modal-accepted p.main { color: var(--accent); font-weight: 700; margin-bottom: 4px; }
 .modal-accepted p.sub  { font-size: 0.85rem; color: var(--muted-foreground); }
 
@@ -885,6 +894,7 @@ tr.clickable:hover { background: #F9FAFB; }
 }
 .colored-card-header.dark   { background: var(--foreground); }
 .colored-card-header.green  { background: #16A34A; }
+.colored-card-header.red    { background: #dc2626; }
 
 /* Progress Tracker */
 .progress-tracker { padding: 8px 0; }
@@ -970,6 +980,8 @@ tr.clickable:hover { background: #F9FAFB; }
 .alert-box svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; fill: none; flex-shrink: 0; margin-top: 1px; }
 .alert-box.green { background: #f0fdf4; border: 1px solid var(--accent); }
 .alert-box.green svg { color: var(--accent); }
+.alert-box.red { background: #fef2f2; border: 1px solid #ef4444; }
+.alert-box.red svg { color: #ef4444; }
 .alert-box.yellow { background: #fffbeb; border: 1px solid #F59E0B; }
 .alert-box.yellow svg { color: #F59E0B; }
 .alert-box p.alert-title { font-size: 0.88rem; font-weight: 700; color: var(--foreground); margin-bottom: 4px; }

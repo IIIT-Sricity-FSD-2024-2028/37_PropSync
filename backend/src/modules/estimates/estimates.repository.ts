@@ -81,8 +81,8 @@ export class EstimatesRepository {
     return [...this.estimates];
   }
 
-  findById(id: number): ServiceEstimate | undefined {
-    return this.estimates.find((estimate) => estimate.id === id);
+  findById(id: number | string): ServiceEstimate | undefined {
+    return this.estimates.find((estimate) => Number(estimate.id) === Number(id));
   }
 
   create(estimate: Omit<ServiceEstimate, 'id'>): ServiceEstimate {
@@ -91,8 +91,15 @@ export class EstimatesRepository {
     return newEstimate;
   }
 
-  remove(id: number): boolean {
-    const index = this.estimates.findIndex((estimate) => estimate.id === id);
+  update(id: number | string, partial: Partial<ServiceEstimate>): ServiceEstimate | undefined {
+    const estimate = this.findById(id);
+    if (!estimate) return undefined;
+    Object.assign(estimate, partial);
+    return estimate;
+  }
+
+  remove(id: number | string): boolean {
+    const index = this.estimates.findIndex((estimate) => Number(estimate.id) === Number(id));
     if (index === -1) return false;
     this.estimates.splice(index, 1);
     return true;

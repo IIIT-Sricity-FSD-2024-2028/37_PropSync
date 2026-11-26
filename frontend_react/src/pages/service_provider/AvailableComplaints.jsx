@@ -1,8 +1,13 @@
 
 import { useCallback, useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 import "./styles.css";
 import EstimateForm from "../../components/service_provider/EstimateForm";
 import { estimateStatus } from "../../services/estimateWorkflow";
+import {
+  setEstimates as setEstimatesAction,
+  deleteEstimate as deleteEstimateAction,
+} from "../../redux/features/estimates/estimatesSlice";
 
 import { API_BASE_URL as API } from "../../services/api";
 import PageHeader from "../../components/service_provider/PageHeader";
@@ -117,6 +122,7 @@ function Icon({ type }) {
 }
 
 function AvailableComplaints() {
+  const dispatch = useDispatch();
   const providerId = getProviderId();
 
   const [complaints, setComplaints] = useState([]);
@@ -172,6 +178,7 @@ function AvailableComplaints() {
       });
       if (!estimatesResponse.ok) throw new Error("Could not load submitted estimates. Please retry.");
       const estimates = await estimatesResponse.json();
+      dispatch(setEstimatesAction(estimates));
       setApplications(estimates.map(estimate => ({ estimate, complaint: data.find(c => c.id === estimate.complaintId) })).filter(a => a.complaint));
     } catch (err) {
       console.error("Failed to fetch complaints:", err);
@@ -466,11 +473,17 @@ function AvailableComplaints() {
           {applications.length > 0 && <section className="card" style={{ marginTop: 24 }}>
             <div className="card-body">
               <h2>My Submitted Estimates</h2>
-              {applications.map(({ estimate, complaint }) => <div className="estimate-notes" key={estimate.id}>
-                <p><strong>C-{complaint.id}: {complaint.title}</strong> · ₹{Number(estimate.estimatedCost).toLocaleString("en-IN")}</p>
-                <p>{estimateStatus(estimate)}</p>
-                <button className="btn btn-ghost" onClick={() => { openComplaint(complaint); setEstimateOpen(true); }}>View Submitted Estimate</button>
-              </div>)}
+              {applications.map(({ estimate, complaint }) => (
+                <div
+                  className="estimate-notes"
+                  key={estimate.id}
+                  style={estimate.approved === false ? { borderLeft: "4px solid #dc2626" } : undefined}
+                >
+                  <p><strong>C-{complaint.id}: {complaint.title}</strong> · ₹{Number(estimate.estimatedCost).toLocaleString("en-IN")}</p>
+                  <p style={estimate.approved === false ? { color: "#dc2626", fontWeight: 600 } : undefined}>{estimateStatus(estimate)}</p>
+                  <button className="btn btn-ghost" onClick={() => { openComplaint(complaint); setEstimateOpen(true); }}>View Submitted Estimate</button>
+                </div>
+              ))}
             </div>
           </section>}
 
@@ -594,7 +607,7 @@ function AvailableComplaints() {
 
                       <div className="modal-action-area">
                         {selectedComplaint.assignedProviderId || applications.some(a => a.estimate.complaintId === selectedComplaint.id && a.estimate.approved === false) ? (
-                          <div className="modal-accepted">
+                          <div className={`modal-accepted ${applications.some(a => a.estimate.complaintId === selectedComplaint.id && a.estimate.approved === false) ? "rejected" : ""}`}>
                             <p>{estimateStatus(applications.find(a => a.estimate.complaintId === selectedComplaint.id)?.estimate || {})}</p>
                             <button className="btn btn-ghost" onClick={() => setEstimateOpen(true)}>View Submitted Estimate</button>
                           </div>
@@ -695,6 +708,12 @@ function AvailableComplaints() {
                     onSubmitted={() => {
                       loadComplaints();
                       setSelectedComplaint(current => ({ ...current, interestedProviders: [...new Set([...(current.interestedProviders || []), providerId])] }));
+                    }}
+                    onDeleted={async (deletedId) => {
+                      dispatch(deleteEstimateAction(deletedId));
+                      setApplications(prev => prev.filter(a => Number(a.estimate.id) !== Number(deletedId)));
+                      setEstimateOpen(false);
+                      await loadComplaints();
                     }} />}
                 </div>
               </section>

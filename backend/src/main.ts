@@ -22,7 +22,7 @@ async function bootstrap() {
   );
 
   app.use('/uploads/estimates', (_req, res) => { res.sendStatus(404); });
-  app.use('/uploads', express.static(join(process.cwd(), 'uploads')));
+  app.use('/uploads', express.static(appConfig.uploadsPath));
 
   app.enableCors(corsConfig);
   app.useGlobalPipes(validationPipe);

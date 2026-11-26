@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import { appConfig } from '../../config/app.config';
 
 @Injectable()
 export class LoggingMiddleware implements NestMiddleware {
@@ -23,7 +24,7 @@ export class LoggingMiddleware implements NestMiddleware {
         `role=${role} | status=${statusCode} | ` +
         `${responseTime}ms | ip=${ip}\n`;
 
-      const logsDirectory = path.join(process.cwd(), 'logs');
+      const logsDirectory = appConfig.logsPath;
       const logFile = path.join(logsDirectory, 'app.log');
 
       if (!fs.existsSync(logsDirectory)) {

@@ -8,6 +8,7 @@ import {
 import { Request, Response } from 'express';
 import * as fs from 'fs';
 import * as path from 'path';
+import { appConfig } from '../../config/app.config';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -56,7 +57,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       `role=${role} | status=${status} | ` +
       `ip=${ip} | error=${message}\n`;
 
-    const logsDirectory = path.join(process.cwd(), 'logs');
+    const logsDirectory = appConfig.logsPath;
     const errorLogFile = path.join(logsDirectory, 'error.log');
 
     if (!fs.existsSync(logsDirectory)) {
