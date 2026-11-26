@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
-import { useDispatch, useSelector, useStore } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import ConfirmModal from "../shared/ConfirmModal";
@@ -10,11 +10,10 @@ import MaintenancePaymentsTable from "./components/MaintenancePaymentsTable";
 import { MM_PATHS } from "../shared/paths";
 import { getCurrentManager, getManagerId } from "../../../services/managerService";
 import {
-  createMaintenanceCharges, fetchMaintenance, markMaintenancePaid, removeMaintenance, settleMaintenanceFees,
-} from "../../../services/maintenanceService";
-import { selectMaintenance, selectMaintenanceRequest } from "../../../redux/features/maintenance/maintenanceSlice";
-import { notifyMonthlyMaintenanceSubmitted } from "../../../redux/features/notifications/notificationsSlice";
-import { createNotification } from "../../../services/notificationService";
+  createMaintenanceCharges, fetchMaintenance, markMaintenancePaid, removeMaintenance, selectMaintenance,
+  selectMaintenanceRequest, settleMaintenanceFees,
+} from "../../../redux/features/maintenance/maintenanceSlice";
+import { createNotification } from "../../../redux/features/notifications/notificationsSlice";
 
 const fee = (p) => Number(p.platformFee) || Number(p.amount || 0) * 0.05;
 
@@ -22,7 +21,6 @@ const fee = (p) => Number(p.platformFee) || Number(p.amount || 0) * 0.05;
 export default function Maintenance() {
   const dispatch = useDispatch();
   const showToast = useToast();
-  const { getState } = useStore();
   const managerId = getManagerId();
   const session = { role: "maintenance_manager", id: managerId };
   const payments = useSelector((state) => selectMaintenance(state, session));
@@ -31,12 +29,11 @@ export default function Maintenance() {
   const [toDelete, setToDelete] = useState(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetchMaintenance({ dispatch, getState }, {
-      session: { role: "maintenance_manager", id: managerId }, signal: controller.signal,
-    }).catch(() => { /* Redux exposes the request error. */ });
-    return () => controller.abort();
-  }, [dispatch, getState, managerId]);
+    const request = dispatch(fetchMaintenance({
+      session: { role: "maintenance_manager", id: managerId }
+    }));
+    return () => request.abort();
+  }, [dispatch, managerId]);
 
   // same rules as updateMaintenanceStats() in the HTML page
   const stats = useMemo(() => {
@@ -56,18 +53,18 @@ export default function Maintenance() {
 
   const createCharges = async (month, amount) => {
     try {
-      const res = await createMaintenanceCharges(month, amount);
-      dispatch(notifyMonthlyMaintenanceSubmitted({
-        month,
-        amount,
-        ownerIds: [1],
+      // CREATE: backend first; the slice re-reads the list on success
+      const res = await dispatch(createMaintenanceCharges({ session, month, amount })).unwrap();
+      // tell owners (saved by the backend, then added to Redux)
+      dispatch(createNotification({
+        data: {
+          userId: 1,
+          message: `Monthly maintenance fee of ₹${Number(amount || 0).toLocaleString("en-IN")} for ${month} has been published. Please check Payment History in your Owner Dashboard.`,
+          type: "payment_due",
+          recipient: "owner",
+        },
+        sender: session,
       }));
-      createNotification({
-        userId: 1,
-        message: `Monthly maintenance fee of ₹${Number(amount || 0).toLocaleString("en-IN")} for ${month} has been published. Please check Payment History in your Owner Dashboard.`,
-        type: "payment_due",
-        recipient: "owner",
-      }, "maintenance_manager").catch(() => {});
 
       const block = getCurrentManager().block;
       showToast(block ? `Maintenance charges created successfully for Block ${block} owners` : "Maintenance charges created successfully for block owners.");
@@ -90,12 +87,12 @@ export default function Maintenance() {
     <ManagerLayout backTo={MM_PATHS.dashboard} backLabel="Back to Dashboard">
       <PageHeader title="Maintenance Payments" subtitle="Create monthly charges and track owner maintenance payment status." />
       <MaintenanceChargeForm onSubmit={createCharges} />
-      <MaintenanceStats stats={stats} onPayFee={() => run(() => settleMaintenanceFees({ dispatch, getState }, { session }), "Platform fee remitted to platform successfully.")} />
+      <MaintenanceStats stats={stats} onPayFee={() => run(() => dispatch(settleMaintenanceFees({ session })).unwrap(), "Platform fee remitted to platform successfully.")} />
       <MaintenancePaymentsTable
         payments={payments}
         loading={loading}
         error={list.error}
-        onMarkPaid={(id) => run(() => markMaintenancePaid({ dispatch, getState }, { session, id }), "Payment marked as paid.")}
+        onMarkPaid={(id) => run(() => dispatch(markMaintenancePaid({ session, id })).unwrap(), "Payment marked as paid.")}
         onDelete={setToDelete}
       />
       <ConfirmModal
@@ -109,7 +106,7 @@ export default function Maintenance() {
         onConfirm={() => {
           const id = toDelete;
           setToDelete(null);
-          run(() => removeMaintenance({ dispatch, getState }, { session, id }), "Maintenance payment deleted.");
+          run(() => dispatch(removeMaintenance({ session, id })).unwrap(), "Maintenance payment deleted.");
         }}
       />
     </ManagerLayout>

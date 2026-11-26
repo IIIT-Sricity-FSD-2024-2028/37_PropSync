@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector, useStore } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
-import { selectMaintenance, selectMaintenanceRequest, selectMaintenanceSummary } from '../../redux/features/maintenance/maintenanceSlice';
-import { fetchMaintenance, fetchMaintenanceSummary, getOwnerMaintenanceSession, submitMaintenanceTransaction } from '../../services/maintenanceService';
-import { createNotification } from '../../services/notificationService';
-import { notifyOwnerPaymentCompleted } from '../../redux/features/notifications/notificationsSlice';
+import {
+  fetchMaintenance, fetchMaintenanceSummary, getOwnerMaintenanceSession, selectMaintenance,
+  selectMaintenanceRequest, selectMaintenanceSummary, submitMaintenanceTransaction,
+} from '../../redux/features/maintenance/maintenanceSlice';
+import { createNotification } from '../../redux/features/notifications/notificationsSlice';
 import OwnerLayout from './components/OwnerLayout';
 import './owner.css';
 
@@ -14,7 +15,6 @@ export default function PaymentHistory() {
   const { currentUser } = useAuth();
   const { ownerProfile, refreshNotifications } = useOwner();
 
-  const { getState } = useStore();
   const { role, id } = getOwnerMaintenanceSession(currentUser);
   const session = { role, id };
   const payments = useSelector((state) => selectMaintenance(state, session));
@@ -43,14 +43,14 @@ export default function PaymentHistory() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
-    const options = { session: { role, id }, signal: controller.signal };
-    Promise.all([
-      fetchMaintenance({ dispatch, getState }, options),
-      fetchMaintenanceSummary({ dispatch, getState }, options),
-    ]).catch(() => { /* Redux exposes the request errors. */ });
-    return () => controller.abort();
-  }, [dispatch, getState, role, id]);
+    // READ: backend -> Redux (list + summary)
+    const list = dispatch(fetchMaintenance({ session: { role, id } }));
+    const totals = dispatch(fetchMaintenanceSummary({ session: { role, id } }));
+    return () => {
+      list.abort();
+      totals.abort();
+    };
+  }, [dispatch, role, id]);
 
   // Derived progress overview
   const totalPaid = payments
@@ -105,28 +105,25 @@ export default function PaymentHistory() {
     setNotifying(true);
 
     try {
-      await submitMaintenanceTransaction({ dispatch, getState }, {
+      // UPDATE: backend first; the slice stores the updated payment on success
+      await dispatch(submitMaintenanceTransaction({
         session, id: activePayment.id, transactionId: cleanId,
-      });
+      })).unwrap();
 
       // Notify Maintenance Manager
       const managerId = activePayment.managerId || 5;
       const unit = userUnit || 'A-101';
-      dispatch(notifyOwnerPaymentCompleted({
-        ownerId: currentUser?.id || 1,
-        unit,
-        month: activePayment.month,
-        amount: activePayment.amount,
-        transactionId: cleanId,
-        managerId: Number(managerId),
-      }));
       try {
-        await createNotification({
-          userId: Number(managerId),
-          message: `Owner of Unit ${unit} submitted payment proof (${cleanId}) for ${activePayment.month} (₹${Number(activePayment.amount || 0).toLocaleString('en-IN')}).`,
-          type: 'custom',
-          recipient: 'maintenance_manager'
-        }, 'maintenance_manager');
+        // CREATE notification: saved by the backend, then added to Redux
+        await dispatch(createNotification({
+          data: {
+            userId: Number(managerId),
+            message: `Owner of Unit ${unit} submitted payment proof (${cleanId}) for ${activePayment.month} (₹${Number(activePayment.amount || 0).toLocaleString('en-IN')}).`,
+            type: 'custom',
+            recipient: 'maintenance_manager',
+          },
+          sender: { role: 'maintenance_manager', id: currentUser?.id ?? 5 },
+        })).unwrap();
       } catch (notifErr) {
         console.warn('Could not notify manager of transaction proof:', notifErr);
       }

@@ -4,15 +4,9 @@ import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
 import {
   markNotificationAsRead,
-  markAllNotificationsRead,
   deleteNotification,
-  clearAllNotifications
-} from '../../services/notificationService';
-import {
-  markNotificationAsRead as markNotificationAsReadAction,
-  deleteNotification as deleteNotificationAction,
-  markAllNotificationsAsRead as markAllNotificationsAsReadAction,
-  clearAllNotifications as clearAllNotificationsAction,
+  markAllNotificationsAsRead,
+  clearAllNotifications,
   extractComplaintId,
   isComplaintRejected,
   isEstimateRejected,
@@ -55,45 +49,21 @@ export default function Alerts() {
 
   const unreadCount = uniqueNotifications.filter((n) => n.status === 'unread').length;
 
-  const handleMarkAsRead = async (id) => {
-    dispatch(markNotificationAsReadAction(id));
+  // Every action: backend first, the thunk updates Redux on success
+  const viewer = { role: currentUser?.role || 'owner', id: currentUser?.id };
+  const run = async (thunkAction) => {
     try {
-      await markNotificationAsRead(id, currentUser);
-      refreshNotifications();
+      await dispatch(thunkAction).unwrap();
     } catch (err) {
       console.error(err);
+      refreshNotifications(); // show the real state from the backend
     }
   };
 
-  const handleDelete = async (id) => {
-    dispatch(deleteNotificationAction(id));
-    try {
-      await deleteNotification(id, currentUser);
-      refreshNotifications();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleMarkAllRead = async () => {
-    dispatch(markAllNotificationsAsReadAction({ userId: currentUser?.id }));
-    try {
-      await markAllNotificationsRead(currentUser);
-      refreshNotifications();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleClearAll = async () => {
-    dispatch(clearAllNotificationsAction({ userId: currentUser?.id }));
-    try {
-      await clearAllNotifications(currentUser);
-      refreshNotifications();
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  const handleMarkAsRead = (id) => run(markNotificationAsRead({ id, viewer }));
+  const handleDelete = (id) => run(deleteNotification({ id, viewer }));
+  const handleMarkAllRead = () => run(markAllNotificationsAsRead({ viewer }));
+  const handleClearAll = () => run(clearAllNotifications({ viewer }));
 
   const filteredNotifications = uniqueNotifications.filter((n) => {
     if (statusFilter === 'unread' && n.status !== 'unread') return false;
