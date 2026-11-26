@@ -1,11 +1,8 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { approveComplaint, rejectComplaint, fetchProviders } from "../../../services/managerService";
-import {
-  notifyComplaintApproved,
-  notifyComplaintRejected,
-} from "../../../redux/features/notifications/notificationsSlice";
-import { createNotification } from "../../../services/notificationService";
+import { updateComplaintStatus } from "../../../redux/features/complaints/complaintsSlice";
+import { createNotification } from "../../../redux/features/notifications/notificationsSlice";
+import { getManagerViewer, useServiceProviders } from "./useManagerData";
 import DeadlineModal from "./DeadlineModal";
 import RejectModal from "./RejectModal";
 import { useToast } from "./Toast";
@@ -24,6 +21,7 @@ export default function useComplaintActions(onDone) {
   const [approveId, setApproveId] = useState(null);
   const [rejectId, setRejectId] = useState(null);
   const [openCount, setOpenCount] = useState(0); // new key each time → fresh modal
+  const { providers } = useServiceProviders(); // from the Redux users slice
 
   const askApprove = (id) => {
     setOpenCount((n) => n + 1);
@@ -34,43 +32,43 @@ export default function useComplaintActions(onDone) {
     setRejectId(id);
   };
 
+  // UPDATE: backend first; the complaints slice stores the updated complaint
   const doApprove = async (deadline) => {
     const id = approveId;
+    const viewer = getManagerViewer();
     try {
-      await approveComplaint(id, deadline);
+      await dispatch(
+        updateComplaintStatus({
+          viewer,
+          id,
+          body: { status: "approved", deadline },
+        }),
+      ).unwrap();
 
-      // Notify all registered service providers that a complaint was approved and is open for estimates
-      let providerIds = [9, 10];
-      try {
-        const allProviders = await fetchProviders();
-        if (Array.isArray(allProviders) && allProviders.length > 0) {
-          const ids = allProviders.map((p) => Number(p.id)).filter(Boolean);
-          if (ids.length > 0) providerIds = [...new Set([...providerIds, ...ids])];
-        }
-      } catch {
-        // Fallback to default providers [9, 10]
-      }
-
+      // Notify all registered service providers that the complaint is open for estimates
+      const providerIds = [
+        ...new Set([
+          9,
+          10,
+          ...providers.map((p) => Number(p.id)).filter(Boolean),
+        ]),
+      ];
       await Promise.allSettled(
         providerIds.map((pId) =>
-          createNotification(
-            {
-              userId: pId,
-              complaintId: Number(id),
-              message: `Complaint #${id} was approved by Maintenance Manager. You may submit an estimate.`,
-              type: "complaint_approved",
-              recipient: "service_provider",
-            },
-            "maintenance_manager"
-          )
-        )
+          dispatch(
+            createNotification({
+              data: {
+                userId: pId,
+                complaintId: Number(id),
+                message: `Complaint #${id} was approved by Maintenance Manager. You may submit an estimate.`,
+                type: "complaint_approved",
+                recipient: "service_provider",
+              },
+              sender: viewer,
+            }),
+          ).unwrap(),
+        ),
       );
-
-      dispatch(notifyComplaintApproved({
-        complaintId: id,
-        title: `Complaint #${id}`,
-        providerIds,
-      }));
 
       showToast(`Complaint ${id} approved and moved to Approved Complaints.`);
       setApproveId(null);
@@ -83,15 +81,14 @@ export default function useComplaintActions(onDone) {
   const doReject = async (reason) => {
     const id = rejectId;
     try {
-      // Backend rejectComplaint already notifies the owner directly (avoiding duplicate notifications)
-      await rejectComplaint(id, reason);
-
-      dispatch(notifyComplaintRejected({
-        complaintId: id,
-        title: `Complaint #${id}`,
-        ownerId: 1,
-        reason,
-      }));
+      // The backend notifies the owner when a complaint is rejected
+      await dispatch(
+        updateComplaintStatus({
+          viewer: getManagerViewer(),
+          id,
+          body: { status: "rejected", rejectionReason: reason },
+        }),
+      ).unwrap();
 
       showToast(`Complaint ${id} rejected. Reason sent to resident.`);
       setRejectId(null);
@@ -103,8 +100,20 @@ export default function useComplaintActions(onDone) {
 
   const modals = (
     <>
-      <DeadlineModal key={`a${openCount}`} open={approveId !== null} targetId={approveId} onClose={() => setApproveId(null)} onSubmit={doApprove} />
-      <RejectModal key={`r${openCount}`} open={rejectId !== null} targetId={rejectId} onClose={() => setRejectId(null)} onSubmit={doReject} />
+      <DeadlineModal
+        key={`a${openCount}`}
+        open={approveId !== null}
+        targetId={approveId}
+        onClose={() => setApproveId(null)}
+        onSubmit={doApprove}
+      />
+      <RejectModal
+        key={`r${openCount}`}
+        open={rejectId !== null}
+        targetId={rejectId}
+        onClose={() => setRejectId(null)}
+        onSubmit={doReject}
+      />
     </>
   );
 

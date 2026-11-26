@@ -1,44 +1,55 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useDispatch, useSelector, useStore } from 'react-redux';
-import { selectMaintenance } from '../../redux/features/maintenance/maintenanceSlice';
-import { fetchMaintenance, getOwnerMaintenanceSession } from '../../services/maintenanceService';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useOwner } from '../../context/OwnerContext';
+import React, { useState, useEffect, useCallback } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import {
-  cancelComplaintNotifications,
+  fetchMaintenance,
+  getOwnerMaintenanceSession,
+  selectMaintenance,
+} from "../../redux/features/maintenance/maintenanceSlice";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { useOwner } from "../../context/OwnerContext";
+import {
   extractComplaintId,
   isComplaintRejected,
   isEstimateRejected,
-} from '../../redux/features/notifications/notificationsSlice';
-import { API_BASE_URL } from '../../services/api';
-import OwnerLayout from './components/OwnerLayout';
-import './owner.css';
+} from "../../redux/features/notifications/notificationsSlice";
+import { API_BASE_URL } from "../../services/api";
+import OwnerLayout from "./components/OwnerLayout";
+import "./owner.css";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { currentUser } = useAuth();
-  const { complaints, notifications, ownerProfile, refreshComplaints, refreshNotifications, removeComplaint } = useOwner();
+  const {
+    complaints,
+    notifications,
+    ownerProfile,
+    refreshComplaints,
+    refreshNotifications,
+    removeComplaint,
+  } = useOwner();
 
-  const { getState } = useStore();
   const { role, id } = getOwnerMaintenanceSession(currentUser);
-  const payments = useSelector((state) => selectMaintenance(state, { role, id }));
-  const refreshPayments = useCallback((signal) => fetchMaintenance({ dispatch, getState }, {
-    session: { role, id }, signal,
-  }).catch(() => { /* The payment history page displays the request error. */ }), [dispatch, getState, role, id]);
+  const payments = useSelector((state) =>
+    selectMaintenance(state, { role, id }),
+  );
+  // READ: backend -> Redux (the payment history page shows request errors)
+  const refreshPayments = useCallback(
+    () => dispatch(fetchMaintenance({ session: { role, id } })),
+    [dispatch, role, id],
+  );
 
   useEffect(() => {
-    const controller = new AbortController();
-    refreshPayments(controller.signal);
-    return () => controller.abort();
+    const request = refreshPayments();
+    return () => request.abort();
   }, [refreshPayments]);
 
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('All Status');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
 
   useEffect(() => {
-    document.title = 'PropSync';
+    document.title = "PropSync";
   }, []);
 
   // 15s polling for complaints, notifications, and payments
@@ -52,59 +63,90 @@ export default function Dashboard() {
   }, [refreshComplaints, refreshNotifications, refreshPayments]);
 
   const normalizeStatus = (status) => {
-    return String(status || 'pending').toLowerCase().replace(/_/g, ' ');
+    return String(status || "pending")
+      .toLowerCase()
+      .replace(/_/g, " ");
   };
 
   const displayStatus = (status) => {
     const normalized = normalizeStatus(status);
     const map = {
-      pending: 'Pending',
-      approved: 'Approved',
-      rejected: 'Rejected',
-      assigned: 'Assigned',
-      'estimating cost': 'Estimating Cost',
-      'in progress': 'In Progress',
-      completed: 'Completed',
-      billed: 'Billed',
-      paid: 'Paid',
-      closed: 'Closed',
-      'payment pending': 'Payment Pending',
-      resolved: 'Resolved',
+      pending: "Pending",
+      approved: "Approved",
+      rejected: "Rejected",
+      assigned: "Assigned",
+      "estimating cost": "Estimating Cost",
+      "in progress": "In Progress",
+      completed: "Completed",
+      billed: "Billed",
+      paid: "Paid",
+      closed: "Closed",
+      "payment pending": "Payment Pending",
+      resolved: "Resolved",
     };
-    return map[normalized] || status || 'Pending';
+    return map[normalized] || status || "Pending";
   };
 
   // Stats calculation
   const totalCount = complaints.length;
   const approvedCount = complaints.filter((c) =>
-    ['approved', 'assigned', 'estimating cost', 'in progress', 'completed', 'billed', 'paid', 'closed', 'payment pending', 'resolved'].includes(normalizeStatus(c.status))
+    [
+      "approved",
+      "assigned",
+      "estimating cost",
+      "in progress",
+      "completed",
+      "billed",
+      "paid",
+      "closed",
+      "payment pending",
+      "resolved",
+    ].includes(normalizeStatus(c.status)),
   ).length;
   const inProgressCount = complaints.filter((c) =>
-    ['assigned', 'estimating cost', 'in progress', 'completed', 'billed'].includes(normalizeStatus(c.status))
+    [
+      "assigned",
+      "estimating cost",
+      "in progress",
+      "completed",
+      "billed",
+    ].includes(normalizeStatus(c.status)),
   ).length;
   const resolvedCount = complaints.filter((c) =>
-    ['paid', 'closed', 'payment pending', 'resolved'].includes(normalizeStatus(c.status))
+    ["paid", "closed", "payment pending", "resolved"].includes(
+      normalizeStatus(c.status),
+    ),
   ).length;
 
   // Filter complaints
   const filteredComplaints = complaints.filter((c) => {
-    const matchesSearch = (c.title || '').toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = (c.title || "")
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
     const norm = normalizeStatus(c.status);
     const selected = statusFilter.toLowerCase();
     const matchesStatus =
-      selected === 'all status' ||
-      selected === '' ||
-      norm === selected;
+      selected === "all status" || selected === "" || norm === selected;
     return matchesSearch && matchesStatus;
   });
 
   const formatPaymentMonth = (monthStr) => {
-    if (!monthStr) return 'Maintenance';
-    const parts = String(monthStr).split('-');
+    if (!monthStr) return "Maintenance";
+    const parts = String(monthStr).split("-");
     if (parts.length === 2) {
       const monthNames = [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
       ];
       const mIdx = parseInt(parts[1], 10) - 1;
       if (mIdx >= 0 && mIdx < 12) {
@@ -129,8 +171,12 @@ export default function Dashboard() {
 
       const rejectKey = isRej && cId ? `reject-${cId}` : null;
       const estRejectKey = isEstRej && cId ? `est-reject-${cId}` : null;
-      const key = `${cId || n.id}-${n.type || ''}-${(n.message || '').trim().toLowerCase()}`;
-      if (seen.has(key) || (rejectKey && seen.has(rejectKey)) || (estRejectKey && seen.has(estRejectKey))) {
+      const key = `${cId || n.id}-${n.type || ""}-${(n.message || "").trim().toLowerCase()}`;
+      if (
+        seen.has(key) ||
+        (rejectKey && seen.has(rejectKey)) ||
+        (estRejectKey && seen.has(estRejectKey))
+      ) {
         continue;
       }
       seen.add(key);
@@ -142,49 +188,61 @@ export default function Dashboard() {
   }, [notifications]);
 
   // In payment history, ONLY monthly maintenance cost notifications should appear; complaint notifications must NOT be included
-  const paymentNotifs = uniqueNotifications.filter((n) => {
-    const cId = extractComplaintId(n);
-    const title = String(n?.title || '').toLowerCase();
-    const msg = String(n?.message || '').toLowerCase();
+  const paymentNotifs = uniqueNotifications
+    .filter((n) => {
+      const cId = extractComplaintId(n);
+      const title = String(n?.title || "").toLowerCase();
+      const msg = String(n?.message || "").toLowerCase();
 
-    // 1. MUST NOT be related to any complaint, service bill, estimate, or task work
-    if (
-      n.complaintId ||
-      cId ||
-      title.includes('complaint') ||
-      msg.includes('complaint') ||
-      title.includes('bill') ||
-      msg.includes('bill') ||
-      title.includes('estimate') ||
-      msg.includes('estimate') ||
-      msg.includes('service provider') ||
-      msg.includes('status updated') ||
-      title.includes('status')
-    ) {
-      return false;
-    }
+      // 1. MUST NOT be related to any complaint, service bill, estimate, or task work
+      if (
+        n.complaintId ||
+        cId ||
+        title.includes("complaint") ||
+        msg.includes("complaint") ||
+        title.includes("bill") ||
+        msg.includes("bill") ||
+        title.includes("estimate") ||
+        msg.includes("estimate") ||
+        msg.includes("service provider") ||
+        msg.includes("status updated") ||
+        title.includes("status")
+      ) {
+        return false;
+      }
 
-    // 2. MUST be explicitly a monthly maintenance cost notification
-    const isMonthlyMaintenance =
-      title.includes('monthly maintenance') ||
-      title.includes('maintenance due') ||
-      msg.includes('monthly maintenance') ||
-      msg.includes('maintenance cost') ||
-      msg.includes('maintenance fee') ||
-      (n.type === 'payment_due' && msg.includes('maintenance') && !msg.includes('complaint'));
+      // 2. MUST be explicitly a monthly maintenance cost notification
+      const isMonthlyMaintenance =
+        title.includes("monthly maintenance") ||
+        title.includes("maintenance due") ||
+        msg.includes("monthly maintenance") ||
+        msg.includes("maintenance cost") ||
+        msg.includes("maintenance fee") ||
+        (n.type === "payment_due" &&
+          msg.includes("maintenance") &&
+          !msg.includes("complaint"));
 
-    return isMonthlyMaintenance;
-  }).slice(0, 3);
+      return isMonthlyMaintenance;
+    })
+    .slice(0, 3);
 
   const recentNotifications = uniqueNotifications.slice(0, 3);
-  const unreadNotifCount = uniqueNotifications.filter((n) => n.status === 'unread').length;
+  const unreadNotifCount = uniqueNotifications.filter(
+    (n) => n.status === "unread",
+  ).length;
 
   return (
     <OwnerLayout>
       <div className="container">
-        <h1>Welcome Back, {ownerProfile?.name || currentUser?.name || 'Property Owner'}!</h1>
+        <h1>
+          Welcome Back,{" "}
+          {ownerProfile?.name || currentUser?.name || "Property Owner"}!
+        </h1>
         <p className="sub">
-          {ownerProfile?.unit || currentUser?.propertyUnit || 'A-101'} | {ownerProfile?.community || currentUser?.communityName || 'Green Valley Society'}
+          {ownerProfile?.unit || currentUser?.propertyUnit || "A-101"} |{" "}
+          {ownerProfile?.community ||
+            currentUser?.communityName ||
+            "Green Valley Society"}
         </p>
 
         {/* ===== STATS ===== */}
@@ -301,24 +359,34 @@ export default function Dashboard() {
               <h3>
                 Notifications <span className="badge">{unreadNotifCount}</span>
               </h3>
-              <Link to="/owner/alerts" className="view-all">View All →</Link>
+              <Link to="/owner/alerts" className="view-all">
+                View All →
+              </Link>
             </div>
 
             {recentNotifications.length > 0 ? (
               recentNotifications.map((n) => (
                 <div key={n.id} className="item">
-                  <div className={`icon ${n.status === 'unread' ? 'yellow' : 'green'}`}>
-                    {n.status === 'unread' ? '!' : '✓'}
+                  <div
+                    className={`icon ${n.status === "unread" ? "yellow" : "green"}`}
+                  >
+                    {n.status === "unread" ? "!" : "✓"}
                   </div>
                   <div>
-                    <p className="title">{n.title || 'Notification'}</p>
-                    <p className="desc">{n.message || 'You have a new update.'}</p>
-                    <span className="time">{n.time || n.createdAt || 'Just now'}</span>
+                    <p className="title">{n.title || "Notification"}</p>
+                    <p className="desc">
+                      {n.message || "You have a new update."}
+                    </p>
+                    <span className="time">
+                      {n.time || n.createdAt || "Just now"}
+                    </span>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="desc" style={{ padding: '16px' }}>No notifications yet.</p>
+              <p className="desc" style={{ padding: "16px" }}>
+                No notifications yet.
+              </p>
             )}
           </div>
 
@@ -326,26 +394,28 @@ export default function Dashboard() {
           <div className="box box-small">
             <div className="box-header">
               <h3>Payment History</h3>
-              <Link to="/owner/payment-history" className="view-all">View All →</Link>
+              <Link to="/owner/payment-history" className="view-all">
+                View All →
+              </Link>
             </div>
 
             {recentPayments.length > 0 ? (
               recentPayments.map((p) => {
-                const isPaid = p.status === 'paid';
-                const isSubmitted = p.status === 'payment_submitted';
+                const isPaid = p.status === "paid";
+                const isSubmitted = p.status === "payment_submitted";
 
-                let iconClass = 'yellow';
-                let iconChar = '!';
-                let desc = `Monthly Maintenance cost pending (₹${Number(p.amount || 0).toLocaleString('en-IN')})`;
+                let iconClass = "yellow";
+                let iconChar = "!";
+                let desc = `Monthly Maintenance cost pending (₹${Number(p.amount || 0).toLocaleString("en-IN")})`;
 
                 if (isPaid) {
-                  iconClass = 'green';
-                  iconChar = '✓';
-                  desc = `Successfully paid monthly maintenance cost (₹${Number(p.amount || 0).toLocaleString('en-IN')}).`;
+                  iconClass = "green";
+                  iconChar = "✓";
+                  desc = `Successfully paid monthly maintenance cost (₹${Number(p.amount || 0).toLocaleString("en-IN")}).`;
                 } else if (isSubmitted) {
-                  iconClass = 'yellow';
-                  iconChar = '!';
-                  desc = `Payment submitted for approval (₹${Number(p.amount || 0).toLocaleString('en-IN')}).`;
+                  iconClass = "yellow";
+                  iconChar = "!";
+                  desc = `Payment submitted for approval (₹${Number(p.amount || 0).toLocaleString("en-IN")}).`;
                 }
 
                 return (
@@ -360,21 +430,25 @@ export default function Dashboard() {
               })
             ) : paymentNotifs.length > 0 ? (
               paymentNotifs.map((n) => {
-                const isPaidNotif = String(n.message || '').toLowerCase().includes('paid');
+                const isPaidNotif = String(n.message || "")
+                  .toLowerCase()
+                  .includes("paid");
                 return (
                   <div key={n.id} className="item">
-                    <div className={`icon ${isPaidNotif ? 'green' : 'yellow'}`}>
-                      {isPaidNotif ? '✓' : '!'}
+                    <div className={`icon ${isPaidNotif ? "green" : "yellow"}`}>
+                      {isPaidNotif ? "✓" : "!"}
                     </div>
                     <div>
-                      <p className="title">{n.title || 'Payment Update'}</p>
+                      <p className="title">{n.title || "Payment Update"}</p>
                       <p className="desc">{n.message}</p>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <p className="desc" style={{ padding: '16px' }}>No payment history records.</p>
+              <p className="desc" style={{ padding: "16px" }}>
+                No payment history records.
+              </p>
             )}
           </div>
         </div>
@@ -385,7 +459,7 @@ export default function Dashboard() {
             <h2>Community Complaints</h2>
             <button
               className="new-complaint-btn"
-              onClick={() => navigate('/owner/new-complaint')}
+              onClick={() => navigate("/owner/new-complaint")}
             >
               + New Complaint
             </button>
@@ -418,68 +492,105 @@ export default function Dashboard() {
             {filteredComplaints.length > 0 ? (
               filteredComplaints.map((c) => {
                 const norm = normalizeStatus(c.status);
-                let statusClass = 'pending';
-                if (norm === 'approved') statusClass = 'approved';
-                else if (norm === 'rejected') statusClass = 'rejected';
-                else if (norm === 'estimating cost' || norm === 'in progress') statusClass = 'estimating';
-                else if (norm === 'assigned') statusClass = 'assigned';
-                else if (['completed', 'billed', 'paid', 'closed', 'resolved'].includes(norm)) statusClass = 'resolved';
+                let statusClass = "pending";
+                if (norm === "approved") statusClass = "approved";
+                else if (norm === "rejected") statusClass = "rejected";
+                else if (norm === "estimating cost" || norm === "in progress")
+                  statusClass = "estimating";
+                else if (norm === "assigned") statusClass = "assigned";
+                else if (
+                  [
+                    "completed",
+                    "billed",
+                    "paid",
+                    "closed",
+                    "resolved",
+                  ].includes(norm)
+                )
+                  statusClass = "resolved";
 
                 return (
                   <div
                     key={c.id}
                     className="complaint-card"
-                    style={{ cursor: 'pointer' }}
+                    style={{ cursor: "pointer" }}
                     onClick={() => navigate(`/owner/complaints/${c.id}`)}
                   >
                     {c.image && (
                       <img
                         className="complaint-thumb"
-                        src={c.image.startsWith('http') ? c.image : `${API_BASE_URL}${c.image.startsWith('/') ? '' : '/'}${c.image}`}
+                        src={
+                          c.image.startsWith("http")
+                            ? c.image
+                            : `${API_BASE_URL}${c.image.startsWith("/") ? "" : "/"}${c.image}`
+                        }
                         alt={c.title}
-                        onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        onError={(e) => {
+                          e.currentTarget.style.display = "none";
+                        }}
                       />
                     )}
                     <div className="card-left">
                       <h3>{c.title}</h3>
-                      <p className="description">{c.caption || c.description}</p>
+                      <p className="description">
+                        {c.caption || c.description}
+                      </p>
                       <div className="tag-row">
                         <span className="tag green">Id: C-{c.id}</span>
                         <span className="tag blue">Category: {c.category}</span>
                       </div>
                     </div>
-                    <div className="card-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '10px' }}>
+                    <div
+                      className="card-right"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        gap: "10px",
+                      }}
+                    >
                       <div className={`status ${statusClass}`}>
                         {displayStatus(c.status)}
                       </div>
                       {(() => {
                         const s = (c.status || "").toLowerCase();
-                        const canDelete = s === "pending" || s === "rejected" || s === "resolved" || s === "closed";
+                        const canDelete =
+                          s === "pending" ||
+                          s === "rejected" ||
+                          s === "resolved" ||
+                          s === "closed";
                         if (!canDelete) return null;
                         return (
                           <button
                             className="delete-complaint-btn"
                             type="button"
                             style={{
-                              background: '#fee2e2',
-                              color: '#dc2626',
-                              border: '1px solid #fca5a5',
-                              borderRadius: '6px',
-                              padding: '4px 10px',
-                              fontSize: '12px',
+                              background: "#fee2e2",
+                              color: "#dc2626",
+                              border: "1px solid #fca5a5",
+                              borderRadius: "6px",
+                              padding: "4px 10px",
+                              fontSize: "12px",
                               fontWeight: 600,
-                              cursor: 'pointer',
+                              cursor: "pointer",
                             }}
                             onClick={async (e) => {
                               e.stopPropagation();
-                              if (!window.confirm(`Are you sure you want to delete complaint "${c.title}"?`)) return;
+                              if (
+                                !window.confirm(
+                                  `Are you sure you want to delete complaint "${c.title}"?`,
+                                )
+                              )
+                                return;
                               try {
-                                dispatch(cancelComplaintNotifications(c.id));
+                                // backend delete first; notifications are hidden after success
                                 if (removeComplaint) {
                                   await removeComplaint(c.id);
                                 }
                               } catch (err) {
-                                alert(err.message || 'Failed to delete complaint');
+                                alert(
+                                  err.message || "Failed to delete complaint",
+                                );
                               }
                             }}
                           >
@@ -492,7 +603,9 @@ export default function Dashboard() {
                 );
               })
             ) : (
-              <p style={{ padding: '24px', color: '#6b7280' }}>No complaints found.</p>
+              <p style={{ padding: "24px", color: "#6b7280" }}>
+                No complaints found.
+              </p>
             )}
           </div>
         </div>

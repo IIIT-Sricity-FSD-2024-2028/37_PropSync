@@ -15,9 +15,25 @@ import ProviderDocumentsCard from "./components/ProviderDocumentsCard";
 import PhotoCard from "./components/PhotoCard";
 import useComplaintActions from "../shared/useComplaintActions";
 import { MM_PATHS } from "../shared/paths";
-import { fetchComplaint, fetchEstimates, fetchProviders, toApiImageUrl, deleteEstimate as deleteEstimateApi } from "../../../services/managerService";
-import { fetchBills, filterBillsByComplaint, selectAllBills } from "../../../redux/features/bills/billsSlice";
-import { deleteEstimate as deleteEstimateAction } from "../../../redux/features/estimates/estimatesSlice";
+import { toApiImageUrl } from "../../../services/managerService";
+import {
+  fetchBills,
+  filterBillsByComplaint,
+  selectAllBills,
+} from "../../../redux/features/bills/billsSlice";
+import {
+  fetchComplaintById,
+  selectComplaintById,
+} from "../../../redux/features/complaints/complaintsSlice";
+import {
+  deleteEstimate,
+  fetchEstimates,
+  selectEstimatesForComplaint,
+} from "../../../redux/features/estimates/estimatesSlice";
+import {
+  getManagerViewer,
+  useServiceProviders,
+} from "../shared/useManagerData";
 
 /* complaint-details.html?id=… */
 export default function ComplaintDetails() {
@@ -25,37 +41,55 @@ export default function ComplaintDetails() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const id = params.get("id");
-  const [c, setC] = useState(null);
-  const [estimates, setEstimates] = useState([]);
-  const allBills = useSelector(selectAllBills); // bills come from the Redux store
-  const bills = useMemo(() => filterBillsByComplaint(allBills, id), [allBills, id]);
-  const [providers, setProviders] = useState([]);
+  // complaint, estimates, bills and providers all come from the Redux store
+  const c = useSelector((state) => selectComplaintById(state, id)) || null;
+  const estimates = useSelector((state) =>
+    selectEstimatesForComplaint(state, id),
+  );
+  const allBills = useSelector(selectAllBills);
+  const bills = useMemo(
+    () => filterBillsByComplaint(allBills, id),
+    [allBills, id],
+  );
+  const { providers } = useServiceProviders();
   const [error, setError] = useState("");
 
+  // DELETE: the estimate leaves Redux only after the backend deletes it
   const handleDeleteEstimate = async (estimateId) => {
-    if (!window.confirm(`Are you sure you want to delete estimate #${estimateId}?`)) return;
+    if (
+      !window.confirm(
+        `Are you sure you want to delete estimate #${estimateId}?`,
+      )
+    )
+      return;
     try {
-      await deleteEstimateApi(estimateId);
-      dispatch(deleteEstimateAction(estimateId));
-      await load();
-    } catch {
-      dispatch(deleteEstimateAction(estimateId));
-      await load();
+      await dispatch(
+        deleteEstimate({ viewer: getManagerViewer(), id: estimateId }),
+      ).unwrap();
+    } catch (e) {
+      window.alert(
+        `Could not delete estimate #${estimateId}: ${e.message || "Unknown error"}`,
+      );
     }
+    await load();
   };
 
+  // READ: backend -> Redux
   const load = useCallback(async () => {
     if (!id) return setError("No complaint ID provided.");
+    const viewer = getManagerViewer();
     try {
-      const [complaint, estimates] = await Promise.all([fetchComplaint(id), fetchEstimates(id)]);
-      setC(complaint);
-      setEstimates(estimates);
+      await Promise.all([
+        dispatch(fetchComplaintById({ viewer, id })).unwrap(),
+        dispatch(fetchEstimates({ viewer, complaintId: id })).unwrap(),
+      ]);
       setError("");
     } catch {
-      return setError(`Could not load complaint #${id}. Make sure the backend is running.`);
+      return setError(
+        `Could not load complaint #${id}. Make sure the backend is running.`,
+      );
     }
     dispatch(fetchBills({ complaintId: id }));
-    fetchProviders().then(setProviders).catch(() => {});
   }, [id, dispatch]);
 
   useEffect(() => {
@@ -64,24 +98,47 @@ export default function ComplaintDetails() {
   }, [load]);
 
   // after approve / reject go back to the list (same as the HTML page)
-  const { askApprove, askReject, modals } = useComplaintActions(() => setTimeout(() => navigate(MM_PATHS.complaints), 1200));
+  const { askApprove, askReject, modals } = useComplaintActions(() =>
+    setTimeout(() => navigate(MM_PATHS.complaints), 1200),
+  );
 
   if (error || !c) {
     return (
-      <ManagerLayout backTo={MM_PATHS.complaints} backLabel="Back to Complaints">
-        <p style={{ padding: 24, color: error ? "red" : "#6B7280" }}>{error || "Loading..."}</p>
+      <ManagerLayout
+        backTo={MM_PATHS.complaints}
+        backLabel="Back to Complaints"
+      >
+        <p style={{ padding: 24, color: error ? "red" : "#6B7280" }}>
+          {error || "Loading..."}
+        </p>
       </ManagerLayout>
     );
   }
 
-  const provider = providers.find((p) => Number(p.id) === Number(c.assignedProviderId));
-  const providerName = c.assignedProviderId ? provider?.name || `Provider #${c.assignedProviderId}` : "";
-  const latestEstimate = estimates.find(e => e.providerId === c.assignedProviderId && e.approved === true) || estimates.find(e => e.providerId === c.assignedProviderId);
+  const provider = providers.find(
+    (p) => Number(p.id) === Number(c.assignedProviderId),
+  );
+  const providerName = c.assignedProviderId
+    ? provider?.name || `Provider #${c.assignedProviderId}`
+    : "";
+  const latestEstimate =
+    estimates.find(
+      (e) => e.providerId === c.assignedProviderId && e.approved === true,
+    ) || estimates.find((e) => e.providerId === c.assignedProviderId);
 
   return (
     <ManagerLayout backTo={MM_PATHS.complaints} backLabel="Back to Complaints">
-      <PageHeader title="Complaint Details" subtitle="Review the complaint, its progress and the provider's documents." />
-      <ComplaintStepper status={c.status} applicationWorkflow={estimates.some(e => e.selectionStatus)} hasApplications={estimates.some(e => e.selectionStatus === "candidate")} />
+      <PageHeader
+        title="Complaint Details"
+        subtitle="Review the complaint, its progress and the provider's documents."
+      />
+      <ComplaintStepper
+        status={c.status}
+        applicationWorkflow={estimates.some((e) => e.selectionStatus)}
+        hasApplications={estimates.some(
+          (e) => e.selectionStatus === "candidate",
+        )}
+      />
       <div className="two-col-grid" style={{ alignItems: "start" }}>
         <div>
           <ComplaintInfoCard
@@ -93,7 +150,12 @@ export default function ComplaintDetails() {
             onAssign={() => navigate(MM_PATHS.assignProvider(c.id))}
           />
           <div style={{ height: 24 }} />
-          <WorkProgressCard status={c.status} submittedAt={c.submittedAt} deadline={c.deadline} providerName={providerName} />
+          <WorkProgressCard
+            status={c.status}
+            submittedAt={c.submittedAt}
+            deadline={c.deadline}
+            providerName={providerName}
+          />
           <TimelineCard complaint={c} providerName={providerName} />
           <DescriptionCard description={c.description} />
           <ProviderDocumentsCard estimate={latestEstimate} bills={bills} />
@@ -101,10 +163,22 @@ export default function ComplaintDetails() {
         </div>
         <LifecycleCard status={c.status} submittedAt={c.submittedAt} />
       </div>
-      {c.status === "approved" ? <ProviderSelection complaintId={id} onUpdated={load} /> : estimates.map(e =>
-        <PendingEstimateCard key={e.id} estimate={e} issue={c.title}
-          provider={providers.find(p => p.id === e.providerId)?.name || `Provider #${e.providerId}`}
-          onDelete={() => handleDeleteEstimate(e.id)} />)}
+      {c.status === "approved" ? (
+        <ProviderSelection complaintId={id} onUpdated={load} />
+      ) : (
+        estimates.map((e) => (
+          <PendingEstimateCard
+            key={e.id}
+            estimate={e}
+            issue={c.title}
+            provider={
+              providers.find((p) => p.id === e.providerId)?.name ||
+              `Provider #${e.providerId}`
+            }
+            onDelete={() => handleDeleteEstimate(e.id)}
+          />
+        ))
+      )}
       {modals}
     </ManagerLayout>
   );

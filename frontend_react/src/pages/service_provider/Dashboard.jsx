@@ -1,16 +1,21 @@
-
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { FiBell } from "react-icons/fi";
 import "./styles.css";
 
 import { API_BASE_URL as API } from "../../services/api";
-import { fetchNotifications } from "../../services/notificationService";
 import {
-  setNotifications as setNotificationsAction,
+  fetchNotifications,
   selectServiceProviderNotifications,
 } from "../../redux/features/notifications/notificationsSlice";
+import { providerAction } from "../../redux/features/complaints/complaintsSlice";
+import {
+  useProviderComplaints,
+  useProviderId,
+  useProviderRatings,
+  useProviderViewer,
+} from "../../components/service_provider/useProviderData";
 import { StatusBadge } from "../../components/service_provider/FeatureStates";
 import PageHeader from "../../components/service_provider/PageHeader";
 
@@ -46,24 +51,9 @@ const COMPLETED_STATUSES = [
   "Resolved",
 ];
 
-function getProviderId() {
-  try {
-    const user = JSON.parse(
-      localStorage.getItem("currentUser") || "null"
-    );
-
-    // Temporary development default: provider 10
-    return user?.id || 10;
-  } catch {
-    return 10;
-  }
-}
-
 function getProviderName() {
   try {
-    const user = JSON.parse(
-      localStorage.getItem("currentUser") || "null"
-    );
+    const user = JSON.parse(localStorage.getItem("currentUser") || "null");
     return user?.name || "Service Provider";
   } catch {
     return "Service Provider";
@@ -88,11 +78,8 @@ function getStatusLabel(status) {
 
 function Stars({ rating, size = 16 }) {
   return (
-    <span
-      className="stars-row"
-      aria-label={`${rating} out of 5 stars`}
-    >
-      {[1, 2, 3,4,5].map((star) => (
+    <span className="stars-row" aria-label={`${rating} out of 5 stars`}>
+      {[1, 2, 3, 4, 5].map((star) => (
         <span
           key={star}
           style={{
@@ -158,184 +145,104 @@ function Dashboard() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const reduxNotifications = useSelector((state) => state.notifications);
-  const providerId = getProviderId();
+  const providerId = useProviderId();
+  const viewer = useProviderViewer();
   const providerName = getProviderName();
 
-  const [tasks, setTasks] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [rejectingId, setRejectingId] = useState(null);
-  const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
   const [notificationsError, setNotificationsError] = useState("");
-  const [feedback, setFeedback] = useState([]);
-  const [ratingsLoading, setRatingsLoading] = useState(true);
-  const [ratingsError, setRatingsError] = useState("");
 
-  const fetchProviderTasks = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  // READ: complaints assigned to this provider (complaints slice)
+  const {
+    complaints: providerComplaints,
+    loading,
+    error: complaintsError,
+    reload: fetchProviderTasks,
+  } = useProviderComplaints();
+  const error = complaintsError
+    ? `${complaintsError} — unable to connect to the backend. Check that the NestJS server is running.`
+    : "";
 
-    try {
-      const response = await fetch(
-        `${API}/complaints/provider/${providerId}`,
-        {
-          headers: {
-            role: "service_provider",
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Could not load complaints (HTTP ${response.status}).`
-        );
-      }
-
-      const complaints = await response.json();
-
-      if (!Array.isArray(complaints)) {
-        throw new Error("Unexpected response from the server.");
-      }
-
-      const mappedTasks = complaints.map((complaint) => ({
+  const tasks = useMemo(
+    () =>
+      providerComplaints.map((complaint) => ({
         id: String(complaint.id),
         issueType: complaint.category || "General",
         title: complaint.title || "Untitled complaint",
-        description:
-          complaint.description || "No description provided.",
+        description: complaint.description || "No description provided.",
         imageUrl: getImageUrl(complaint.photo),
         location: complaint.location || "Unknown",
         deadline: complaint.deadline || "None",
         rawStatus: complaint.status,
         status: getStatusLabel(complaint.status),
         estimateSubmitted: ESTIMATE_SUBMITTED_STATUSES.includes(
-          complaint.status
+          complaint.status,
         ),
-      }));
+      })),
+    [providerComplaints],
+  );
 
-      setTasks(mappedTasks);
-    } catch(err){
-      console.error("Failed to load provider tasks:", err);
-      setError(
-        err.message ||
-          "Unable to connect to the backend. Check that the NestJS server is running."
-      );
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [providerId]);
-
+  // READ: notifications (notifications slice)
   useEffect(() => {
-    fetchProviderTasks();
-  }, [fetchProviderTasks]);
-
-  const fetchProviderNotifications = useCallback(async () => {
     setNotificationsLoading(true);
     setNotificationsError("");
+    const req = dispatch(fetchNotifications({ viewer }));
+    req
+      .unwrap()
+      .catch((err) => {
+        if (err?.name === "AbortError") return;
+        console.error("Failed to load provider notifications:", err);
+        setNotificationsError(
+          "Could not load notifications. Please try again.",
+        );
+      })
+      .finally(() => setNotificationsLoading(false));
+    return () => req.abort();
+  }, [dispatch, viewer]);
 
-    try {
-      const data = await fetchNotifications("service_provider", providerId);
-      const safeData = Array.isArray(data) ? data : [];
-      setNotifications(safeData);
-      dispatch(setNotificationsAction(safeData));
-    } catch (err) {
-      console.error("Failed to load provider notifications:", err);
-      setNotifications([]);
-      setNotificationsError("Could not load notifications. Please try again.");
-    } finally {
-      setNotificationsLoading(false);
-    }
-  }, [providerId, dispatch]);
+  // READ: ratings on this provider's complaints (ratings slice)
+  const {
+    ratings,
+    loading: ratingsLoading,
+    error: ratingsError,
+  } = useProviderRatings();
+  const feedback = useMemo(() => {
+    const providerComplaintIds = new Set(
+      providerComplaints.map((c) => Number(c.id)),
+    );
+    return ratings
+      .filter((rating) => providerComplaintIds.has(Number(rating.complaintId)))
+      .slice()
+      .sort(
+        (first, second) =>
+          new Date(second.ratedAt).getTime() -
+          new Date(first.ratedAt).getTime(),
+      )
+      .map((rating) => {
+        const ratingDate = new Date(`${rating.ratedAt}T00:00:00`);
+        const date = Number.isNaN(ratingDate.getTime())
+          ? rating.ratedAt || ""
+          : ratingDate.toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            });
 
-  useEffect(() => {
-    fetchProviderNotifications();
-  }, [fetchProviderNotifications]);
-
-  const fetchProviderRatings = useCallback(async () => {
-    setRatingsLoading(true);
-    setRatingsError("");
-
-    const headers = {
-      role: "service_provider",
-      "Content-Type": "application/json",
-      "x-user-id": String(providerId),
-    };
-
-    try {
-      const [complaintsResponse, ratingsResponse] = await Promise.all([
-        fetch(`${API}/complaints/provider/${providerId}`, { headers }),
-        fetch(`${API}/ratings`, { headers }),
-      ]);
-
-      if (!complaintsResponse.ok) {
-        throw new Error("Could not load your complaints for ratings.");
-      }
-      if (!ratingsResponse.ok) {
-        throw new Error("Could not load ratings. Please try again.");
-      }
-
-      const [complaints, ratings] = await Promise.all([
-        complaintsResponse.json(),
-        ratingsResponse.json(),
-      ]);
-
-      if (!Array.isArray(complaints) || !Array.isArray(ratings)) {
-        throw new Error("Unexpected response while loading ratings.");
-      }
-
-      const complaintsById = new Map(
-        complaints.map((complaint) => [Number(complaint.id), complaint])
-      );
-      const providerComplaintIds = new Set(complaintsById.keys());
-      const providerFeedback = ratings
-        .filter((rating) =>
-          providerComplaintIds.has(Number(rating.complaintId))
-        )
-        .sort(
-          (first, second) =>
-            new Date(second.ratedAt).getTime() -
-            new Date(first.ratedAt).getTime()
-        )
-        .map((rating) => {
-          const ratingDate = new Date(`${rating.ratedAt}T00:00:00`);
-          const date = Number.isNaN(ratingDate.getTime())
-            ? rating.ratedAt || ""
-            : ratingDate.toLocaleDateString(undefined, {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              });
-
-          return {
-            id: String(rating.id),
-            name: `Owner #${rating.ownerId}`,
-            rating: Number(rating.score) || 0,
-            comment: rating.feedback || "No written feedback.",
-            date,
-          };
-        });
-
-      setFeedback(providerFeedback);
-    } catch (err) {
-      console.error("Failed to load provider ratings:", err);
-      setFeedback([]);
-      setRatingsError(err.message || "Could not load ratings.");
-    } finally {
-      setRatingsLoading(false);
-    }
-  }, [providerId]);
-
-  useEffect(() => {
-    fetchProviderRatings();
-  }, [fetchProviderRatings]);
+        return {
+          id: String(rating.id),
+          name: `Owner #${rating.ownerId}`,
+          rating: Number(rating.score) || 0,
+          comment: rating.feedback || "No written feedback.",
+          date,
+        };
+      });
+  }, [ratings, providerComplaints]);
 
   const handleReject = async (taskId) => {
     const confirmed = window.confirm(
-      "Are you sure you want to reject this complaint?"
+      "Are you sure you want to reject this complaint?",
     );
 
     if (!confirmed) return;
@@ -344,35 +251,23 @@ function Dashboard() {
     setActionError("");
 
     try {
-      const response = await fetch(
-        `${API}/complaints/${Number(taskId)}/sp-reject`,
-        {
-          method: "PATCH",
-          headers: {
-            role: "service_provider",
-            "Content-Type": "application/json",
-            "x-user-id": String(providerId),
-          },
-          body: JSON.stringify({
+      // UPDATE: backend first; the complaints slice stores the result
+      await dispatch(
+        providerAction({
+          viewer,
+          id: Number(taskId),
+          action: "sp-reject",
+          body: {
             providerId: Number(providerId),
             reason: "Declined from dashboard",
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(
-          message || `Reject failed (HTTP ${response.status}).`
-        );
-      }
+          },
+        }),
+      ).unwrap();
 
       await fetchProviderTasks();
     } catch (err) {
       console.error("Failed to reject complaint:", err);
-      setActionError(
-        err.message || "Unable to reject this complaint."
-      );
+      setActionError(err.message || "Unable to reject this complaint.");
     } finally {
       setRejectingId(null);
     }
@@ -381,15 +276,15 @@ function Dashboard() {
   const totalAssigned = tasks.length;
 
   const inProgress = tasks.filter(
-    (task) => task.status === "In Progress"
+    (task) => task.status === "In Progress",
   ).length;
 
   const completed = tasks.filter((task) =>
-    COMPLETED_STATUSES.includes(task.status)
+    COMPLETED_STATUSES.includes(task.status),
   ).length;
 
   const pendingEstimates = tasks.filter(
-    (task) => !task.estimateSubmitted
+    (task) => !task.estimateSubmitted,
   ).length;
 
   const recentComplaints = tasks.slice(0, 3);
@@ -397,15 +292,15 @@ function Dashboard() {
 
   // Whatever notifications present in service provider notifications page, those only are visible on the dashboard
   const providerNotifications = useMemo(() => {
-    const source = (reduxNotifications && reduxNotifications.length > 0)
-      ? reduxNotifications
-      : notifications;
-    return selectServiceProviderNotifications(source, providerId);
-  }, [reduxNotifications, notifications, providerId]);
+    return selectServiceProviderNotifications(
+      reduxNotifications || [],
+      providerId,
+    );
+  }, [reduxNotifications, providerId]);
 
   const unreadNotificationCount = useMemo(
     () => providerNotifications.filter((n) => n.status === "unread").length,
-    [providerNotifications]
+    [providerNotifications],
   );
   const averageRating = feedback.length
     ? feedback.reduce((total, item) => total + item.rating, 0) / feedback.length
@@ -416,7 +311,10 @@ function Dashboard() {
     <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
-          <PageHeader title="Dashboard" description={`Welcome back, ${providerName}! Here's your overview.`} />
+          <PageHeader
+            title="Dashboard"
+            description={`Welcome back, ${providerName}! Here's your overview.`}
+          />
 
           {error && (
             <div
@@ -441,10 +339,7 @@ function Dashboard() {
           )}
 
           {actionError && (
-            <p
-              role="alert"
-              style={{ color: "#B91C1C", marginBottom: 16 }}
-            >
+            <p role="alert" style={{ color: "#B91C1C", marginBottom: 16 }}>
               {actionError}
             </p>
           )}
@@ -454,9 +349,7 @@ function Dashboard() {
             <div className="stat-card">
               <div className="stat-card-info">
                 <p className="label">Total Complaints Assigned</p>
-                <p className="value">
-                  {loading ? "—" : totalAssigned}
-                </p>
+                <p className="value">{loading ? "—" : totalAssigned}</p>
               </div>
               <div className="stat-icon blue">
                 <DashboardIcon type="assigned" />
@@ -466,9 +359,7 @@ function Dashboard() {
             <div className="stat-card">
               <div className="stat-card-info">
                 <p className="label">Complaints In Progress</p>
-                <p className="value">
-                  {loading ? "—" : inProgress}
-                </p>
+                <p className="value">{loading ? "—" : inProgress}</p>
               </div>
               <div className="stat-icon yellow">
                 <DashboardIcon type="progress" />
@@ -478,9 +369,7 @@ function Dashboard() {
             <div className="stat-card">
               <div className="stat-card-info">
                 <p className="label">Completed Complaints</p>
-                <p className="value">
-                  {loading ? "—" : completed}
-                </p>
+                <p className="value">{loading ? "—" : completed}</p>
               </div>
               <div className="stat-icon green">
                 <DashboardIcon type="completed" />
@@ -490,9 +379,7 @@ function Dashboard() {
             <div className="stat-card">
               <div className="stat-card-info">
                 <p className="label">Pending Estimates</p>
-                <p className="value">
-                  {loading ? "—" : pendingEstimates}
-                </p>
+                <p className="value">{loading ? "—" : pendingEstimates}</p>
               </div>
               <div className="stat-icon black">
                 <DashboardIcon type="estimate" />
@@ -504,9 +391,7 @@ function Dashboard() {
           <div className="two-col-grid mb-8">
             <section className="card">
               <div className="card-body">
-                <h2 style={{ marginBottom: 20 }}>
-                  Recent Complaints
-                </h2>
+                <h2 style={{ marginBottom: 20 }}>Recent Complaints</h2>
 
                 {loading ? (
                   <p>Loading complaints...</p>
@@ -530,9 +415,7 @@ function Dashboard() {
 
                       <div className="complaint-content">
                         <div className="complaint-badges">
-                          <span className="badge badge-green">
-                            #{task.id}
-                          </span>
+                          <span className="badge badge-green">#{task.id}</span>
                           <span className="badge badge-dark">
                             {task.issueType}
                           </span>
@@ -548,12 +431,8 @@ function Dashboard() {
                           </span>
                         </div>
 
-                        <p className="complaint-title">
-                          {task.title}
-                        </p>
-                        <p className="complaint-desc">
-                          {task.description}
-                        </p>
+                        <p className="complaint-title">{task.title}</p>
+                        <p className="complaint-desc">{task.description}</p>
 
                         <div className="complaint-meta">
                           <div className="complaint-meta-row">
@@ -570,9 +449,7 @@ function Dashboard() {
                           <button
                             className="btn-link"
                             onClick={() =>
-                              navigate(
-                                `/service-provider/assigned-tasks`
-                              )
+                              navigate(`/service-provider/assigned-tasks`)
                             }
                           >
                             View in Assigned Tasks →
@@ -604,53 +481,77 @@ function Dashboard() {
 
                   <button
                     className="btn-link"
-                    onClick={() =>
-                      navigate("/service-provider/notifications")
-                    }
+                    onClick={() => navigate("/service-provider/notifications")}
                   >
                     View All →
                   </button>
                 </div>
 
                 {notificationsLoading ? (
-                  <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+                  <p
+                    style={{
+                      color: "var(--muted-foreground)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
                     Loading notifications...
                   </p>
                 ) : notificationsError ? (
-                  <p role="alert" style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+                  <p
+                    role="alert"
+                    style={{
+                      color: "var(--muted-foreground)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
                     {notificationsError}{" "}
-                    <button className="btn-link" onClick={fetchProviderNotifications}>
+                    <button
+                      className="btn-link"
+                      onClick={fetchProviderNotifications}
+                    >
                       Retry
                     </button>
                   </p>
                 ) : providerNotifications.length === 0 ? (
-                  <p style={{ color: "var(--muted-foreground)", fontSize: "0.9rem" }}>
+                  <p
+                    style={{
+                      color: "var(--muted-foreground)",
+                      fontSize: "0.9rem",
+                    }}
+                  >
                     You’re all caught up. No notifications yet.
                   </p>
                 ) : (
-                  providerNotifications.slice(0, 3).map((notification, index) => (
-                    <Link
-                      className="notif-item"
-                      key={notification.id ?? `${notification.createdAt}-${index}`}
-                      to="/service-provider/notifications"
-                    >
-                      <div className="notif-icon-wrap notif-icon-green">
-                        <FiBell aria-hidden="true" />
-                      </div>
-                      <div className="notif-info">
-                        <p className="notif-title">
-                          {notification.title || "Notification"}
-                          {notification.status === "unread" && (
-                            <span className="new-dot">New</span>
-                          )}
-                        </p>
-                        <p className="notif-msg">{notification.message}</p>
-                        <span className="notif-time">
-                          {notification.time || notification.createdAt || "Recently"}
-                        </span>
-                      </div>
-                    </Link>
-                  ))
+                  providerNotifications
+                    .slice(0, 3)
+                    .map((notification, index) => (
+                      <Link
+                        className="notif-item"
+                        key={
+                          notification.id ??
+                          `${notification.createdAt}-${index}`
+                        }
+                        to="/service-provider/notifications"
+                      >
+                        <div className="notif-icon-wrap notif-icon-green">
+                          <FiBell aria-hidden="true" />
+                        </div>
+                        <div className="notif-info">
+                          <p className="notif-title">
+                            {notification.title || "Notification"}
+                            {notification.status === "unread" && (
+                              <span className="new-dot">New</span>
+                            )}
+                          </p>
+                          <p className="notif-msg">{notification.message}</p>
+                          <span className="notif-time">
+                            {notification.time ||
+                              notification.createdAt ||
+                              "Recently"}
+                          </span>
+                        </div>
+                      </Link>
+                    ))
                 )}
               </div>
             </section>
@@ -692,9 +593,7 @@ function Dashboard() {
                     <tbody>
                       {tableTasks.map((task) => (
                         <tr key={task.id}>
-                          <td style={{ fontWeight: 600 }}>
-                            {task.id}
-                          </td>
+                          <td style={{ fontWeight: 600 }}>{task.id}</td>
                           <td>{task.issueType}</td>
                           <td>
                             <StatusBadge status={task.status} />
@@ -713,8 +612,8 @@ function Dashboard() {
                               onClick={() =>
                                 navigate(
                                   `/service-provider/update-status?task=${encodeURIComponent(
-                                    task.id
-                                  )}`
+                                    task.id,
+                                  )}`,
                                 )
                               }
                             >
@@ -752,9 +651,7 @@ function Dashboard() {
 
                 <button
                   className="btn-link"
-                  onClick={() =>
-                    navigate("/service-provider/ratings")
-                  }
+                  onClick={() => navigate("/service-provider/ratings")}
                 >
                   View All →
                 </button>
@@ -801,29 +698,23 @@ function Dashboard() {
                 <p>No ratings yet.</p>
               ) : (
                 recentFeedback.map((item) => (
-                <div className="feedback-item" key={item.id}>
-                  <div className="feedback-header">
-                    <div className="feedback-user">
-                      <div className="feedback-avatar">
-                        {item.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="feedback-name">
-                          {item.name}
+                  <div className="feedback-item" key={item.id}>
+                    <div className="feedback-header">
+                      <div className="feedback-user">
+                        <div className="feedback-avatar">
+                          {item.name.charAt(0)}
                         </div>
-                        <div className="feedback-date">
-                          {item.date}
+                        <div>
+                          <div className="feedback-name">{item.name}</div>
+                          <div className="feedback-date">{item.date}</div>
                         </div>
                       </div>
+
+                      <Stars rating={item.rating} size={12} />
                     </div>
 
-                    <Stars rating={item.rating} size={12} />
+                    <p className="feedback-comment">{item.comment}</p>
                   </div>
-
-                  <p className="feedback-comment">
-                    {item.comment}
-                  </p>
-                </div>
                 ))
               )}
             </div>

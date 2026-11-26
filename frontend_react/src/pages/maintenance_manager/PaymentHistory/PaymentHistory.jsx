@@ -9,16 +9,29 @@ import PaymentHistoryTable from "./components/PaymentHistoryTable";
 import PaymentModal from "./components/PaymentModal";
 import PaymentRecordsTable from "./components/PaymentRecordsTable";
 import { MM_PATHS } from "../shared/paths";
-import { fetchComplaints, fetchProviders } from "../../../services/managerService";
 import {
-  fetchBills, filterPaidBills, filterPendingBills, isBillPaid as isPaid, markBillPaid,
-  selectAllBills, selectBillsError, selectBillsLoading, selectBillsSaving,
+  getManagerViewer,
+  useManagerComplaints,
+  useServiceProviders,
+} from "../shared/useManagerData";
+import {
+  fetchBills,
+  filterPaidBills,
+  filterPendingBills,
+  isBillPaid as isPaid,
+  markBillPaid,
+  selectAllBills,
+  selectBillsError,
+  selectBillsLoading,
+  selectBillsSaving,
 } from "../../../redux/features/bills/billsSlice";
 import {
-  fetchPayments, selectAllPayments, selectPaymentsError, selectPaymentsLoading,
+  fetchPayments,
+  selectAllPayments,
+  selectPaymentsError,
+  selectPaymentsLoading,
 } from "../../../redux/features/payments/paymentsSlice";
-import { notifyBillPaid } from "../../../redux/features/notifications/notificationsSlice";
-import { createNotification } from "../../../services/notificationService";
+import { createNotification } from "../../../redux/features/notifications/notificationsSlice";
 const total = (b) => Number(b.totalAmount || b.amount || 0);
 
 /* service-bills.html  (sidebar: "Payment History") */
@@ -36,24 +49,36 @@ export default function PaymentHistory() {
   const paymentsError = useSelector(selectPaymentsError);
 
   // complaint titles / provider names are only labels (not part of the bills slice)
-  const [complaintsById, setComplaintsById] = useState({});
-  const [providersById, setProvidersById] = useState({});
+  // (they come from the complaints and users slices)
+  const { complaints, reload: reloadComplaints } = useManagerComplaints();
+  const { providers } = useServiceProviders();
+  const complaintsById = useMemo(
+    () => Object.fromEntries(complaints.map((x) => [Number(x.id), x])),
+    [complaints],
+  );
+  const providersById = useMemo(
+    () => Object.fromEntries(providers.map((p) => [Number(p.id), p.name])),
+    [providers],
+  );
   const [payBill, setPayBill] = useState(null);
 
   const load = useCallback(() => {
     dispatch(fetchBills());
     dispatch(fetchPayments());
-    fetchComplaints().then((c) => setComplaintsById(Object.fromEntries(c.map((x) => [Number(x.id), x])))).catch(() => {});
-  }, [dispatch]);
+    reloadComplaints();
+  }, [dispatch, reloadComplaints]);
 
   useEffect(() => {
     load();
-    fetchProviders().then((l) => setProvidersById(Object.fromEntries(l.map((p) => [Number(p.id), p.name])))).catch(() => {});
   }, [load]);
 
-  const error = billsError && bills.length === 0 ? `Could not load bills from backend. ${billsError}` : "";
+  const error =
+    billsError && bills.length === 0
+      ? `Could not load bills from backend. ${billsError}`
+      : "";
 
-  const issueOf = (b) => complaintsById[Number(b.complaintId)]?.title || "Service Bill";
+  const issueOf = (b) =>
+    complaintsById[Number(b.complaintId)]?.title || "Service Bill";
   const providerOf = (b, fallback = "—") => {
     const pid = complaintsById[Number(b.complaintId)]?.assignedProviderId;
     return pid ? providersById[Number(pid)] || `Provider #${pid}` : fallback;
@@ -67,26 +92,34 @@ export default function PaymentHistory() {
       await dispatch(markBillPaid(payBill.id)).unwrap();
       const cid = payBill.complaintId;
       const relatedComp = complaintsById[Number(cid)] || {};
-      dispatch(notifyBillPaid({
-        complaintId: cid,
-        title: issueOf(payBill),
-        ownerId: relatedComp.ownerId || 1,
-        providerId: relatedComp.assignedProviderId || payBill.providerId || 10,
-      }));
-      createNotification({
-        userId: Number(relatedComp.assignedProviderId || payBill.providerId || 10),
-        complaintId: Number(cid),
-        message: `Payment is completed and complaint is closed for Complaint #${cid}.`,
-        type: "work_completed",
-        recipient: "service_provider",
-      }, "maintenance_manager").catch(() => {});
-      createNotification({
-        userId: Number(relatedComp.ownerId || 1),
-        complaintId: Number(cid),
-        message: `Payment is completed and complaint is closed for Complaint #${cid}.`,
-        type: "work_completed",
-        recipient: "owner",
-      }, "maintenance_manager").catch(() => {});
+      // notifications: saved by the backend, then added to Redux
+      const viewer = getManagerViewer();
+      dispatch(
+        createNotification({
+          data: {
+            userId: Number(
+              relatedComp.assignedProviderId || payBill.providerId || 10,
+            ),
+            complaintId: Number(cid),
+            message: `Payment is completed and complaint is closed for Complaint #${cid}.`,
+            type: "work_completed",
+            recipient: "service_provider",
+          },
+          sender: viewer,
+        }),
+      );
+      dispatch(
+        createNotification({
+          data: {
+            userId: Number(relatedComp.ownerId || 1),
+            complaintId: Number(cid),
+            message: `Payment is completed and complaint is closed for Complaint #${cid}.`,
+            type: "work_completed",
+            recipient: "owner",
+          },
+          sender: viewer,
+        }),
+      );
 
       setPayBill(null);
       showToast("Payment processed. Complaint closed.");
@@ -98,22 +131,50 @@ export default function PaymentHistory() {
 
   return (
     <ManagerLayout backTo={MM_PATHS.dashboard} backLabel="Back to Dashboard">
-      <PageHeader title="Service Bills & Payments" subtitle={`${pending.length} bill${pending.length !== 1 ? "s" : ""} pending payment approval`} />
+      <PageHeader
+        title="Service Bills & Payments"
+        subtitle={`${pending.length} bill${pending.length !== 1 ? "s" : ""} pending payment approval`}
+      />
       <BillsSummary
         pendingTotal={pending.reduce((s, b) => s + total(b), 0)}
         paidTotal={paid.reduce((s, b) => s + total(b), 0)}
         count={bills.length}
       />
 
-      <h2 className="section-title">Pending Payments <span className="count-pill">{pending.length}</span></h2>
-      {error ? <div className="card" style={{ color: "#DC2626" }}>{error}</div>
-        : loading && bills.length === 0 ? <div className="card muted">Loading...</div>
-        : pending.length === 0 ? <div className="card empty-state"><h3>No bills are pending payment</h3><p>Bills submitted by service providers will appear here.</p></div>
-        : pending.map((b) => (
-            <BillCard key={b.id} bill={b} issue={issueOf(b)} provider={providerOf(b, "Assigned provider")} onPay={() => setPayBill(b)} />
-          ))}
+      <h2 className="section-title">
+        Pending Payments <span className="count-pill">{pending.length}</span>
+      </h2>
+      {error ? (
+        <div className="card" style={{ color: "#DC2626" }}>
+          {error}
+        </div>
+      ) : loading && bills.length === 0 ? (
+        <div className="card muted">Loading...</div>
+      ) : pending.length === 0 ? (
+        <div className="card empty-state">
+          <h3>No bills are pending payment</h3>
+          <p>Bills submitted by service providers will appear here.</p>
+        </div>
+      ) : (
+        pending.map((b) => (
+          <BillCard
+            key={b.id}
+            bill={b}
+            issue={issueOf(b)}
+            provider={providerOf(b, "Assigned provider")}
+            onPay={() => setPayBill(b)}
+          />
+        ))
+      )}
 
-      <PaymentHistoryTable bills={bills} loading={loading} isPaid={isPaid} issueOf={issueOf} providerOf={providerOf} onPay={setPayBill} />
+      <PaymentHistoryTable
+        bills={bills}
+        loading={loading}
+        isPaid={isPaid}
+        issueOf={issueOf}
+        providerOf={providerOf}
+        onPay={setPayBill}
+      />
 
       <PaymentRecordsTable
         payments={payments}

@@ -1,28 +1,21 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { notifyStatusAndBillSubmitted } from "../../redux/features/notifications/notificationsSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { createNotification } from "../../redux/features/notifications/notificationsSlice";
 import { createBill } from "../../redux/features/bills/billsSlice";
-import { createNotification } from "../../services/notificationService";
+import {
+  fetchComplaintById,
+  selectComplaintById,
+} from "../../redux/features/complaints/complaintsSlice";
+import {
+  fetchEstimates,
+  selectEstimatesForComplaint,
+} from "../../redux/features/estimates/estimatesSlice";
+import { useProviderViewer } from "../../components/service_provider/useProviderData";
 import "./styles.css";
 
-import { API_BASE_URL as API } from "../../services/api";
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const MAX_FILES = 5;
-
-const SP_HEADERS = {
-  role: "service_provider",
-  "Content-Type": "application/json",
-};
-
-function getProviderId() {
-  try {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
-    return Number(currentUser.id) || 10;
-  } catch {
-    return 10;
-  }
-}
 
 function statusLabel(status) {
   const labels = {
@@ -128,10 +121,34 @@ export default function UpdateStatus() {
   const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const taskId = searchParams.get("task");
-  const providerId = getProviderId();
+  const viewer = useProviderViewer();
+  const providerId = Number(viewer.id);
   const fileInputRef = useRef(null);
+  const numericId = taskId ? String(taskId).replace(/^C-/i, "") : null;
 
-  const [task, setTask] = useState(null);
+  // the complaint and its estimates come from the Redux store
+  const complaint = useSelector((state) =>
+    selectComplaintById(state, numericId),
+  );
+  const complaintEstimates = useSelector((state) =>
+    selectEstimatesForComplaint(state, numericId),
+  );
+  const [taskLoaded, setTaskLoaded] = useState(false);
+  const task = useMemo(() => {
+    if (!taskLoaded || !complaint) return null;
+    const latestEstimate = complaintEstimates.at(-1) || null;
+    return {
+      id: String(complaint.id),
+      issueType: complaint.category || "General",
+      location: complaint.location || "Unknown",
+      deadline: formatDate(complaint.deadline || "None"),
+      status: statusLabel(complaint.status),
+      backendStatus: complaint.status,
+      estimateApproved:
+        complaint.estimateApproved === true ||
+        latestEstimate?.approved === true,
+    };
+  }, [taskLoaded, complaint, complaintEstimates]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("In Progress");
@@ -158,28 +175,20 @@ export default function UpdateStatus() {
         return;
       }
 
-      const numericId = String(taskId).replace(/^C-/i, "");
-
       try {
-        const headers = {
-          ...SP_HEADERS,
-          "x-user-id": String(providerId),
-        };
-
-        const response = await fetch(
-          `${API}/complaints/${encodeURIComponent(numericId)}`,
-          { headers }
-        );
-
-        if (!response.ok) {
+        // READ: backend -> Redux
+        let complaint;
+        try {
+          complaint = await dispatch(
+            fetchComplaintById({ viewer, id: numericId }),
+          ).unwrap();
+        } catch (error) {
           throw new Error(
-            response.status === 404
+            /404|not found/i.test(error?.message || "")
               ? "The task you're looking for doesn't exist."
-              : "Could not load task information."
+              : "Could not load task information.",
           );
         }
-
-        const complaint = await response.json();
 
         if (
           complaint.assignedProviderId != null &&
@@ -190,20 +199,11 @@ export default function UpdateStatus() {
 
         let latestEstimate = null;
         try {
-          const estimateResponse = await fetch(
-            `${API}/estimates?complaintId=${encodeURIComponent(numericId)}`,
-            { headers }
-          );
-
-          if (estimateResponse.ok) {
-            const estimateData = await estimateResponse.json();
-            const estimates = Array.isArray(estimateData)
-              ? estimateData
-              : estimateData
-                ? [estimateData]
-                : [];
-            latestEstimate = estimates.at(-1) || null;
-          }
+          const estimates = await dispatch(
+            fetchEstimates({ viewer, complaintId: numericId }),
+          ).unwrap();
+          latestEstimate =
+            (Array.isArray(estimates) ? estimates : []).at(-1) || null;
         } catch {
           // The complaint itself can still be displayed if estimates fail to load.
         }
@@ -213,26 +213,18 @@ export default function UpdateStatus() {
           latestEstimate?.approved === true;
         const status = statusLabel(complaint.status);
 
-        const mappedTask = {
-          id: String(complaint.id),
-          issueType: complaint.category || "General",
-          location: complaint.location || "Unknown",
-          deadline: formatDate(complaint.deadline || "None"),
-          status,
-          backendStatus: complaint.status,
-          estimateApproved,
-        };
-
         if (cancelled) return;
-        setTask(mappedTask);
+        setTaskLoaded(true);
 
         // Stop before showing a form that would submit an invalid transition
         // or create a duplicate unpaid bill.
-        if (["billed", "paid", "closed", "completed"].includes(complaint.status)) {
+        if (
+          ["billed", "paid", "closed", "completed"].includes(complaint.status)
+        ) {
           setLoadError(
             complaint.status === "billed"
               ? "Bill Already Submitted"
-              : `This task is already ${statusLabel(complaint.status)}.`
+              : `This task is already ${statusLabel(complaint.status)}.`,
           );
           return;
         }
@@ -246,7 +238,7 @@ export default function UpdateStatus() {
         // manager approves the estimate. The next valid SP action is billing.
         if (complaint.status !== "in_progress") {
           setLoadError(
-            `This task is currently "${status}". Its status must be In Progress before a final bill can be submitted.`
+            `This task is currently "${status}". Its status must be In Progress before a final bill can be submitted.`,
           );
           return;
         }
@@ -265,7 +257,7 @@ export default function UpdateStatus() {
     return () => {
       cancelled = true;
     };
-  }, [taskId, providerId]);
+  }, [taskId, numericId, providerId, viewer, dispatch]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -340,7 +332,6 @@ export default function UpdateStatus() {
       return;
     }
 
-    const numericId = String(task.id).replace(/^C-/i, "");
     setSubmitting(true);
 
     try {
@@ -349,36 +340,41 @@ export default function UpdateStatus() {
       formData.append("amount", String(amount));
       formData.append(
         "description",
-        `${billDescription.trim()}\n\nProgress notes: ${notes.trim()}`
+        `${billDescription.trim()}\n\nProgress notes: ${notes.trim()}`,
       );
       files.forEach((file) => formData.append("attachments", file));
 
       // CREATE: the bills slice posts the bill and adds it to the Redux store
       try {
         await dispatch(
-          createBill({ formData, auth: { role: "service_provider", userId: providerId } })
+          createBill({
+            formData,
+            auth: { role: "service_provider", userId: providerId },
+          }),
         ).unwrap();
       } catch (error) {
-        throw new Error(`Could not submit bill: ${error.message || "Unknown error"}`);
+        throw new Error(
+          `Could not submit bill: ${error.message || "Unknown error"}`,
+        );
       }
 
-      dispatch(notifyStatusAndBillSubmitted({
-        complaintId: numericId,
-        title: task?.title || `Complaint #${numericId}`,
-        ownerId: task?.ownerId || 1,
-        providerId,
-        amount: Number(amount),
-        managerId: task?.managerId || 5,
-      }));
-
-      // Notify Maintenance Manager using role "maintenance_manager" so backend RolesGuard accepts it
-      await createNotification({
-        userId: Number(task?.managerId || 5),
-        complaintId: Number(numericId),
-        message: `Service Provider #${providerId} submitted a bill of ₹${amount} for Complaint #${numericId}.`,
-        type: "payment_due",
-        recipient: "maintenance_manager",
-      }, "maintenance_manager").catch(() => {});
+      // Notify the Maintenance Manager. Sent with role "maintenance_manager" (as before)
+      // because the backend RolesGuard does not let providers create notifications.
+      const managerId = Number(complaint?.managerId || 5);
+      await dispatch(
+        createNotification({
+          data: {
+            userId: managerId,
+            complaintId: Number(numericId),
+            message: `Service Provider #${providerId} submitted a bill of ₹${amount} for Complaint #${numericId}.`,
+            type: "payment_due",
+            recipient: "maintenance_manager",
+          },
+          sender: { role: "maintenance_manager", id: managerId },
+        }),
+      )
+        .unwrap()
+        .catch(() => {});
 
       // Note: Backend POST /bills already notifies the owner directly, avoiding duplicate notification.
 
@@ -444,9 +440,7 @@ export default function UpdateStatus() {
                   className="btn btn-dark"
                   onClick={() =>
                     navigate(
-                      task
-                        ? taskUrl
-                        : "/service-provider/assigned-tasks"
+                      task ? taskUrl : "/service-provider/assigned-tasks",
                     )
                   }
                 >
@@ -477,7 +471,8 @@ export default function UpdateStatus() {
             <div className="page-header">
               <h1>Update Task Status</h1>
               <p>
-                Update the progress and status of your assigned maintenance task.
+                Update the progress and status of your assigned maintenance
+                task.
               </p>
             </div>
 
@@ -490,25 +485,38 @@ export default function UpdateStatus() {
 
                 <div className="info-grid-2" style={{ marginBottom: 0 }}>
                   <div>
-                    <span className="update-status-muted-label">Issue Type:</span>
-                    <span className="update-status-task-value">{task.issueType}</span>
+                    <span className="update-status-muted-label">
+                      Issue Type:
+                    </span>
+                    <span className="update-status-task-value">
+                      {task.issueType}
+                    </span>
                   </div>
 
                   <div>
-                    <span className="update-status-muted-label">Current Status:</span>
-                    <span className={statusClass(task.status)} style={{ marginLeft: 6 }}>
+                    <span className="update-status-muted-label">
+                      Current Status:
+                    </span>
+                    <span
+                      className={statusClass(task.status)}
+                      style={{ marginLeft: 6 }}
+                    >
                       {task.status}
                     </span>
                   </div>
 
                   <div>
                     <span className="update-status-muted-label">Location:</span>
-                    <span className="update-status-task-value">{task.location}</span>
+                    <span className="update-status-task-value">
+                      {task.location}
+                    </span>
                   </div>
 
                   <div>
                     <span className="update-status-muted-label">Deadline:</span>
-                    <span className="update-status-task-value">{task.deadline}</span>
+                    <span className="update-status-task-value">
+                      {task.deadline}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -531,22 +539,29 @@ export default function UpdateStatus() {
                       id="status-select"
                       className="form-select"
                       value={selectedStatus}
-                      onChange={(event) => setSelectedStatus(event.target.value)}
+                      onChange={(event) =>
+                        setSelectedStatus(event.target.value)
+                      }
                     >
-                      <option value="Completed">Completed — Submit Final Bill</option>
+                      <option value="Completed">
+                        Completed — Submit Final Bill
+                      </option>
                     </select>
                   </div>
 
                   <div className="update-status-bill-fields">
-                    <div className="alert-box yellow" style={{ marginBottom: 20 }}>
+                    <div
+                      className="alert-box yellow"
+                      style={{ marginBottom: 20 }}
+                    >
                       <svg viewBox="0 0 24 24" aria-hidden="true">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="12" />
                         <line x1="12" y1="16" x2="12.01" y2="16" />
                       </svg>
                       <p className="alert-text">
-                        Completing this task requires submitting the final service
-                        bill for manager payment review.
+                        Completing this task requires submitting the final
+                        service bill for manager payment review.
                       </p>
                     </div>
 
@@ -579,10 +594,14 @@ export default function UpdateStatus() {
                         rows={4}
                         placeholder="Describe completed work, materials, labour, and charges..."
                         value={billDescription}
-                        onChange={(event) => setBillDescription(event.target.value)}
+                        onChange={(event) =>
+                          setBillDescription(event.target.value)
+                        }
                       />
                       {errors.description && (
-                        <p className="update-status-error">{errors.description}</p>
+                        <p className="update-status-error">
+                          {errors.description}
+                        </p>
                       )}
                     </div>
 
@@ -593,8 +612,9 @@ export default function UpdateStatus() {
                       </label>
 
                       <div
-                        className={`upload-zone ${dragging ? "update-status-upload-dragging" : ""
-                          }`}
+                        className={`upload-zone ${
+                          dragging ? "update-status-upload-dragging" : ""
+                        }`}
                         onClick={() => fileInputRef.current?.click()}
                         onDragOver={(event) => {
                           event.preventDefault();
@@ -690,8 +710,9 @@ export default function UpdateStatus() {
                       <p className="alert-title">Status Update Guidelines</p>
                       <p className="alert-text">
                         Please provide detailed notes about your progress. If
-                        marking as completed, ensure all work has been thoroughly
-                        tested. Photos help document the work performed.
+                        marking as completed, ensure all work has been
+                        thoroughly tested. Photos help document the work
+                        performed.
                       </p>
                     </div>
                   </div>

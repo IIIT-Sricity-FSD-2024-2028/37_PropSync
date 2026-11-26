@@ -18,7 +18,19 @@ import {
   FiFolder,
 } from "react-icons/fi";
 
+import { useDispatch, useSelector } from "react-redux";
 import { API_BASE_URL as API_URL } from "../services/api";
+import {
+  fetchComplaintById,
+  selectComplaintById,
+  updateComplaintStatus,
+} from "../redux/features/complaints/complaintsSlice";
+import {
+  createEstimate,
+  fetchEstimates,
+  selectEstimatesForComplaint,
+} from "../redux/features/estimates/estimatesSlice";
+import { fetchUsers, selectUsers } from "../redux/features/users/usersSlice";
 
 const ROLE_USER_NAMES = {
   owner: "Raj Kumar",
@@ -138,7 +150,10 @@ export default function ComplaintDetails({
 }) {
   // Resolve role strictly from passed props, fallback to current session
   const currentRole = useMemo(() => {
-    const passed = (role || propRole || Proprole || proprole || "").toString().toLowerCase().trim();
+    const passed = (role || propRole || Proprole || proprole || "")
+      .toString()
+      .toLowerCase()
+      .trim();
     if (passed) return passed;
     try {
       const stored = JSON.parse(localStorage.getItem("currentUser") || "{}");
@@ -149,10 +164,16 @@ export default function ComplaintDetails({
     return "owner";
   }, [role, propRole, Proprole, proprole]);
 
+  const dispatch = useDispatch();
+  const viewer = useMemo(
+    () => ({ role: currentRole, id: getUserIdForRole(currentRole) }),
+    [currentRole],
+  );
+
   // State
-  const [complaint, setComplaint] = useState(null);
-  const [estimate, setEstimate] = useState(null);
   const [toast, setToast] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [loadedId, setLoadedId] = useState(null);
 
   // Modals & Action States
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -178,7 +199,8 @@ export default function ComplaintDetails({
     if (complaintId || id) return complaintId || id;
     if (typeof window !== "undefined") {
       const search = new URLSearchParams(window.location.search);
-      const urlId = search.get("id") || search.get("complaint") || search.get("task");
+      const urlId =
+        search.get("id") || search.get("complaint") || search.get("task");
       if (urlId) return urlId;
       const parts = window.location.pathname.split("/").filter(Boolean);
       const lastPart = parts[parts.length - 1];
@@ -187,94 +209,59 @@ export default function ComplaintDetails({
     return null;
   }, [complaintId, id]);
 
-  // Load from backend, fallback seamlessly to backend sample schema if backend is starting
-  const loadComplaintData = useCallback(async () => {
-    const userId = getUserIdForRole(currentRole);
-    const headers = {
-      role: currentRole,
-      "x-user-id": String(userId),
-      "Content-Type": "application/json",
+  // The complaint, its latest estimate and the owner's name come from the Redux store
+  const storedComplaint = useSelector((state) =>
+    selectComplaintById(state, loadedId),
+  );
+  const complaintEstimates = useSelector((state) =>
+    selectEstimatesForComplaint(state, loadedId),
+  );
+  const users = useSelector((state) => selectUsers(state, viewer));
+  const estimate = complaintEstimates.length
+    ? complaintEstimates[complaintEstimates.length - 1]
+    : null;
+  const complaint = useMemo(() => {
+    if (!storedComplaint) return null;
+    const owner = users.find(
+      (u) => Number(u.id) === Number(storedComplaint.ownerId),
+    );
+    return {
+      ...storedComplaint,
+      lifecycleStep: getLifecycleStep(storedComplaint.status),
+      workProgress: getWorkProgress(storedComplaint.status),
+      ownerName:
+        owner?.name ||
+        storedComplaint.ownerName ||
+        `Owner #${storedComplaint.ownerId}`,
+      propertyLocation:
+        owner?.propertyUnit ||
+        storedComplaint.propertyLocation ||
+        storedComplaint.location ||
+        "—",
     };
+  }, [storedComplaint, users]);
 
-    let complaintData = null;
-    let estimateData = null;
-
+  // READ: backend -> Redux
+  const loadComplaintData = useCallback(async () => {
+    if (!targetId) {
+      setLoadError("No complaint ID provided.");
+      return;
+    }
+    setLoadError("");
     try {
-      const target = targetId || 1;
-      const res = await fetch(`${API_URL}/complaints/${target}`, { headers });
-      if (res.ok) {
-        complaintData = await res.json();
-      } else {
-        const listRes = await fetch(`${API_URL}/complaints`, { headers });
-        if (listRes.ok) {
-          const list = await listRes.json();
-          if (Array.isArray(list) && list.length > 0) {
-            complaintData = list[0];
-          }
-        }
-      }
-
-      if (complaintData?.id) {
-        const estRes = await fetch(`${API_URL}/estimates?complaintId=${complaintData.id}`, { headers });
-        if (estRes.ok) {
-          const estList = await estRes.json();
-          if (Array.isArray(estList) && estList.length > 0) {
-            estimateData = estList[estList.length - 1];
-          }
-        }
-      }
-
-      if (complaintData?.ownerId) {
-        try {
-          const userRes = await fetch(`${API_URL}/users?role=owner`, { headers });
-          if (userRes.ok) {
-            const users = await userRes.json();
-            if (Array.isArray(users)) {
-              const o = users.find((u) => u.id === complaintData.ownerId);
-              if (o) {
-                complaintData.ownerName = o.name;
-                complaintData.propertyLocation = o.propertyUnit;
-              }
-            }
-          }
-        } catch {
-          // ignore
-        }
-      }
-    } catch {
-      // Backend not running
+      const complaintData = await dispatch(
+        fetchComplaintById({ viewer, id: targetId }),
+      ).unwrap();
+      setLoadedId(complaintData.id);
+      // supplemental: estimate and owner name (failures don't hide the complaint)
+      dispatch(fetchEstimates({ viewer, complaintId: complaintData.id }));
+      if (currentRole !== "owner") dispatch(fetchUsers({ session: viewer }));
+    } catch (error) {
+      setLoadError(
+        `Could not load complaint #${targetId}. ${error.message || "Is the backend running?"}`,
+      );
     }
-
-    // Default backend structure fallback
-    if (!complaintData) {
-      complaintData = {
-        id: 1,
-        title: "Water Leakage in Block A",
-        description: "Continuous water leakage in corridor room 203 causing wet floors and damage.",
-        category: "Plumbing",
-        priority: "high",
-        status: "approved",
-        ownerId: 1,
-        ownerName: "Raj Kumar",
-        managerId: 5,
-        location: "Building A, Corridor 203",
-        propertyLocation: "Building A, Corridor 203",
-        submittedAt: "2024-03-08",
-        updatedAt: "2024-03-08",
-        photo: null,
-      };
-    }
-
-    setComplaint({
-      ...complaintData,
-      lifecycleStep: getLifecycleStep(complaintData.status),
-      workProgress: getWorkProgress(complaintData.status),
-      ownerName: complaintData.ownerName || "Raj Kumar",
-      propertyLocation: complaintData.propertyLocation || complaintData.location || "Building A, Corridor 203",
-    });
-
-    setEstimate(estimateData);
-  }, [currentRole, targetId]);
+  }, [dispatch, viewer, targetId, currentRole]);
 
   useEffect(() => {
     loadComplaintData();
@@ -286,26 +273,20 @@ export default function ComplaintDetails({
     setSubmittingAction(true);
     const userId = getUserIdForRole(currentRole);
 
+    // UPDATE: backend first; the complaints slice stores the result
     try {
-      await fetch(`${API_URL}/complaints/${complaint.id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          role: "maintenance_manager",
-          "x-user-id": String(userId),
-        },
-        body: JSON.stringify({ status: "approved" }),
-      });
-    } catch {
-      // local update
+      await dispatch(
+        updateComplaintStatus({
+          viewer: { role: "maintenance_manager", id: userId },
+          id: complaint.id,
+          body: { status: "approved" },
+        }),
+      ).unwrap();
+    } catch (error) {
+      showToast(`Could not accept the complaint: ${error.message}`);
+      setSubmittingAction(false);
+      return;
     }
-
-    setComplaint((prev) => ({
-      ...prev,
-      status: "approved",
-      lifecycleStep: Math.max(prev.lifecycleStep, 2),
-      workProgress: Math.max(prev.workProgress, 30),
-    }));
 
     showToast("Complaint accepted successfully by Maintenance Manager.");
     setSubmittingAction(false);
@@ -322,29 +303,20 @@ export default function ComplaintDetails({
     setSubmittingAction(true);
     const userId = getUserIdForRole(currentRole);
 
+    // UPDATE: backend first; the complaints slice stores the result
     try {
-      await fetch(`${API_URL}/complaints/${complaint.id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          role: "maintenance_manager",
-          "x-user-id": String(userId),
-        },
-        body: JSON.stringify({
-          status: "rejected",
-          rejectionReason: rejectionReason.trim(),
+      await dispatch(
+        updateComplaintStatus({
+          viewer: { role: "maintenance_manager", id: userId },
+          id: complaint.id,
+          body: { status: "rejected", rejectionReason: rejectionReason.trim() },
         }),
-      });
-    } catch {
-      // local update
+      ).unwrap();
+    } catch (error) {
+      showToast(`Could not reject the complaint: ${error.message}`);
+      setSubmittingAction(false);
+      return;
     }
-
-    setComplaint((prev) => ({
-      ...prev,
-      status: "rejected",
-      rejectionReason: rejectionReason.trim(),
-      workProgress: 0,
-    }));
 
     setRejectModalOpen(false);
     showToast(`Complaint rejected: "${rejectionReason}"`);
@@ -360,26 +332,20 @@ export default function ComplaintDetails({
     setSubmittingAction(true);
     const userId = getUserIdForRole(currentRole);
 
+    // UPDATE: backend first; the complaints slice stores the result
     try {
-      await fetch(`${API_URL}/complaints/${complaint.id}/status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          role: "service_provider",
-          "x-user-id": String(userId),
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-    } catch {
-      // local update
+      await dispatch(
+        updateComplaintStatus({
+          viewer: { role: "service_provider", id: userId },
+          id: complaint.id,
+          body: { status: newStatus },
+        }),
+      ).unwrap();
+    } catch (error) {
+      showToast(`Could not update the status: ${error.message}`);
+      setSubmittingAction(false);
+      return;
     }
-
-    setComplaint((prev) => ({
-      ...prev,
-      status: newStatus,
-      lifecycleStep: getLifecycleStep(newStatus),
-      workProgress: getWorkProgress(newStatus),
-    }));
 
     showToast(`Status updated to "${formatStatus(newStatus)}"`);
     setStatusRemark("");
@@ -410,28 +376,18 @@ export default function ComplaintDetails({
         formData.append("document", estimateForm.file);
       }
 
-      await fetch(`${API_URL}/estimates`, {
-        method: "POST",
-        headers: {
-          role: "service_provider",
-          "x-user-id": String(userId),
-        },
-        body: formData,
-      });
-    } catch {
-      // local update
+      // CREATE: backend first; the estimates slice stores the saved estimate
+      await dispatch(
+        createEstimate({
+          viewer: { role: "service_provider", id: userId },
+          data: formData,
+        }),
+      ).unwrap();
+    } catch (error) {
+      showToast(`Could not submit the estimate: ${error.message}`);
+      setSubmittingAction(false);
+      return;
     }
-
-    setEstimate({
-      id: Date.now(),
-      complaintId: complaint.id,
-      providerId: userId,
-      estimatedCost: parsedCost,
-      notes: estimateForm.description,
-      completionTime: estimateForm.completionTime || "Awaiting manager review",
-      documentName: estimateForm.file ? estimateForm.file.name : "submitted_estimate_doc.pdf",
-      approved: true,
-    });
 
     setEstimateModalOpen(false);
     showToast("Service estimate submitted successfully.");
@@ -453,49 +409,115 @@ export default function ComplaintDetails({
       {
         id: "approved",
         title: "Complaint Approved",
-        time: ["pending", "rejected"].includes(s) ? "Pending" : (complaint.updatedAt || "08 Mar 2024"),
+        time: ["pending", "rejected"].includes(s)
+          ? "Pending"
+          : complaint.updatedAt || "08 Mar 2024",
         done: !["pending", "rejected"].includes(s),
         current: s === "approved",
       },
       {
         id: "assigned",
         title: "Service Provider Assigned",
-        time: Boolean(complaint.assignedProviderId) || ["assigned", "estimating_cost", "in_progress", "completed", "billed", "paid", "closed", "resolved"].includes(s) ? "09 Mar 2024" : "Pending",
-        done: Boolean(complaint.assignedProviderId) || ["assigned", "estimating_cost", "in_progress", "completed", "billed", "paid", "closed", "resolved"].includes(s),
+        time:
+          Boolean(complaint.assignedProviderId) ||
+          [
+            "assigned",
+            "estimating_cost",
+            "in_progress",
+            "completed",
+            "billed",
+            "paid",
+            "closed",
+            "resolved",
+          ].includes(s)
+            ? "09 Mar 2024"
+            : "Pending",
+        done:
+          Boolean(complaint.assignedProviderId) ||
+          [
+            "assigned",
+            "estimating_cost",
+            "in_progress",
+            "completed",
+            "billed",
+            "paid",
+            "closed",
+            "resolved",
+          ].includes(s),
         current: s === "assigned",
       },
       {
         id: "est_sub",
         title: "Estimate Submitted",
-        time: estimate?.submittedAt || (complaint.estimateSubmitted ? "10 Mar 2024" : "Pending"),
-        done: Boolean(estimate) || Boolean(complaint.estimateSubmitted) || ["in_progress", "completed", "billed", "paid", "closed", "resolved"].includes(s),
+        time:
+          estimate?.submittedAt ||
+          (complaint.estimateSubmitted ? "10 Mar 2024" : "Pending"),
+        done:
+          Boolean(estimate) ||
+          Boolean(complaint.estimateSubmitted) ||
+          [
+            "in_progress",
+            "completed",
+            "billed",
+            "paid",
+            "closed",
+            "resolved",
+          ].includes(s),
         current: s === "estimating_cost" && !estimate?.approved,
       },
       {
         id: "est_app",
         title: "Estimate Approved",
-        time: estimate?.reviewedAt || (estimate?.approved || complaint.estimateApproved ? "11 Mar 2024" : "Pending"),
-        done: Boolean(complaint.estimateApproved) || Boolean(estimate?.approved) || ["in_progress", "completed", "billed", "paid", "closed", "resolved"].includes(s),
-        current: Boolean(estimate) && !estimate?.approved && s !== "in_progress",
+        time:
+          estimate?.reviewedAt ||
+          (estimate?.approved || complaint.estimateApproved
+            ? "11 Mar 2024"
+            : "Pending"),
+        done:
+          Boolean(complaint.estimateApproved) ||
+          Boolean(estimate?.approved) ||
+          [
+            "in_progress",
+            "completed",
+            "billed",
+            "paid",
+            "closed",
+            "resolved",
+          ].includes(s),
+        current:
+          Boolean(estimate) && !estimate?.approved && s !== "in_progress",
       },
       {
         id: "wip",
         title: "Work In Progress",
-        time: ["in_progress", "completed", "billed", "paid", "closed", "resolved"].includes(s) ? "12 Mar 2024" : "Pending",
+        time: [
+          "in_progress",
+          "completed",
+          "billed",
+          "paid",
+          "closed",
+          "resolved",
+        ].includes(s)
+          ? "12 Mar 2024"
+          : "Pending",
         done: ["completed", "billed", "paid", "closed", "resolved"].includes(s),
         current: s === "in_progress",
       },
       {
         id: "done",
         title: "Work Completed",
-        time: ["completed", "billed", "paid", "closed", "resolved"].includes(s) ? (complaint.updatedAt || "Completed") : "Pending",
+        time: ["completed", "billed", "paid", "closed", "resolved"].includes(s)
+          ? complaint.updatedAt || "Completed"
+          : "Pending",
         done: ["completed", "billed", "paid", "closed", "resolved"].includes(s),
         current: s === "completed",
       },
       {
         id: "payment",
         title: "Payment Processed",
-        time: ["paid", "closed", "resolved"].includes(s) ? "Processed" : "Pending",
+        time: ["paid", "closed", "resolved"].includes(s)
+          ? "Processed"
+          : "Pending",
         done: ["paid", "closed", "resolved"].includes(s),
         current: s === "paid",
       },
@@ -506,13 +528,20 @@ export default function ComplaintDetails({
   const isProvider = currentRole === "service_provider";
   const isAdmin = currentRole === "admin";
 
-  const shouldRenderNavbar = showNavbar === true || (!hideNavbar && typeof document !== "undefined" && !document.getElementById("nav_container"));
+  const shouldRenderNavbar =
+    showNavbar === true ||
+    (!hideNavbar &&
+      typeof document !== "undefined" &&
+      !document.getElementById("nav_container"));
   const photoUrl = complaint ? getPhotoUrl(complaint.photo) : null;
 
   return (
     <div className="cd_page">
       {shouldRenderNavbar && (
-        <Navbar name={ROLE_USER_NAMES[currentRole] || "Raj Kumar"} role={currentRole} />
+        <Navbar
+          name={ROLE_USER_NAMES[currentRole] || "Raj Kumar"}
+          role={currentRole}
+        />
       )}
 
       <div className="cd_main">
@@ -525,6 +554,11 @@ export default function ComplaintDetails({
         </div>
 
         {/* Content */}
+        {loadError && !complaint && (
+          <div className="cd_card" role="alert" style={{ color: "#B91C1C" }}>
+            {loadError}
+          </div>
+        )}
         {complaint && (
           <>
             {/* Horizontal Lifecycle Stepper + Work Progress Bar */}
@@ -542,7 +576,9 @@ export default function ComplaintDetails({
                       key={step.id}
                       className={`cd_step_item ${isCompleted ? "completed" : ""} ${isActive ? "active" : ""}`}
                     >
-                      {idx < DEFAULT_LIFECYCLE_STEPS.length - 1 && <div className="cd_step_line" />}
+                      {idx < DEFAULT_LIFECYCLE_STEPS.length - 1 && (
+                        <div className="cd_step_line" />
+                      )}
                       <div className="cd_step_circle">
                         {isCompleted ? <FiCheck strokeWidth={3} /> : step.id}
                       </div>
@@ -594,11 +630,15 @@ export default function ComplaintDetails({
                   </div>
                   <div className="cd_info_item">
                     <span className="cd_info_label">Location</span>
-                    <span className="cd_info_value">{complaint.propertyLocation}</span>
+                    <span className="cd_info_value">
+                      {complaint.propertyLocation}
+                    </span>
                   </div>
                   <div className="cd_info_item">
                     <span className="cd_info_label">Work Status</span>
-                    <span className="cd_info_value">{formatStatus(complaint.status)}</span>
+                    <span className="cd_info_value">
+                      {formatStatus(complaint.status)}
+                    </span>
                   </div>
                   <div className="cd_info_item">
                     <span className="cd_info_label">Current Status</span>
@@ -609,7 +649,10 @@ export default function ComplaintDetails({
                   {complaint.rejectionReason && (
                     <div className="cd_info_item">
                       <span className="cd_info_label">Rejection Reason</span>
-                      <span className="cd_info_value" style={{ color: "#dc2626" }}>
+                      <span
+                        className="cd_info_value"
+                        style={{ color: "#dc2626" }}
+                      >
                         {complaint.rejectionReason}
                       </span>
                     </div>
@@ -651,7 +694,9 @@ export default function ComplaintDetails({
                       key={item.id}
                       className={`cd_lifecycle_item ${item.done ? "done" : ""} ${item.current ? "current" : ""}`}
                     >
-                      {idx < timelineItems.length - 1 && <div className="cd_timeline_vbar" />}
+                      {idx < timelineItems.length - 1 && (
+                        <div className="cd_timeline_vbar" />
+                      )}
                       <div className="cd_timeline_row">
                         <div className="cd_timeline_dot">
                           {item.done && <FiCheck strokeWidth={3} />}
@@ -671,8 +716,17 @@ export default function ComplaintDetails({
 
                 {/* Extra for Service Provider: Update Complaint Status */}
                 {isProvider && (
-                  <form onSubmit={handleUpdateStatus} className="cd_sp_status_box">
-                    <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#374151" }}>
+                  <form
+                    onSubmit={handleUpdateStatus}
+                    className="cd_sp_status_box"
+                  >
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        color: "#374151",
+                      }}
+                    >
                       Update Complaint Status
                     </div>
                     <select
@@ -692,7 +746,11 @@ export default function ComplaintDetails({
                       onChange={(e) => setStatusRemark(e.target.value)}
                       className="cd_input"
                     />
-                    <button type="submit" disabled={submittingAction} className="cd_btn_primary">
+                    <button
+                      type="submit"
+                      disabled={submittingAction}
+                      className="cd_btn_primary"
+                    >
                       <FiSend /> Update Status
                     </button>
                   </form>
@@ -706,7 +764,8 @@ export default function ComplaintDetails({
                 <FiFileText /> Description & Notes
               </div>
               <p className="cd_desc_text">
-                {complaint.description || "Continuous water leakage in corridor room 203 causing wet floors and damage."}
+                {complaint.description ||
+                  "Continuous water leakage in corridor room 203 causing wet floors and damage."}
               </p>
             </div>
 
@@ -733,11 +792,22 @@ export default function ComplaintDetails({
                     <div className="cd_estimate_meta_row">
                       <div>
                         <span className="cd_info_label">Estimated Cost</span>
-                        <div className="cd_cost_val">₹{estimate.estimatedCost}</div>
+                        <div className="cd_cost_val">
+                          ₹{estimate.estimatedCost}
+                        </div>
                       </div>
                       <div>
-                        <span className="cd_info_label">Estimated Completion Time</span>
-                        <div style={{ fontSize: "1.1rem", fontWeight: 600, color: "#1e293b", marginTop: "4px" }}>
+                        <span className="cd_info_label">
+                          Estimated Completion Time
+                        </span>
+                        <div
+                          style={{
+                            fontSize: "1.1rem",
+                            fontWeight: 600,
+                            color: "#1e293b",
+                            marginTop: "4px",
+                          }}
+                        >
                           {estimate.completionTime || "Awaiting manager review"}
                         </div>
                       </div>
@@ -747,7 +817,8 @@ export default function ComplaintDetails({
                     <div>
                       <span className="cd_info_label">Description of Work</span>
                       <p className="cd_desc_text" style={{ marginTop: "4px" }}>
-                        {estimate.notes || "Emergency pipe replacement and basement cleanup"}
+                        {estimate.notes ||
+                          "Emergency pipe replacement and basement cleanup"}
                       </p>
                     </div>
 
@@ -757,12 +828,19 @@ export default function ComplaintDetails({
                       <div className="cd_file_box" style={{ marginTop: "6px" }}>
                         <div className="cd_file_info">
                           <FiFileText size={20} color="#16a34a" />
-                          <span>{estimate.documentName || "pipe_replacement_estimate_v1.pdf"}</span>
+                          <span>
+                            {estimate.documentName ||
+                              "pipe_replacement_estimate_v1.pdf"}
+                          </span>
                         </div>
                         <button
                           type="button"
                           className="cd_file_download_btn"
-                          onClick={() => showToast(`Downloading: ${estimate.documentName || "pipe_replacement_estimate_v1.pdf"}`)}
+                          onClick={() =>
+                            showToast(
+                              `Downloading: ${estimate.documentName || "pipe_replacement_estimate_v1.pdf"}`,
+                            )
+                          }
                         >
                           <FiDownload size={16} /> Download
                         </button>
@@ -771,7 +849,13 @@ export default function ComplaintDetails({
 
                     {/* Extra for Service Provider: Submit / Update Estimate */}
                     {isProvider && (
-                      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "4px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          marginTop: "4px",
+                        }}
+                      >
                         <button
                           type="button"
                           className="cd_btn_primary"
@@ -784,7 +868,10 @@ export default function ComplaintDetails({
                   </div>
                 ) : (
                   <div className="cd_empty_doc_box">
-                    <span>No service provider documents have been submitted for this complaint yet.</span>
+                    <span>
+                      No service provider documents have been submitted for this
+                      complaint yet.
+                    </span>
                     {isProvider && (
                       <div style={{ marginTop: "12px" }}>
                         <button
@@ -806,7 +893,14 @@ export default function ComplaintDetails({
               <div className="cd_card_title">
                 <FiCamera /> Complaint Issue Photo
               </div>
-              <div style={{ fontSize: "0.88rem", fontWeight: 600, color: "#475569", marginBottom: "8px" }}>
+              <div
+                style={{
+                  fontSize: "0.88rem",
+                  fontWeight: 600,
+                  color: "#475569",
+                  marginBottom: "8px",
+                }}
+              >
                 Complaint Photo
               </div>
               {photoUrl ? (
@@ -817,7 +911,8 @@ export default function ComplaintDetails({
                     className="cd_photo_img"
                   />
                   <span className="cd_photo_overlay_text">
-                    Photo uploaded on {complaint.submittedAt || "Complaint submission"}
+                    Photo uploaded on{" "}
+                    {complaint.submittedAt || "Complaint submission"}
                   </span>
                 </div>
               ) : (
@@ -832,15 +927,28 @@ export default function ComplaintDetails({
 
       {/* Rejection Reason Modal (Maintenance Manager) */}
       {rejectModalOpen && (
-        <div className="cd_modal_overlay" onClick={() => setRejectModalOpen(false)}>
+        <div
+          className="cd_modal_overlay"
+          onClick={() => setRejectModalOpen(false)}
+        >
           <div className="cd_modal" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#0f172a" }}>
                 Reject Complaint
               </h3>
               <button
                 type="button"
-                style={{ background: "none", border: "none", cursor: "pointer" }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
                 onClick={() => setRejectModalOpen(false)}
               >
                 <FiX size={20} />
@@ -879,21 +987,37 @@ export default function ComplaintDetails({
 
       {/* Submit Estimate Modal (Service Provider) */}
       {estimateModalOpen && (
-        <div className="cd_modal_overlay" onClick={() => setEstimateModalOpen(false)}>
+        <div
+          className="cd_modal_overlay"
+          onClick={() => setEstimateModalOpen(false)}
+        >
           <div className="cd_modal" onClick={(e) => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <h3 style={{ margin: 0, fontSize: "1.2rem", color: "#0f172a" }}>
                 Submit Service Estimate
               </h3>
               <button
                 type="button"
-                style={{ background: "none", border: "none", cursor: "pointer" }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
                 onClick={() => setEstimateModalOpen(false)}
               >
                 <FiX size={20} />
               </button>
             </div>
-            <form onSubmit={handleSubmitEstimate} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            <form
+              onSubmit={handleSubmitEstimate}
+              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+            >
               <div>
                 <label className="cd_info_label">Estimated Cost (₹)</label>
                 <input
@@ -902,17 +1026,26 @@ export default function ComplaintDetails({
                   placeholder="e.g. 3600"
                   className="cd_input"
                   value={estimateForm.cost}
-                  onChange={(e) => setEstimateForm({ ...estimateForm, cost: e.target.value })}
+                  onChange={(e) =>
+                    setEstimateForm({ ...estimateForm, cost: e.target.value })
+                  }
                 />
               </div>
               <div>
-                <label className="cd_info_label">Estimated Completion Time</label>
+                <label className="cd_info_label">
+                  Estimated Completion Time
+                </label>
                 <input
                   type="text"
                   placeholder="e.g. 2 Days / Awaiting manager review"
                   className="cd_input"
                   value={estimateForm.completionTime}
-                  onChange={(e) => setEstimateForm({ ...estimateForm, completionTime: e.target.value })}
+                  onChange={(e) =>
+                    setEstimateForm({
+                      ...estimateForm,
+                      completionTime: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
@@ -923,16 +1056,28 @@ export default function ComplaintDetails({
                   placeholder="e.g. Emergency pipe replacement and basement cleanup"
                   className="cd_textarea"
                   value={estimateForm.description}
-                  onChange={(e) => setEstimateForm({ ...estimateForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setEstimateForm({
+                      ...estimateForm,
+                      description: e.target.value,
+                    })
+                  }
                 />
               </div>
               <div>
-                <label className="cd_info_label">Upload Estimate Document (PDF / DOCX)</label>
+                <label className="cd_info_label">
+                  Upload Estimate Document (PDF / DOCX)
+                </label>
                 <input
                   type="file"
                   required
                   className="cd_input"
-                  onChange={(e) => setEstimateForm({ ...estimateForm, file: e.target.files?.[0] || null })}
+                  onChange={(e) =>
+                    setEstimateForm({
+                      ...estimateForm,
+                      file: e.target.files?.[0] || null,
+                    })
+                  }
                 />
               </div>
               <div className="cd_modal_actions" style={{ marginTop: "8px" }}>
@@ -943,7 +1088,11 @@ export default function ComplaintDetails({
                 >
                   Cancel
                 </button>
-                <button type="submit" disabled={submittingAction} className="cd_btn_primary">
+                <button
+                  type="submit"
+                  disabled={submittingAction}
+                  className="cd_btn_primary"
+                >
                   Submit Estimate
                 </button>
               </div>

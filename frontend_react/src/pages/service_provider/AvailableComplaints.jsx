@@ -1,29 +1,26 @@
-
-import { useCallback, useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import "./styles.css";
 import EstimateForm from "../../components/service_provider/EstimateForm";
 import { estimateStatus } from "../../services/estimateWorkflow";
 import {
-  setEstimates as setEstimatesAction,
-  deleteEstimate as deleteEstimateAction,
+  fetchProviderEstimates,
+  selectEstimatesForProvider,
 } from "../../redux/features/estimates/estimatesSlice";
+import {
+  complaintListKey,
+  fetchComplaintById,
+  fetchComplaints,
+  providerAction,
+  selectComplaintById,
+  selectComplaintList,
+} from "../../redux/features/complaints/complaintsSlice";
+import { useProviderViewer } from "../../components/service_provider/useProviderData";
 
 import { API_BASE_URL as API } from "../../services/api";
 import PageHeader from "../../components/service_provider/PageHeader";
 import ComplaintList from "../../components/service_provider/ComplaintList";
 import { ErrorMessage } from "../../components/service_provider/FeatureStates";
-
-function getProviderId() {
-  try {
-    const user = JSON.parse(
-      localStorage.getItem("currentUser") || "null"
-    );
-    return Number(user?.id || 10);
-  } catch {
-    return 10;
-  }
-}
 
 function imageUrl(photo) {
   if (!photo) {
@@ -123,10 +120,9 @@ function Icon({ type }) {
 
 function AvailableComplaints() {
   const dispatch = useDispatch();
-  const providerId = getProviderId();
+  const viewer = useProviderViewer();
+  const providerId = Number(viewer.id);
 
-  const [complaints, setComplaints] = useState([]);
-  const [applications, setApplications] = useState([]);
   const [estimateOpen, setEstimateOpen] = useState(false);
   const [estimateBusy, setEstimateBusy] = useState(false);
   const [search, setSearch] = useState("");
@@ -134,59 +130,66 @@ function AvailableComplaints() {
   const [location, setLocation] = useState("All");
   const [deadline, setDeadline] = useState("All");
 
-  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [selectedId, setSelectedId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const [actionLoading, setActionLoading] = useState("");
 
+  // all complaints + this provider's estimates come from the Redux store
+  const allComplaints = useSelector((state) =>
+    selectComplaintList(state, complaintListKey.all(viewer)),
+  );
+  const providerEstimates = useSelector((state) =>
+    selectEstimatesForProvider(state, viewer.id),
+  );
+  const selectedComplaint =
+    useSelector((state) => selectComplaintById(state, selectedId)) || null;
+
+  // Preserve the original page's availability rule.
+  const complaints = useMemo(
+    () =>
+      allComplaints.filter(
+        (complaint) =>
+          String(complaint.status).toLowerCase() === "approved" &&
+          !complaint.assignedProviderId,
+      ),
+    [allComplaints],
+  );
+  const applications = useMemo(
+    () =>
+      providerEstimates
+        .map((estimate) => ({
+          estimate,
+          complaint: allComplaints.find(
+            (c) => String(c.id) === String(estimate.complaintId),
+          ),
+        }))
+        .filter((a) => a.complaint),
+    [providerEstimates, allComplaints],
+  );
+
+  // READ: backend -> Redux
   const loadComplaints = useCallback(async () => {
     setLoading(true);
     setError("");
 
     try {
-      const response = await fetch(`${API}/complaints`, {
-        headers: {
-          role: "service_provider",
-          "Content-Type": "application/json",
-          "x-user-id": String(providerId),
-        },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || `Request failed (${response.status})`
-        );
+      await dispatch(fetchComplaints({ viewer })).unwrap();
+      try {
+        await dispatch(
+          fetchProviderEstimates({ viewer, providerId: viewer.id }),
+        ).unwrap();
+      } catch {
+        throw new Error("Could not load submitted estimates. Please retry.");
       }
-
-      if (!Array.isArray(data)) {
-        throw new Error("Unexpected response from complaints API.");
-      }
-
-      // Preserve the original page's availability rule.
-      const available = data.filter(
-        (complaint) =>
-          String(complaint.status).toLowerCase() === "approved" &&
-          !complaint.assignedProviderId
-      );
-
-      setComplaints(available);
-      const estimatesResponse = await fetch(`${API}/estimates/provider/${providerId}`, {
-        headers: { role: "service_provider", "x-user-id": String(providerId) },
-      });
-      if (!estimatesResponse.ok) throw new Error("Could not load submitted estimates. Please retry.");
-      const estimates = await estimatesResponse.json();
-      dispatch(setEstimatesAction(estimates));
-      setApplications(estimates.map(estimate => ({ estimate, complaint: data.find(c => c.id === estimate.complaintId) })).filter(a => a.complaint));
     } catch (err) {
       console.error("Failed to fetch complaints:", err);
       setError(err.message || "Failed to load available complaints.");
     } finally {
       setLoading(false);
     }
-  }, [providerId]);
+  }, [dispatch, viewer]);
 
   useEffect(() => {
     const timer = setTimeout(loadComplaints, 0);
@@ -204,58 +207,32 @@ function AvailableComplaints() {
       category === "All" || complaint.category === category;
 
     const matchesLocation =
-      location === "All" ||
-      (complaint.location || "").startsWith(location);
+      location === "All" || (complaint.location || "").startsWith(location);
 
-    const matchesDeadline = deadlineMatches(
-      complaint.deadline,
-      deadline
-    );
+    const matchesDeadline = deadlineMatches(complaint.deadline, deadline);
 
     return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesLocation &&
-      matchesDeadline
+      matchesSearch && matchesCategory && matchesLocation && matchesDeadline
     );
   });
 
   const openComplaint = useCallback(
     async (complaint) => {
-      setSelectedComplaint(complaint);
+      setSelectedId(complaint.id);
       setEstimateOpen(false);
       setActionError("");
 
       try {
-        const response = await fetch(
-          `${API}/complaints/${complaint.id}`,
-          {
-            headers: {
-              role: "service_provider",
-              "Content-Type": "application/json",
-              "x-user-id": String(providerId),
-            },
-          }
-        );
-
-        if (response.ok) {
-          const freshComplaint = await response.json();
-
-          setSelectedComplaint(freshComplaint);
-          setComplaints((current) =>
-            current.map((item) =>
-              String(item.id) === String(freshComplaint.id)
-                ? freshComplaint
-                : item
-            )
-          );
-        }
+        // READ one: refreshes this complaint in the store
+        await dispatch(
+          fetchComplaintById({ viewer, id: complaint.id }),
+        ).unwrap();
       } catch (err) {
         // The list data is still available if the detail request fails.
         console.error("Failed to refresh complaint details:", err);
       }
     },
-    [providerId]
+    [dispatch, viewer],
   );
 
   useEffect(() => {
@@ -264,17 +241,14 @@ function AvailableComplaints() {
 
     if (!openId || loading) return;
 
-    const complaint = complaints.find(
-      (item) => String(item.id) === String(openId)
-    ) || applications.find(a => String(a.complaint.id) === String(openId))?.complaint;
+    const complaint =
+      complaints.find((item) => String(item.id) === String(openId)) ||
+      applications.find((a) => String(a.complaint.id) === String(openId))
+        ?.complaint;
 
     if (complaint) {
       const timer = setTimeout(() => openComplaint(complaint), 0);
-      window.history.replaceState(
-        null,
-        "",
-        window.location.pathname
-      );
+      window.history.replaceState(null, "", window.location.pathname);
       return () => clearTimeout(timer);
     }
   }, [complaints, applications, loading, openComplaint]);
@@ -282,7 +256,7 @@ function AvailableComplaints() {
   const closeModal = () => {
     if (estimateBusy) return;
     setEstimateOpen(false);
-    setSelectedComplaint(null);
+    setSelectedId(null);
     setActionError("");
     setActionLoading("");
   };
@@ -290,22 +264,29 @@ function AvailableComplaints() {
   const handleDecision = async (action) => {
     if (!selectedComplaint || actionLoading) return;
 
-    if (action === "accept") { setEstimateOpen(true); return; }
+    if (action === "accept") {
+      setEstimateOpen(true);
+      return;
+    }
     const complaintId = selectedComplaint.id;
     setActionLoading(action);
     setActionError("");
     try {
-      const response = await fetch(`${API}/complaints/${complaintId}/sp-reject`, {
-        method: "PATCH",
-        headers: { role: "service_provider", "Content-Type": "application/json", "x-user-id": String(providerId) },
-        body: JSON.stringify({ providerId, reason: "Declined by service provider" }),
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.message || "Could not reject complaint.");
-      setSelectedComplaint(current => ({ ...current, rejectedProviders: data.rejectedProviders }));
+      // UPDATE: backend first; the complaints slice stores the updated complaint
+      await dispatch(
+        providerAction({
+          viewer,
+          id: complaintId,
+          action: "sp-reject",
+          body: { providerId, reason: "Declined by service provider" },
+        }),
+      ).unwrap();
       await loadComplaints();
-    } catch (err) { setActionError(err.message || "The request failed."); }
-    finally { setActionLoading(""); }
+    } catch (err) {
+      setActionError(err.message || "The request failed.");
+    } finally {
+      setActionLoading("");
+    }
   };
 
   const categories = [
@@ -337,23 +318,37 @@ function AvailableComplaints() {
 
   const alreadyInterested =
     selectedComplaint?.interestedProviders?.some(
-      (id) => Number(id) === providerId
+      (id) => Number(id) === providerId,
     ) || false;
 
   const alreadyRejected =
     selectedComplaint?.rejectedProviders?.some(
-      (id) => Number(id) === providerId
+      (id) => Number(id) === providerId,
     ) || false;
 
   return (
     <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
-          <PageHeader title="Available Complaints" description="Submit an estimate to accept an available complaint. The Maintenance Manager will compare estimates and select a provider." />
+          <PageHeader
+            title="Available Complaints"
+            description="Submit an estimate to accept an available complaint. The Maintenance Manager will compare estimates and select a provider."
+          />
 
-          {error && <ErrorMessage onRetry={loadComplaints} style={{ padding: 16, marginBottom: 20, background: "#FEE2E2", color: "#991B1B", borderRadius: 8 }}>
-            {error}
-          </ErrorMessage>}
+          {error && (
+            <ErrorMessage
+              onRetry={loadComplaints}
+              style={{
+                padding: 16,
+                marginBottom: 20,
+                background: "#FEE2E2",
+                color: "#991B1B",
+                borderRadius: 8,
+              }}
+            >
+              {error}
+            </ErrorMessage>
+          )}
 
           <div className="filters-bar">
             <div className="filters-grid">
@@ -438,15 +433,12 @@ function AvailableComplaints() {
                 <h3>Loading complaints...</h3>
               </div>
             ) : filteredComplaints.length === 0 ? (
-              <div
-                className="empty-state"
-                style={{ gridColumn: "1 / -1" }}
-              >
+              <div className="empty-state" style={{ gridColumn: "1 / -1" }}>
                 <Icon type="list" />
                 <h3>No Complaints Found</h3>
                 <p>
-                  No complaints match your current filters, or there
-                  are no unassigned approved complaints.
+                  No complaints match your current filters, or there are no
+                  unassigned approved complaints.
                 </p>
                 <button
                   className="btn btn-accent"
@@ -461,31 +453,61 @@ function AvailableComplaints() {
                 </button>
               </div>
             ) : (
-              <ComplaintList complaints={filteredComplaints}
+              <ComplaintList
+                complaints={filteredComplaints}
                 imageUrl={imageUrl}
                 priorityClass={urgencyClass}
                 locationIcon={<Icon type="location" />}
                 calendarIcon={<Icon type="calendar" />}
-                onView={openComplaint} />
+                onView={openComplaint}
+              />
             )}
           </div>
 
-          {applications.length > 0 && <section className="card" style={{ marginTop: 24 }}>
-            <div className="card-body">
-              <h2>My Submitted Estimates</h2>
-              {applications.map(({ estimate, complaint }) => (
-                <div
-                  className="estimate-notes"
-                  key={estimate.id}
-                  style={estimate.approved === false ? { borderLeft: "4px solid #dc2626" } : undefined}
-                >
-                  <p><strong>C-{complaint.id}: {complaint.title}</strong> · ₹{Number(estimate.estimatedCost).toLocaleString("en-IN")}</p>
-                  <p style={estimate.approved === false ? { color: "#dc2626", fontWeight: 600 } : undefined}>{estimateStatus(estimate)}</p>
-                  <button className="btn btn-ghost" onClick={() => { openComplaint(complaint); setEstimateOpen(true); }}>View Submitted Estimate</button>
-                </div>
-              ))}
-            </div>
-          </section>}
+          {applications.length > 0 && (
+            <section className="card" style={{ marginTop: 24 }}>
+              <div className="card-body">
+                <h2>My Submitted Estimates</h2>
+                {applications.map(({ estimate, complaint }) => (
+                  <div
+                    className="estimate-notes"
+                    key={estimate.id}
+                    style={
+                      estimate.approved === false
+                        ? { borderLeft: "4px solid #dc2626" }
+                        : undefined
+                    }
+                  >
+                    <p>
+                      <strong>
+                        C-{complaint.id}: {complaint.title}
+                      </strong>{" "}
+                      · ₹
+                      {Number(estimate.estimatedCost).toLocaleString("en-IN")}
+                    </p>
+                    <p
+                      style={
+                        estimate.approved === false
+                          ? { color: "#dc2626", fontWeight: 600 }
+                          : undefined
+                      }
+                    >
+                      {estimateStatus(estimate)}
+                    </p>
+                    <button
+                      className="btn btn-ghost"
+                      onClick={() => {
+                        openComplaint(complaint);
+                        setEstimateOpen(true);
+                      }}
+                    >
+                      View Submitted Estimate
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
 
           {selectedComplaint && (
             <div
@@ -502,12 +524,10 @@ function AvailableComplaints() {
               >
                 <div className="modal-header">
                   <div className="modal-header-left">
-                    <h2 id="complaint-modal-title">
-                      Complaint Details
-                    </h2>
+                    <h2 id="complaint-modal-title">Complaint Details</h2>
                     <span
                       className={`badge urgency-badge ${urgencyClass(
-                        selectedComplaint.priority
+                        selectedComplaint.priority,
                       )}`}
                     >
                       {selectedComplaint.priority || "Low"} Priority
@@ -589,8 +609,7 @@ function AvailableComplaints() {
                         </p>
                         <div className="detail-box green">
                           <Icon type="location" />
-                          {selectedComplaint.location ||
-                            "Unknown Location"}
+                          {selectedComplaint.location || "Unknown Location"}
                         </div>
                       </div>
 
@@ -606,12 +625,36 @@ function AvailableComplaints() {
                       </div>
 
                       <div className="modal-action-area">
-                        {selectedComplaint.assignedProviderId || applications.some(a => a.estimate.complaintId === selectedComplaint.id && a.estimate.approved === false) ? (
-                          <div className={`modal-accepted ${applications.some(a => a.estimate.complaintId === selectedComplaint.id && a.estimate.approved === false) ? "rejected" : ""}`}>
-                            <p>{estimateStatus(applications.find(a => a.estimate.complaintId === selectedComplaint.id)?.estimate || {})}</p>
-                            <button className="btn btn-ghost" onClick={() => setEstimateOpen(true)}>View Submitted Estimate</button>
+                        {selectedComplaint.assignedProviderId ||
+                        applications.some(
+                          (a) =>
+                            a.estimate.complaintId === selectedComplaint.id &&
+                            a.estimate.approved === false,
+                        ) ? (
+                          <div
+                            className={`modal-accepted ${applications.some((a) => a.estimate.complaintId === selectedComplaint.id && a.estimate.approved === false) ? "rejected" : ""}`}
+                          >
+                            <p>
+                              {estimateStatus(
+                                applications.find(
+                                  (a) =>
+                                    a.estimate.complaintId ===
+                                    selectedComplaint.id,
+                                )?.estimate || {},
+                              )}
+                            </p>
+                            <button
+                              className="btn btn-ghost"
+                              onClick={() => setEstimateOpen(true)}
+                            >
+                              View Submitted Estimate
+                            </button>
                           </div>
-                        ) : alreadyInterested && applications.some(a => a.estimate.complaintId === selectedComplaint.id) ? (
+                        ) : alreadyInterested &&
+                          applications.some(
+                            (a) =>
+                              a.estimate.complaintId === selectedComplaint.id,
+                          ) ? (
                           <div className="modal-accepted">
                             <p
                               className="main"
@@ -623,15 +666,21 @@ function AvailableComplaints() {
                               ✓ Estimate Submitted — Awaiting Manager Selection
                             </p>
                             <p className="sub" style={{ marginTop: 6 }}>
-                              Your estimate has been submitted for manager selection.
+                              Your estimate has been submitted for manager
+                              selection.
                             </p>
                             <p className="sub" style={{ marginTop: 4 }}>
-                              {selectedComplaint.interestedProviders
-                                ?.length || 1}{" "}
-                              provider(s) in queue. The Maintenance
-                              Manager will select one.
+                              {selectedComplaint.interestedProviders?.length ||
+                                1}{" "}
+                              provider(s) in queue. The Maintenance Manager will
+                              select one.
                             </p>
-                            <button className="btn btn-ghost btn-full" onClick={() => setEstimateOpen(true)}>View Submitted Estimate</button>
+                            <button
+                              className="btn btn-ghost btn-full"
+                              onClick={() => setEstimateOpen(true)}
+                            >
+                              View Submitted Estimate
+                            </button>
                           </div>
                         ) : alreadyRejected ? (
                           <div
@@ -671,17 +720,18 @@ function AvailableComplaints() {
                             }}
                           >
                             {actionError && (
-                              <p
-                                role="alert"
-                                style={{ color: "#B91C1C" }}
-                              >
+                              <p role="alert" style={{ color: "#B91C1C" }}>
                                 {actionError}
                               </p>
                             )}
 
                             <button
                               className="btn btn-accent btn-full"
-                              disabled={Boolean(actionLoading) || estimateBusy || estimateOpen}
+                              disabled={
+                                Boolean(actionLoading) ||
+                                estimateBusy ||
+                                estimateOpen
+                              }
                               onClick={() => handleDecision("accept")}
                             >
                               {actionLoading === "accept"
@@ -691,7 +741,11 @@ function AvailableComplaints() {
 
                             <button
                               className="btn btn-red btn-full"
-                              disabled={Boolean(actionLoading) || estimateBusy || estimateOpen}
+                              disabled={
+                                Boolean(actionLoading) ||
+                                estimateBusy ||
+                                estimateOpen
+                              }
                               onClick={() => handleDecision("reject")}
                             >
                               {actionLoading === "reject"
@@ -703,18 +757,29 @@ function AvailableComplaints() {
                       </div>
                     </div>
                   </div>
-                  {estimateOpen && <EstimateForm key={selectedComplaint.id} embedded complaintId={selectedComplaint.id}
-                    onCancel={() => setEstimateOpen(false)} onBusyChange={setEstimateBusy}
-                    onSubmitted={() => {
-                      loadComplaints();
-                      setSelectedComplaint(current => ({ ...current, interestedProviders: [...new Set([...(current.interestedProviders || []), providerId])] }));
-                    }}
-                    onDeleted={async (deletedId) => {
-                      dispatch(deleteEstimateAction(deletedId));
-                      setApplications(prev => prev.filter(a => Number(a.estimate.id) !== Number(deletedId)));
-                      setEstimateOpen(false);
-                      await loadComplaints();
-                    }} />}
+                  {estimateOpen && (
+                    <EstimateForm
+                      key={selectedComplaint.id}
+                      embedded
+                      complaintId={selectedComplaint.id}
+                      onCancel={() => setEstimateOpen(false)}
+                      onBusyChange={setEstimateBusy}
+                      onSubmitted={async () => {
+                        await loadComplaints();
+                        dispatch(
+                          fetchComplaintById({
+                            viewer,
+                            id: selectedComplaint.id,
+                          }),
+                        );
+                      }}
+                      onDeleted={async () => {
+                        // the estimate was already removed from Redux by the deleteEstimate thunk
+                        setEstimateOpen(false);
+                        await loadComplaints();
+                      }}
+                    />
+                  )}
                 </div>
               </section>
             </div>

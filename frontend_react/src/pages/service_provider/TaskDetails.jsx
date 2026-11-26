@@ -1,20 +1,19 @@
-
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import "./styles.css";
-import { deleteEstimate as deleteEstimateAction } from "../../redux/features/estimates/estimatesSlice";
+import {
+  deleteEstimate,
+  fetchEstimates,
+  selectEstimatesForComplaint,
+} from "../../redux/features/estimates/estimatesSlice";
+import {
+  fetchComplaintById,
+  selectComplaintById,
+} from "../../redux/features/complaints/complaintsSlice";
+import { useProviderViewer } from "../../components/service_provider/useProviderData";
 
 import { API_BASE_URL as API } from "../../services/api";
-
-function getProviderId() {
-  try {
-    const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
-    return user.id || 10;
-  } catch {
-    return 10;
-  }
-}
 
 function imageUrl(photo) {
   if (!photo) {
@@ -63,8 +62,7 @@ function getTask(complaint, estimate) {
     location: complaint.location || "Unknown",
     deadline: complaint.deadline || "None",
     priority: complaint.priority
-      ? complaint.priority.charAt(0).toUpperCase() +
-        complaint.priority.slice(1)
+      ? complaint.priority.charAt(0).toUpperCase() + complaint.priority.slice(1)
       : "Low",
     assignedDate:
       complaint.updatedAt || complaint.submittedAt || "Not recorded",
@@ -74,8 +72,7 @@ function getTask(complaint, estimate) {
       ? {
           id: estimate.id,
           cost: `₹${estimate.estimatedCost ?? "—"}`,
-          completionTime:
-            estimate.completionTime || "Awaiting manager review",
+          completionTime: estimate.completionTime || "Awaiting manager review",
           workDescription: estimate.notes || "No notes provided.",
           uploadedFile: estimate.documentName || "No file uploaded",
         }
@@ -164,9 +161,7 @@ function ProgressStep({ done, label, sub }) {
 }
 
 function ProgressConnector({ done }) {
-  return (
-    <div className={`progress-connector ${done ? "done" : "pending"}`} />
-  );
+  return <div className={`progress-connector ${done ? "done" : "pending"}`} />;
 }
 
 export default function TaskDetails() {
@@ -175,14 +170,30 @@ export default function TaskDetails() {
   const [searchParams] = useSearchParams();
   const taskId = searchParams.get("task");
 
-  const [task, setTask] = useState(null);
+  const viewer = useProviderViewer();
+  const numericId = taskId ? String(taskId).replace(/^C-/i, "") : null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // complaint and its estimates come from the Redux store
+  const complaint = useSelector((state) =>
+    selectComplaintById(state, numericId),
+  );
+  const estimates = useSelector((state) =>
+    selectEstimatesForComplaint(state, numericId),
+  );
+  const task = useMemo(() => {
+    if (error || !complaint) return null;
+    const latestEstimate = estimates.length
+      ? estimates[estimates.length - 1]
+      : null;
+    return getTask(complaint, latestEstimate);
+  }, [complaint, estimates, error]);
+
+  // READ: backend -> Redux
   const loadTask = useCallback(async () => {
-    if (!taskId) {
+    if (!numericId) {
       setError("The task you're looking for doesn't exist.");
-      setTask(null);
       setLoading(false);
       return;
     }
@@ -190,52 +201,28 @@ export default function TaskDetails() {
     setLoading(true);
     setError("");
 
-    const numericId = String(taskId).replace(/^C-/i, "");
-    const headers = {
-      role: "service_provider",
-      "x-user-id": String(getProviderId()),
-      "Content-Type": "application/json",
-    };
-
     try {
-      const complaintResponse = await fetch(
-        `${API}/complaints/${numericId}`,
-        { headers }
-      );
-
-      if (!complaintResponse.ok) {
+      let loaded;
+      try {
+        loaded = await dispatch(
+          fetchComplaintById({ viewer, id: numericId }),
+        ).unwrap();
+      } catch {
         throw new Error("The task you're looking for doesn't exist.");
       }
+      if (Number(loaded.assignedProviderId) !== Number(viewer.id))
+        throw new Error("This task is not assigned to your account.");
 
-      const complaint = await complaintResponse.json();
-      if (Number(complaint.assignedProviderId) !== Number(getProviderId())) throw new Error("This task is not assigned to your account.");
-
-      let latestEstimate = null;
-
-      try {
-        const estimateResponse = await fetch(
-          `${API}/estimates?complaintId=${numericId}`,
-          { headers }
-        );
-
-        if (estimateResponse.ok) {
-          const estimates = await estimateResponse.json();
-          latestEstimate = estimates.length
-            ? estimates[estimates.length - 1]
-            : null;
-        }
-      } catch {
-        // Complaint details can still be shown if estimates are unavailable.
-      }
-
-      setTask(getTask(complaint, latestEstimate));
+      // Complaint details can still be shown if estimates are unavailable.
+      await dispatch(fetchEstimates({ viewer, complaintId: numericId }))
+        .unwrap()
+        .catch(() => {});
     } catch (err) {
-      setTask(null);
       setError(err.message || "Failed to load task details.");
     } finally {
       setLoading(false);
     }
-  }, [taskId]);
+  }, [numericId, viewer, dispatch]);
 
   useEffect(() => {
     const timer = setTimeout(loadTask, 0);
@@ -270,9 +257,7 @@ export default function TaskDetails() {
               <div style={{ marginTop: 20 }}>
                 <button
                   className="btn btn-dark"
-                  onClick={() =>
-                    navigate("/service-provider/assigned-tasks")
-                  }
+                  onClick={() => navigate("/service-provider/assigned-tasks")}
                 >
                   Back to Assigned Tasks
                 </button>
@@ -295,20 +280,23 @@ export default function TaskDetails() {
   const goToStatus = () =>
     navigate(`/service-provider/update-status?task=${task.id}`);
 
-  const goToTasks = () =>
-    navigate("/service-provider/assigned-tasks");
+  const goToTasks = () => navigate("/service-provider/assigned-tasks");
 
   const handleDeleteEstimate = async () => {
-    if (!task?.estimate?.id || !window.confirm("Are you sure you want to delete this estimate?")) return;
+    if (
+      !task?.estimate?.id ||
+      !window.confirm("Are you sure you want to delete this estimate?")
+    )
+      return;
     const estId = task.estimate.id;
+    // DELETE: the estimate leaves Redux only after the backend deletes it
     try {
-      await fetch(`${API}/estimates/${estId}`, {
-        method: "DELETE",
-        headers: { role: "service_provider", "x-user-id": String(getProviderId()) },
-      });
-    } catch {}
-    dispatch(deleteEstimateAction(estId));
-    setTask((prev) => (prev ? { ...prev, estimate: null, estimateSubmitted: false, estimateApproved: false } : null));
+      await dispatch(deleteEstimate({ viewer, id: estId })).unwrap();
+    } catch (err) {
+      window.alert(
+        `Could not delete the estimate: ${err.message || "Unknown error"}`,
+      );
+    }
     await loadTask();
   };
 
@@ -491,10 +479,7 @@ export default function TaskDetails() {
                       </p>
                     </div>
 
-                    <div
-                      className="info-grid-2"
-                      style={{ marginBottom: 20 }}
-                    >
+                    <div className="info-grid-2" style={{ marginBottom: 20 }}>
                       <div>
                         <label className="task-detail-label">
                           Estimated Cost
@@ -542,9 +527,7 @@ export default function TaskDetails() {
                     </div>
 
                     <div>
-                      <label className="task-detail-label">
-                        Uploaded File
-                      </label>
+                      <label className="task-detail-label">Uploaded File</label>
                       <div className="file-row">
                         <Icon>
                           <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -554,13 +537,30 @@ export default function TaskDetails() {
                       </div>
                     </div>
 
-                    {task.estimateApproved || task.estimate?.approved === true || task.estimate?.selectionStatus === "selected" ? (
-                      <div style={{ marginTop: 16, padding: "8px 12px", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: "6px", color: "#166534", fontSize: "13px", fontWeight: 600 }}>
+                    {task.estimateApproved ||
+                    task.estimate?.approved === true ||
+                    task.estimate?.selectionStatus === "selected" ? (
+                      <div
+                        style={{
+                          marginTop: 16,
+                          padding: "8px 12px",
+                          background: "#f0fdf4",
+                          border: "1px solid #bbf7d0",
+                          borderRadius: "6px",
+                          color: "#166534",
+                          fontSize: "13px",
+                          fontWeight: 600,
+                        }}
+                      >
                         ✓ Estimate Accepted by Manager — Locked from Editing
                       </div>
                     ) : (
                       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-                        <button className="btn btn-dark" type="button" onClick={goToEstimate}>
+                        <button
+                          className="btn btn-dark"
+                          type="button"
+                          onClick={goToEstimate}
+                        >
                           Edit Estimate & File
                         </button>
                         <button

@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useDispatch } from "react-redux";
 import Navbar from "../../../components/Navbar"; // COMMON COMPONENT
 import UserProfile from "../../../layouts/UserProfile"; // COMMON COMPONENT
 import { getManagerName } from "../shared/ManagerLayout";
 import { useToast } from "../shared/Toast";
+import { getCurrentManager } from "../../../services/managerService";
+import { saveUser } from "../../../redux/features/users/usersSlice";
+import { useAuth } from "../../../context/AuthContext";
 import {
-  fetchComplaints,
-  fetchProviders,
-  getCurrentManager,
-  updateManagerProfile,
-} from "../../../services/managerService";
+  getManagerViewer,
+  useManagerComplaints,
+  useServiceProviders,
+} from "../shared/useManagerData";
 
 const RESOLVED = ["completed", "billed", "paid", "closed"];
 
 /** Profile page = shared Navbar + shared UserProfile layout, fed with manager data */
 export default function ManagerProfile() {
   const showToast = useToast();
+  const dispatch = useDispatch();
+  const { updateUser } = useAuth();
   const current = getCurrentManager();
   const storageKey = `mmProfile:${current.email || "manager"}`;
 
@@ -32,25 +37,28 @@ export default function ManagerProfile() {
       role: "Maintenance Manager",
       id: `Manager #${current.id || 5}`,
       idLabel: "Manager ID",
-      department: saved.department || (current.block ? `Block ${current.block}` : "Maintenance"),
-      location: saved.location || current.communityName || "Green Valley Society",
+      department:
+        saved.department ||
+        (current.block ? `Block ${current.block}` : "Maintenance"),
+      location:
+        saved.location || current.communityName || "Green Valley Society",
     };
   });
   const [navName, setNavName] = useState(getManagerName());
-  const [activity, setActivity] = useState(null);
-
-  useEffect(() => {
-    Promise.all([fetchComplaints(), fetchProviders().catch(() => [])])
-      .then(([complaints, providers]) =>
-        setActivity({
-          totalComplaints: complaints.length,
-          resolvedComplaints: complaints.filter((c) => RESOLVED.includes(c.status)).length,
-          serviceProviderCount: providers.length,
-          pendingComplaints: complaints.filter((c) => c.status === "pending").length,
-        })
-      )
-      .catch(() => setActivity(null));
-  }, []);
+  // activity numbers come from the complaints and users slices
+  const { complaints, loading, error } = useManagerComplaints();
+  const { providers } = useServiceProviders();
+  const activity = useMemo(() => {
+    if (loading || error) return null;
+    return {
+      totalComplaints: complaints.length,
+      resolvedComplaints: complaints.filter((c) => RESOLVED.includes(c.status))
+        .length,
+      serviceProviderCount: providers.length,
+      pendingComplaints: complaints.filter((c) => c.status === "pending")
+        .length,
+    };
+  }, [complaints, providers, loading, error]);
 
   const handleUpdate = async (updated) => {
     const next = { ...user, ...updated };
@@ -58,12 +66,16 @@ export default function ManagerProfile() {
     localStorage.setItem(storageKey, JSON.stringify(next));
     setNavName(next.fullName);
     try {
-      await updateManagerProfile({ name: next.fullName, phone: next.phone });
-      // keep the logged-in user in sync for the rest of the app
-      localStorage.setItem(
-        "currentUser",
-        JSON.stringify({ ...current, name: next.fullName, phone: next.phone })
-      );
+      // UPDATE: backend first, then the users slice and the logged-in user
+      const viewer = getManagerViewer();
+      await dispatch(
+        saveUser({
+          session: viewer,
+          id: viewer.id,
+          data: { name: next.fullName, phone: next.phone },
+        }),
+      ).unwrap();
+      updateUser({ ...current, name: next.fullName, phone: next.phone });
       showToast("Profile updated successfully.");
     } catch (e) {
       showToast("Saved locally, but the server update failed: " + e.message);

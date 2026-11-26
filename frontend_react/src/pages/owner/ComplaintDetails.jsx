@@ -1,64 +1,75 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { useAuth } from '../../context/AuthContext';
-import { useOwner } from '../../context/OwnerContext';
-import { getComplaintDetails, getOwnerRatings, submitOwnerRating } from '../../services/ownerService';
-import { createNotification } from '../../services/notificationService';
-import { createRating as createRatingAction } from '../../redux/features/ratings/ratingsSlice';
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { useAuth } from "../../context/AuthContext";
+import { useOwner } from "../../context/OwnerContext";
 import {
-  cancelComplaintNotifications,
-  notifyRatingSubmitted,
-} from '../../redux/features/notifications/notificationsSlice';
-import { API_BASE_URL } from '../../services/api';
-import OwnerLayout from './components/OwnerLayout';
-import './owner.css';
+  fetchComplaintById,
+  selectComplaintById,
+} from "../../redux/features/complaints/complaintsSlice";
+import {
+  fetchRatings,
+  selectRatings,
+  submitRating,
+} from "../../redux/features/ratings/ratingsSlice";
+import { createNotification } from "../../redux/features/notifications/notificationsSlice";
+import { API_BASE_URL } from "../../services/api";
+import OwnerLayout from "./components/OwnerLayout";
+import "./owner.css";
 
 export default function ComplaintDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const reduxRatings = useSelector((state) => state.ratings);
   const { currentUser } = useAuth();
   const { removeComplaint } = useOwner();
+  const ownerId = currentUser?.id || 1;
+  const viewer = useMemo(
+    () => ({ role: currentUser?.role || "owner", id: ownerId }),
+    [currentUser?.role, ownerId],
+  );
 
-  const [complaint, setComplaint] = useState(null);
+  // complaint and rating come from the Redux store
+  const stored = useSelector((state) => selectComplaintById(state, id));
+  const complaint = useMemo(
+    () =>
+      stored
+        ? { ...stored, issuedBy: "Resident", submittedOn: stored.submittedAt }
+        : null,
+    [stored],
+  );
+  const ratings = useSelector(selectRatings);
+  const existingRating =
+    ratings.find(
+      (r) =>
+        String(r.complaintId) === String(id) &&
+        String(r.ownerId) === String(ownerId),
+    ) || null;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Rating state
-  const [existingRating, setExistingRating] = useState(null);
+  // Rating form state
   const [ratingScore, setRatingScore] = useState(5);
-  const [ratingFeedback, setRatingFeedback] = useState('');
+  const [ratingFeedback, setRatingFeedback] = useState("");
   const [submittingRating, setSubmittingRating] = useState(false);
 
+  // READ: backend -> Redux (complaint + this owner's rating for it)
   const fetchDetails = useCallback(async () => {
     if (!id) return;
     try {
-      const data = await getComplaintDetails(id, currentUser);
-      setComplaint(data);
-      document.title = `PropSync – ${data.title || 'Complaint Detail'}`;
-
-      // Check existing rating from Redux store first, otherwise fetch from API
-      const foundInRedux = reduxRatings.find(
-        (r) => String(r.complaintId) === String(id) && String(r.ownerId) === String(ownerId)
-      );
-      if (foundInRedux) {
-        setExistingRating(foundInRedux);
-      } else {
-        const ratings = await getOwnerRatings(ownerId, id, currentUser);
-        if (ratings && ratings.length > 0) {
-          setExistingRating(ratings[0]);
-          dispatch(createRatingAction(ratings[0]));
-        }
-      }
+      const data = await dispatch(fetchComplaintById({ viewer, id })).unwrap();
+      document.title = `PropSync – ${data.title || "Complaint Detail"}`;
+      await dispatch(
+        fetchRatings({ viewer, filters: { ownerId, complaintId: id } }),
+      ).unwrap();
+      setError(null);
     } catch (err) {
-      console.error('Failed to load complaint details:', err);
-      setError('Error loading complaint details.');
+      console.error("Failed to load complaint details:", err);
+      setError("Error loading complaint details.");
     } finally {
       setLoading(false);
     }
-  }, [id, currentUser, reduxRatings, dispatch]);
+  }, [id, viewer, ownerId, dispatch]);
 
   useEffect(() => {
     fetchDetails();
@@ -68,34 +79,36 @@ export default function ComplaintDetails() {
   }, [fetchDetails]);
 
   const normalizeStatus = (status) => {
-    return String(status || 'pending').toLowerCase().replace(/_/g, ' ');
+    return String(status || "pending")
+      .toLowerCase()
+      .replace(/_/g, " ");
   };
 
   const displayStatus = (status) => {
     const normalized = normalizeStatus(status);
     const map = {
-      pending: 'Pending',
-      approved: 'Approved',
-      rejected: 'Rejected',
-      assigned: 'Assigned',
-      'estimating cost': 'Estimating Cost',
-      'in progress': 'In Progress',
-      completed: 'Completed',
-      billed: 'Billed',
-      paid: 'Paid',
-      closed: 'Closed',
-      'payment pending': 'Payment Pending',
-      resolved: 'Resolved',
+      pending: "Pending",
+      approved: "Approved",
+      rejected: "Rejected",
+      assigned: "Assigned",
+      "estimating cost": "Estimating Cost",
+      "in progress": "In Progress",
+      completed: "Completed",
+      billed: "Billed",
+      paid: "Paid",
+      closed: "Closed",
+      "payment pending": "Payment Pending",
+      resolved: "Resolved",
     };
-    return map[normalized] || status || 'Pending';
+    return map[normalized] || status || "Pending";
   };
 
   const RATABLE_STATUSES = new Set([
-    'completed',
-    'payment pending',
-    'resolved',
-    'paid',
-    'closed',
+    "completed",
+    "payment pending",
+    "resolved",
+    "paid",
+    "closed",
   ]);
 
   const isComplaintRatable = (status) => {
@@ -107,46 +120,40 @@ export default function ComplaintDetails() {
     if (!complaint) return;
     setSubmittingRating(true);
     try {
-      const ownerId = currentUser?.id || complaint.ownerId || 1;
-      const result = await submitOwnerRating(
-        {
-          ownerId,
-          complaintId: complaint.id,
-          score: ratingScore,
-          feedback: ratingFeedback.trim() || undefined,
-        },
-        currentUser
-      );
-      setExistingRating(result);
-      dispatch(createRatingAction(result));
+      // CREATE: backend first; the slice stores the saved rating
+      const result = await dispatch(
+        submitRating({
+          viewer,
+          rating: {
+            ownerId: currentUser?.id || complaint.ownerId || 1,
+            complaintId: complaint.id,
+            score: ratingScore,
+            feedback: ratingFeedback.trim() || undefined,
+          },
+        }),
+      ).unwrap();
 
       // Notify the service provider about the new rating
-      const providerId = complaint.assignedProviderId || result?.providerId || 10;
+      const providerId =
+        complaint.assignedProviderId || result?.providerId || 10;
       const feedbackStr = ratingFeedback.trim();
-      const notifMessage = `Owner submitted a rating of ${ratingScore}/5 for closed Complaint #${complaint.id} ("${complaint.title || 'Task'}").${feedbackStr ? ` Feedback: "${feedbackStr}"` : ''}`;
+      const notifMessage = `Owner submitted a rating of ${ratingScore}/5 for closed Complaint #${complaint.id} ("${complaint.title || "Task"}").${feedbackStr ? ` Feedback: "${feedbackStr}"` : ""}`;
 
+      // tell the provider (saved by the backend, then added to Redux)
       dispatch(
-        notifyRatingSubmitted({
-          complaintId: complaint.id,
-          title: complaint.title,
-          providerId: Number(providerId),
-          score: ratingScore,
-          feedback: feedbackStr,
-        })
+        createNotification({
+          data: {
+            userId: Number(providerId),
+            complaintId: Number(complaint.id),
+            type: "custom",
+            recipient: "service_provider",
+            message: notifMessage,
+          },
+          sender: { role: "maintenance_manager", id: ownerId },
+        }),
       );
-
-      createNotification(
-        {
-          userId: Number(providerId),
-          complaintId: Number(complaint.id),
-          type: 'custom',
-          recipient: 'service_provider',
-          message: notifMessage,
-        },
-        'maintenance_manager'
-      ).catch(() => {});
     } catch (err) {
-      alert(err.message || 'Error submitting rating');
+      alert(err.message || "Error submitting rating");
     } finally {
       setSubmittingRating(false);
     }
@@ -156,7 +163,9 @@ export default function ComplaintDetails() {
     return (
       <OwnerLayout>
         <main className="complaint-details-page main">
-          <p style={{ textAlign: 'center', marginTop: '40px' }}>Loading complaint details...</p>
+          <p style={{ textAlign: "center", marginTop: "40px" }}>
+            Loading complaint details...
+          </p>
         </main>
       </OwnerLayout>
     );
@@ -166,7 +175,7 @@ export default function ComplaintDetails() {
     return (
       <OwnerLayout>
         <main className="complaint-details-page main">
-          <h2 style={{ textAlign: 'center', marginTop: '50px' }}>{error}</h2>
+          <h2 style={{ textAlign: "center", marginTop: "50px" }}>{error}</h2>
         </main>
       </OwnerLayout>
     );
@@ -180,36 +189,36 @@ export default function ComplaintDetails() {
     rejected: 1,
     approved: 2,
     assigned: 3,
-    'estimating cost': 4,
-    'in progress': 5,
+    "estimating cost": 4,
+    "in progress": 5,
     completed: 6,
     billed: 6,
     paid: 6,
     closed: 6,
-    'payment pending': 6,
+    "payment pending": 6,
     resolved: 6,
   };
   const currentStep = statusStepMap[currentStatus] || 1;
 
   const stepperSteps = [
-    { num: 1, label: 'Submitted' },
-    { num: 2, label: 'Approved' },
-    { num: 3, label: 'Provider Assigned' },
-    { num: 4, label: 'Estimate Submitted' },
-    { num: 5, label: 'Work In Progress' },
-    { num: 6, label: 'Completed' },
+    { num: 1, label: "Submitted" },
+    { num: 2, label: "Approved" },
+    { num: 3, label: "Provider Assigned" },
+    { num: 4, label: "Estimate Submitted" },
+    { num: 5, label: "Work In Progress" },
+    { num: 6, label: "Completed" },
   ];
 
   // Lifecycle calculations (8 stages)
   const lifecycleStages = [
-    { name: 'Complaint Submitted', date: complaint?.submittedOn || null },
-    { name: 'Complaint Approved', date: null },
-    { name: 'Service Provider Assigned', date: null },
-    { name: 'Estimate Submitted', date: null },
-    { name: 'Estimate Approved', date: null },
-    { name: 'Work In Progress', date: null },
-    { name: 'Work Completed', date: null },
-    { name: 'Payment Processed', date: null },
+    { name: "Complaint Submitted", date: complaint?.submittedOn || null },
+    { name: "Complaint Approved", date: null },
+    { name: "Service Provider Assigned", date: null },
+    { name: "Estimate Submitted", date: null },
+    { name: "Estimate Approved", date: null },
+    { name: "Work In Progress", date: null },
+    { name: "Work Completed", date: null },
+    { name: "Payment Processed", date: null },
   ];
 
   const lifecycleStepMap = {
@@ -217,47 +226,96 @@ export default function ComplaintDetails() {
     rejected: 1,
     approved: 2,
     assigned: 3,
-    'estimating cost': 4,
-    'in progress': 6,
+    "estimating cost": 4,
+    "in progress": 6,
     completed: 7,
     billed: 7,
     paid: 8,
     closed: 8,
-    'payment pending': 8,
+    "payment pending": 8,
     resolved: 8,
   };
   const lifecycleCurrentStep = lifecycleStepMap[currentStatus] || 1;
 
   const workStatusMap = {
-    pending: 'Waiting for Maintenance Manager to approve…',
-    approved: 'Complaint approved. Waiting for provider assignment.',
+    pending: "Waiting for Maintenance Manager to approve…",
+    approved: "Complaint approved. Waiting for provider assignment.",
     rejected: complaint?.rejectionReason
       ? `Complaint rejected. Reason: ${complaint.rejectionReason}`
-      : 'Complaint was rejected by the Maintenance Manager.',
-    assigned: `Assigned to: ${complaint?.assignedTo || 'a service provider'}`,
-    'estimating cost': 'Service provider is submitting cost estimate.',
-    'in progress': 'Work is currently in progress.',
-    completed: 'Service provider marked the work as completed and submitted a bill.',
-    billed: 'Service bill submitted. Payment is awaiting manager approval.',
-    paid: 'Service bill payment has been completed.',
-    closed: 'Payment completed. Complaint is closed.',
-    'payment pending': 'Work is completed. Payment is pending.',
-    resolved: 'Work has been completed and resolved.',
+      : "Complaint was rejected by the Maintenance Manager.",
+    assigned: `Assigned to: ${complaint?.assignedTo || "a service provider"}`,
+    "estimating cost": "Service provider is submitting cost estimate.",
+    "in progress": "Work is currently in progress.",
+    completed:
+      "Service provider marked the work as completed and submitted a bill.",
+    billed: "Service bill submitted. Payment is awaiting manager approval.",
+    paid: "Service bill payment has been completed.",
+    closed: "Payment completed. Complaint is closed.",
+    "payment pending": "Work is completed. Payment is pending.",
+    resolved: "Work has been completed and resolved.",
   };
 
   const statusColorMap = {
-    pending: { background: 'var(--amber-lt)', color: 'var(--amber)', borderColor: 'rgba(217,119,6,.25)' },
-    approved: { background: 'var(--green-lt)', color: 'var(--green)', borderColor: 'rgba(22,163,74,.25)' },
-    rejected: { background: '#fee2e2', color: '#b91c1c', borderColor: 'rgba(185,28,28,.25)' },
-    assigned: { background: 'var(--blue-lt)', color: 'var(--blue)', borderColor: 'rgba(29,78,216,.25)' },
-    'estimating cost': { background: '#f5f3ff', color: '#7c3aed', borderColor: 'rgba(124,58,237,.25)' },
-    'in progress': { background: 'var(--teal-lt)', color: 'var(--teal)', borderColor: 'rgba(13,148,136,.25)' },
-    completed: { background: 'var(--green-lt)', color: 'var(--green)', borderColor: 'rgba(22,163,74,.25)' },
-    billed: { background: '#f5f3ff', color: '#7c3aed', borderColor: 'rgba(124,58,237,.25)' },
-    paid: { background: 'var(--green-lt)', color: 'var(--green)', borderColor: 'rgba(22,163,74,.25)' },
-    closed: { background: 'var(--green-lt)', color: 'var(--green)', borderColor: 'rgba(22,163,74,.25)' },
-    'payment pending': { background: '#f5f3ff', color: '#7c3aed', borderColor: 'rgba(124,58,237,.25)' },
-    resolved: { background: '#f3f4f6', color: '#374151', borderColor: 'rgba(55,65,81,.25)' },
+    pending: {
+      background: "var(--amber-lt)",
+      color: "var(--amber)",
+      borderColor: "rgba(217,119,6,.25)",
+    },
+    approved: {
+      background: "var(--green-lt)",
+      color: "var(--green)",
+      borderColor: "rgba(22,163,74,.25)",
+    },
+    rejected: {
+      background: "#fee2e2",
+      color: "#b91c1c",
+      borderColor: "rgba(185,28,28,.25)",
+    },
+    assigned: {
+      background: "var(--blue-lt)",
+      color: "var(--blue)",
+      borderColor: "rgba(29,78,216,.25)",
+    },
+    "estimating cost": {
+      background: "#f5f3ff",
+      color: "#7c3aed",
+      borderColor: "rgba(124,58,237,.25)",
+    },
+    "in progress": {
+      background: "var(--teal-lt)",
+      color: "var(--teal)",
+      borderColor: "rgba(13,148,136,.25)",
+    },
+    completed: {
+      background: "var(--green-lt)",
+      color: "var(--green)",
+      borderColor: "rgba(22,163,74,.25)",
+    },
+    billed: {
+      background: "#f5f3ff",
+      color: "#7c3aed",
+      borderColor: "rgba(124,58,237,.25)",
+    },
+    paid: {
+      background: "var(--green-lt)",
+      color: "var(--green)",
+      borderColor: "rgba(22,163,74,.25)",
+    },
+    closed: {
+      background: "var(--green-lt)",
+      color: "var(--green)",
+      borderColor: "rgba(22,163,74,.25)",
+    },
+    "payment pending": {
+      background: "#f5f3ff",
+      color: "#7c3aed",
+      borderColor: "rgba(124,58,237,.25)",
+    },
+    resolved: {
+      background: "#f3f4f6",
+      color: "#374151",
+      borderColor: "rgba(55,65,81,.25)",
+    },
   };
 
   const badgeStyle = statusColorMap[currentStatus] || {};
@@ -268,7 +326,14 @@ export default function ComplaintDetails() {
       <div className="complaint-details-page">
         <main className="main">
           {/* Top navigation and actions */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: "16px",
+            }}
+          >
             <a
               className="back-link"
               onClick={(e) => {
@@ -276,14 +341,14 @@ export default function ComplaintDetails() {
                 navigate(-1);
               }}
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                fontSize: '13px',
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "6px",
+                fontSize: "13px",
                 fontWeight: 600,
-                color: '#34a853',
-                textDecoration: 'none',
-                cursor: 'pointer'
+                color: "#34a853",
+                textDecoration: "none",
+                cursor: "pointer",
               }}
             >
               <svg
@@ -301,32 +366,41 @@ export default function ComplaintDetails() {
 
             {(() => {
               const s = (complaint?.status || "").toLowerCase();
-              const canDelete = s === "pending" || s === "rejected" || s === "resolved" || s === "closed";
+              const canDelete =
+                s === "pending" ||
+                s === "rejected" ||
+                s === "resolved" ||
+                s === "closed";
               if (!canDelete) return null;
               return (
                 <button
                   className="delete-complaint-btn"
                   type="button"
                   style={{
-                    background: '#fee2e2',
-                    color: '#dc2626',
-                    border: '1px solid #fca5a5',
-                    borderRadius: '8px',
-                    padding: '6px 14px',
-                    fontSize: '13px',
+                    background: "#fee2e2",
+                    color: "#dc2626",
+                    border: "1px solid #fca5a5",
+                    borderRadius: "8px",
+                    padding: "6px 14px",
+                    fontSize: "13px",
                     fontWeight: 600,
-                    cursor: 'pointer',
+                    cursor: "pointer",
                   }}
                   onClick={async () => {
-                    if (!window.confirm(`Are you sure you want to delete complaint "${complaint?.title}"?`)) return;
+                    if (
+                      !window.confirm(
+                        `Are you sure you want to delete complaint "${complaint?.title}"?`,
+                      )
+                    )
+                      return;
                     try {
-                      dispatch(cancelComplaintNotifications(complaint?.id));
+                      // backend delete first; notifications are hidden after success
                       if (removeComplaint) {
                         await removeComplaint(complaint.id);
                       }
-                      navigate('/owner/dashboard');
+                      navigate("/owner/dashboard");
                     } catch (err) {
-                      alert(err.message || 'Failed to delete complaint');
+                      alert(err.message || "Failed to delete complaint");
                     }
                   }}
                 >
@@ -341,13 +415,13 @@ export default function ComplaintDetails() {
             className="hdr-title"
             style={{
               fontFamily: '"Fraunces", serif',
-              fontSize: '22px',
+              fontSize: "22px",
               fontWeight: 800,
-              marginBottom: '18px',
-              color: 'var(--text)',
+              marginBottom: "18px",
+              color: "var(--text)",
             }}
           >
-            {complaint?.title || 'Complaint Details'}
+            {complaint?.title || "Complaint Details"}
           </h2>
 
           {/* ── LIFECYCLE STEPPER ── */}
@@ -361,16 +435,20 @@ export default function ComplaintDetails() {
                   <React.Fragment key={step.num}>
                     <div className="step-wrap">
                       <div
-                        className={`step-circle ${isDone ? 'done' : isCurrent ? 'current' : ''}`}
+                        className={`step-circle ${isDone ? "done" : isCurrent ? "current" : ""}`}
                       >
-                        {isDone ? '✓' : step.num}
+                        {isDone ? "✓" : step.num}
                       </div>
-                      <div className={`step-label ${isDone || isCurrent ? 'active' : ''}`}>
+                      <div
+                        className={`step-label ${isDone || isCurrent ? "active" : ""}`}
+                      >
                         {step.label}
                       </div>
                     </div>
                     {idx < stepperSteps.length - 1 && (
-                      <div className={`step-connector ${isDone ? 'done' : ''}`} />
+                      <div
+                        className={`step-connector ${isDone ? "done" : ""}`}
+                      />
                     )}
                   </React.Fragment>
                 );
@@ -383,7 +461,12 @@ export default function ComplaintDetails() {
             {/* Complaint Information */}
             <div className="card">
               <div className="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -393,27 +476,37 @@ export default function ComplaintDetails() {
 
               <div className="info-row">
                 <div className="info-lbl">Issue</div>
-                <div className="info-val" id="detail-title">{complaint?.title || '—'}</div>
+                <div className="info-val" id="detail-title">
+                  {complaint?.title || "—"}
+                </div>
               </div>
 
               <div className="info-row">
                 <div className="info-lbl">Category</div>
-                <div className="info-val" id="detail-category">{complaint?.category || '—'}</div>
+                <div className="info-val" id="detail-category">
+                  {complaint?.category || "—"}
+                </div>
               </div>
 
               <div className="info-row">
                 <div className="info-lbl">Complaint Id</div>
-                <div className="info-val" id="detail-id">C-{complaint?.id}</div>
+                <div className="info-val" id="detail-id">
+                  C-{complaint?.id}
+                </div>
               </div>
 
               <div className="info-row">
                 <div className="info-lbl">Submitted By</div>
-                <div className="info-val" id="detail-issuedby">{complaint?.issuedBy || '—'}</div>
+                <div className="info-val" id="detail-issuedby">
+                  {complaint?.issuedBy || "—"}
+                </div>
               </div>
 
               <div className="info-row">
                 <div className="info-lbl">Location</div>
-                <div className="info-val" id="detail-location">{complaint?.location || 'Location not provided'}</div>
+                <div className="info-val" id="detail-location">
+                  {complaint?.location || "Location not provided"}
+                </div>
               </div>
 
               <div className="info-row">
@@ -421,22 +514,26 @@ export default function ComplaintDetails() {
                 <div
                   className="info-val"
                   id="detail-workstatus"
-                  style={{ fontWeight: 500, color: 'var(--muted)' }}
+                  style={{ fontWeight: 500, color: "var(--muted)" }}
                 >
-                  {workStatusMap[currentStatus] || displayStatus(complaint?.status) || '—'}
+                  {workStatusMap[currentStatus] ||
+                    displayStatus(complaint?.status) ||
+                    "—"}
                 </div>
               </div>
 
               <div className="info-row">
                 <div className="info-lbl">Current Status</div>
-                <div style={{ marginTop: '5px' }}>
+                <div style={{ marginTop: "5px" }}>
                   <span
                     className="status-badge"
                     id="detail-status-badge"
                     style={badgeStyle}
                   >
                     <span className="status-dot"></span>
-                    <span id="detail-status-text">{displayStatus(complaint?.status)}</span>
+                    <span id="detail-status-text">
+                      {displayStatus(complaint?.status)}
+                    </span>
                   </span>
                 </div>
               </div>
@@ -445,7 +542,12 @@ export default function ComplaintDetails() {
             {/* Complaint Lifecycle */}
             <div className="card">
               <div className="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
                 </svg>
                 Complaint Lifecycle
@@ -461,12 +563,21 @@ export default function ComplaintDetails() {
                     <div
                       key={idx}
                       className="lc-item"
-                      style={idx === lifecycleStages.length - 1 ? { paddingBottom: 0 } : undefined}
+                      style={
+                        idx === lifecycleStages.length - 1
+                          ? { paddingBottom: 0 }
+                          : undefined
+                      }
                     >
-                      <div className={`lc-dot ${isDone ? 'done' : isCur ? 'cur' : ''}`} />
+                      <div
+                        className={`lc-dot ${isDone ? "done" : isCur ? "cur" : ""}`}
+                      />
                       <div>
-                        <div className={`lc-name ${!isDone && !isCur ? 'dim' : ''}`}>
-                          {stage.name} {isCur && <span className="cur-pill">Current</span>}
+                        <div
+                          className={`lc-name ${!isDone && !isCur ? "dim" : ""}`}
+                        >
+                          {stage.name}{" "}
+                          {isCur && <span className="cur-pill">Current</span>}
                         </div>
                         {isCur && stage.date && (
                           <div className="lc-date">{stage.date}</div>
@@ -482,7 +593,12 @@ export default function ComplaintDetails() {
           {/* ── DESCRIPTION ── */}
           <div className="card card-full">
             <div className="card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
                 <line x1="16" y1="13" x2="8" y2="13" />
@@ -490,65 +606,92 @@ export default function ComplaintDetails() {
               </svg>
               Description &amp; Notes
             </div>
-            <p className="desc-text">{complaint?.caption || complaint?.description || 'No description provided.'}</p>
+            <p className="desc-text">
+              {complaint?.caption ||
+                complaint?.description ||
+                "No description provided."}
+            </p>
           </div>
 
           {/* Owner Rating (Shown for ratable statuses only & if provider assigned) */}
-          {isComplaintRatable(currentStatus) && complaint?.assignedProviderId && (
-            <div className="card card-full" id="owner-rating-card">
-              <div className="card-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                </svg>
-                Rate Service Provider
-              </div>
-
-              {existingRating ? (
-                <div className="rating-state" id="owner-rating-state">
-                  You rated this service {existingRating.score}/5
-                  {existingRating.feedback ? `: ${existingRating.feedback}` : '.'}
-                </div>
-              ) : (
-                <form className="rating-form" id="owner-rating-form" onSubmit={handleRatingSubmit}>
-                  <div className="rating-options" role="radiogroup" aria-label="Rating score">
-                    {[5, 4, 3, 2, 1].map((s) => (
-                      <label key={s} className="rating-option">
-                        <input
-                          type="radio"
-                          name="owner-rating-score"
-                          value={s}
-                          checked={ratingScore === s}
-                          onChange={() => setRatingScore(s)}
-                        />
-                        <span>{s} star{s > 1 ? 's' : ''}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <textarea
-                    className="rating-feedback"
-                    id="owner-rating-feedback"
-                    maxLength="500"
-                    placeholder="Share feedback for the completed service"
-                    value={ratingFeedback}
-                    onChange={(e) => setRatingFeedback(e.target.value)}
-                  />
-                  <button
-                    className="rating-submit"
-                    id="owner-rating-submit"
-                    type="submit"
-                    disabled={submittingRating}
+          {isComplaintRatable(currentStatus) &&
+            complaint?.assignedProviderId && (
+              <div className="card card-full" id="owner-rating-card">
+                <div className="card-title">
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
-                    {submittingRating ? 'Submitting...' : 'Submit Rating'}
-                  </button>
-                </form>
-              )}
-            </div>
-          )}
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                  Rate Service Provider
+                </div>
+
+                {existingRating ? (
+                  <div className="rating-state" id="owner-rating-state">
+                    You rated this service {existingRating.score}/5
+                    {existingRating.feedback
+                      ? `: ${existingRating.feedback}`
+                      : "."}
+                  </div>
+                ) : (
+                  <form
+                    className="rating-form"
+                    id="owner-rating-form"
+                    onSubmit={handleRatingSubmit}
+                  >
+                    <div
+                      className="rating-options"
+                      role="radiogroup"
+                      aria-label="Rating score"
+                    >
+                      {[5, 4, 3, 2, 1].map((s) => (
+                        <label key={s} className="rating-option">
+                          <input
+                            type="radio"
+                            name="owner-rating-score"
+                            value={s}
+                            checked={ratingScore === s}
+                            onChange={() => setRatingScore(s)}
+                          />
+                          <span>
+                            {s} star{s > 1 ? "s" : ""}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                    <textarea
+                      className="rating-feedback"
+                      id="owner-rating-feedback"
+                      maxLength="500"
+                      placeholder="Share feedback for the completed service"
+                      value={ratingFeedback}
+                      onChange={(e) => setRatingFeedback(e.target.value)}
+                    />
+                    <button
+                      className="rating-submit"
+                      id="owner-rating-submit"
+                      type="submit"
+                      disabled={submittingRating}
+                    >
+                      {submittingRating ? "Submitting..." : "Submit Rating"}
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
 
           {/* ── PHOTO ── */}
           <div className="card card-full">
             <div className="card-title">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
@@ -559,18 +702,32 @@ export default function ComplaintDetails() {
               {photoSrc ? (
                 <>
                   <img
-                    src={photoSrc.startsWith('http') ? photoSrc : `${API_BASE_URL}${photoSrc.startsWith('/') ? '' : '/'}${photoSrc}`}
+                    src={
+                      photoSrc.startsWith("http")
+                        ? photoSrc
+                        : `${API_BASE_URL}${photoSrc.startsWith("/") ? "" : "/"}${photoSrc}`
+                    }
                     alt={complaint.title}
                     loading="lazy"
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                    onError={(e) => {
+                      e.currentTarget.style.display = "none";
+                    }}
                   />
                   <div className="photo-caption">
                     <strong>{complaint.title}</strong>
-                    <small>Submitted by {complaint.issuedBy || 'resident'}</small>
+                    <small>
+                      Submitted by {complaint.issuedBy || "resident"}
+                    </small>
                   </div>
                 </>
               ) : (
-                <p style={{ padding: '2rem', textAlign: 'center', color: 'var(--muted)' }}>
+                <p
+                  style={{
+                    padding: "2rem",
+                    textAlign: "center",
+                    color: "var(--muted)",
+                  }}
+                >
                   No photo attached to this complaint.
                 </p>
               )}

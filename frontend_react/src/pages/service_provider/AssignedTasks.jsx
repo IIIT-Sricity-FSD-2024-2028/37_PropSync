@@ -1,9 +1,16 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import "./styles.css";
 
-import { API_BASE_URL as API } from "../../services/api";
+import {
+  fetchProviderEstimates,
+  selectEstimatesForProvider,
+} from "../../redux/features/estimates/estimatesSlice";
+import {
+  useProviderComplaints,
+  useProviderViewer,
+} from "../../components/service_provider/useProviderData";
 import PageHeader from "../../components/service_provider/PageHeader";
 import TaskList from "../../components/service_provider/TaskList";
 
@@ -18,17 +25,6 @@ const STATUS_LABELS = {
   payment_pending: "Payment Pending",
   resolved: "Resolved",
 };
-
-function getProviderId() {
-  try {
-    const user = JSON.parse(
-      localStorage.getItem("currentUser") || "null"
-    );
-    return Number(user?.id || 10);
-  } catch {
-    return 10;
-  }
-}
 
 function getStatusLabel(status) {
   return STATUS_LABELS[status] || status || "Unknown";
@@ -70,8 +66,12 @@ function parseDate(dateString) {
 }
 
 function isOverdue(deadline, status) {
-  if (status === "Completed" || status === "Closed" ||
-      status === "Paid" || status === "Resolved") {
+  if (
+    status === "Completed" ||
+    status === "Closed" ||
+    status === "Paid" ||
+    status === "Resolved"
+  ) {
     return false;
   }
 
@@ -166,58 +166,48 @@ function Icon({ type }) {
 
 function AssignedTasks() {
   const navigate = useNavigate();
-  const providerId = getProviderId();
+  const dispatch = useDispatch();
+  const viewer = useProviderViewer();
 
-  const [tasks, setTasks] = useState([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [deadlineFilter, setDeadlineFilter] = useState("All");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const loadTasks = useCallback(async () => {
-    setLoading(true);
-    setError("");
+  // READ: complaints (complaints slice) + this provider's estimates (estimates slice)
+  const {
+    complaints,
+    loading,
+    error: complaintsError,
+    reload,
+  } = useProviderComplaints();
+  const error = complaintsError
+    ? `Could not load assigned tasks. ${complaintsError}`
+    : "";
+  const estimates = useSelector((state) =>
+    selectEstimatesForProvider(state, viewer.id),
+  );
 
-    const headers = {
-      role: "service_provider",
-      "Content-Type": "application/json",
-      "x-user-id": String(providerId),
-    };
+  // Estimates are supplemental: a failed estimate request does not hide the tasks
+  const loadEstimates = useCallback(
+    () => dispatch(fetchProviderEstimates({ viewer, providerId: viewer.id })),
+    [dispatch, viewer],
+  );
+  useEffect(() => {
+    const req = loadEstimates();
+    return () => req.abort();
+  }, [loadEstimates]);
 
-    try {
-      const [complaintResponse, estimateResponse] = await Promise.all([
-        fetch(`${API}/complaints/provider/${providerId}`, { headers }),
-        fetch(`${API}/estimates/provider/${providerId}`, { headers }),
-      ]);
+  const loadTasks = useCallback(() => {
+    reload();
+    loadEstimates();
+  }, [reload, loadEstimates]);
 
-      const complaintData = await complaintResponse.json();
-
-      if (!complaintResponse.ok) {
-        throw new Error(
-          complaintData.message ||
-            `Could not load assigned tasks (${complaintResponse.status}).`
-        );
-      }
-
-      if (!Array.isArray(complaintData)) {
-        throw new Error("Unexpected response from the complaints API.");
-      }
-
-      // Estimates are supplemental. A failed estimate request should not
-      // prevent the assigned complaints from being displayed.
-      let estimates = [];
-
-      if (estimateResponse.ok) {
-        const result = await estimateResponse.json();
-        if (Array.isArray(result)) estimates = result;
-      }
-
-      const mappedTasks = complaintData.map((complaint) => {
+  const tasks = useMemo(
+    () =>
+      complaints.map((complaint) => {
         const estimate = estimates.find(
-          (item) =>
-            Number(item.complaintId) === Number(complaint.id)
+          (item) => Number(item.complaintId) === Number(complaint.id),
         );
 
         return {
@@ -229,28 +219,14 @@ function AssignedTasks() {
           deadline: complaint.deadline || "None",
           priority: getPriorityLabel(complaint.priority),
           status: getStatusLabel(complaint.status),
-          estimateSubmitted: Boolean(
-            complaint.estimateSubmitted || estimate
-          ),
+          estimateSubmitted: Boolean(complaint.estimateSubmitted || estimate),
           estimateApproved: Boolean(
-            complaint.estimateApproved || estimate?.approved === true
+            complaint.estimateApproved || estimate?.approved === true,
           ),
         };
-      });
-
-      setTasks(mappedTasks);
-    } catch (err) {
-      console.error("Failed to load assigned tasks:", err);
-      setError(err.message || "Could not load assigned tasks.");
-      setTasks([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [providerId]);
-
-  useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+      }),
+    [complaints, estimates],
+  );
 
   const filteredTasks = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -284,21 +260,21 @@ function AssignedTasks() {
 
   function openTaskDetails(taskId) {
     navigate(
-      `/service-provider/task-details?task=${encodeURIComponent(taskId)}`
+      `/service-provider/task-details?task=${encodeURIComponent(taskId)}`,
     );
   }
 
   function submitEstimate(event, taskId) {
     event.stopPropagation();
     navigate(
-      `/service-provider/submit-estimate?task=${encodeURIComponent(taskId)}`
+      `/service-provider/submit-estimate?task=${encodeURIComponent(taskId)}`,
     );
   }
 
   function updateTaskStatus(event, taskId) {
     event.stopPropagation();
     navigate(
-      `/service-provider/update-status?task=${encodeURIComponent(taskId)}`
+      `/service-provider/update-status?task=${encodeURIComponent(taskId)}`,
     );
   }
 
@@ -306,7 +282,10 @@ function AssignedTasks() {
     <div className="app-shell service-provider-app">
       <main className="main-wrap">
         <div className="page-content">
-          <PageHeader title="Assigned Tasks" description="View complaints that have been officially assigned to you by the maintenance manager." />
+          <PageHeader
+            title="Assigned Tasks"
+            description="View complaints that have been officially assigned to you by the maintenance manager."
+          />
 
           {error && (
             <div
@@ -415,8 +394,8 @@ function AssignedTasks() {
               <Icon type="document" />
               <h3>No Assigned Tasks Found</h3>
               <p>
-                You currently have no assigned maintenance tasks matching
-                your filters.
+                You currently have no assigned maintenance tasks matching your
+                filters.
               </p>
               <button
                 className="btn btn-accent"
@@ -459,8 +438,12 @@ function AssignedTasks() {
                         getStatusColor={getStatusColor}
                         isOverdue={isOverdue}
                         onView={(task) => openTaskDetails(task.id)}
-                        onEstimate={(event, task) => submitEstimate(event, task.id)}
-                        onUpdate={(event, task) => updateTaskStatus(event, task.id)}
+                        onEstimate={(event, task) =>
+                          submitEstimate(event, task.id)
+                        }
+                        onUpdate={(event, task) =>
+                          updateTaskStatus(event, task.id)
+                        }
                         calendarIcon={<Icon type="calendar" />}
                         estimateIcon={<Icon type="document" />}
                         updateIcon="↻"

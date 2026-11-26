@@ -1,18 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import "./styles.css";
 
-import { API_BASE_URL as API } from "../../services/api";
+import {
+  useProviderComplaints,
+  useProviderRatings,
+} from "../../components/service_provider/useProviderData";
 import PageHeader from "../../components/service_provider/PageHeader";
-
-function getProviderId() {
-  try {
-    const currentUser = JSON.parse(localStorage.getItem("currentUser"));
-    if (currentUser?.id) return Number(currentUser.id);
-  } catch (error) {
-    console.error("Could not read current user:", error);
-  }
-  return 10;
-}
 
 function renderStars(rating, size = 16) {
   return (
@@ -28,7 +21,8 @@ function renderStars(rating, size = 16) {
           height={size}
           style={{
             fill: star <= Math.round(Number(rating) || 0) ? "#F59E0B" : "none",
-            stroke: star <= Math.round(Number(rating) || 0) ? "#F59E0B" : "#D1D5DB",
+            stroke:
+              star <= Math.round(Number(rating) || 0) ? "#F59E0B" : "#D1D5DB",
             strokeWidth: 1.5,
           }}
         >
@@ -94,90 +88,50 @@ function isWithinDateFilter(dateValue, filter) {
 }
 
 export default function Ratings() {
-  const [providerId] = useState(getProviderId);
-  const [tasks, setTasks] = useState([]);
-  const [feedbackList, setFeedbackList] = useState([]);
   const [ratingFilter, setRatingFilter] = useState("All");
   const [serviceFilter, setServiceFilter] = useState("All");
   const [dateFilter, setDateFilter] = useState("All");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
+  // READ: complaints (complaints slice) + ratings (ratings slice), loaded through thunks
+  const {
+    complaints: tasks,
+    loading: tasksLoading,
+    error: tasksError,
+  } = useProviderComplaints();
+  const {
+    ratings,
+    loading: ratingsLoading,
+    error: ratingsError,
+  } = useProviderRatings();
+  const loading = tasksLoading || ratingsLoading;
+  const error = tasksError
+    ? `Could not load service-provider complaints. ${tasksError}`
+    : ratingsError
+      ? `Could not load ratings. ${ratingsError}`
+      : "";
 
-    async function loadRatingsFromAPI() {
-      setLoading(true);
-      setError("");
-
-      const headers = {
-        role: "service_provider",
-        "Content-Type": "application/json",
-        "x-user-id": String(providerId),
-      };
-
-      try {
-        const [taskRes, ratingRes] = await Promise.all([
-          fetch(`${API}/complaints/provider/${providerId}`, { headers }),
-          fetch(`${API}/ratings`, { headers }),
-        ]);
-
-        if (!taskRes.ok) {
-          throw new Error(`Could not load service-provider complaints (${taskRes.status}).`);
-        }
-        if (!ratingRes.ok) {
-          throw new Error(`Could not load ratings (${ratingRes.status}).`);
-        }
-
-        const taskData = await taskRes.json();
-        const ratingData = await ratingRes.json();
-
-        const safeTasks = Array.isArray(taskData) ? taskData : [];
-        const safeRatings = Array.isArray(ratingData) ? ratingData : [];
-        const taskMap = new Map(safeTasks.map((complaint) => [Number(complaint.id), complaint]));
-        const taskIds = new Set(safeTasks.map((complaint) => Number(complaint.id)));
-
-        // The API exposes ratings globally to permitted roles. Only show ratings
-        // for complaints assigned to this service provider.
-        const providerRatings = safeRatings.filter((rating) =>
-          taskIds.has(Number(rating.complaintId))
-        );
-        console.log("Provider ID:", providerId);
-        console.log("Provider complaints:", safeTasks);
-        console.log("All ratings:", safeRatings);
-        console.log("Complaint IDs:", [...taskIds]);
-
-        const mappedFeedback = providerRatings.map((rating) => {
-          const complaint = taskMap.get(Number(rating.complaintId)) || {};
-          return {
-            id: String(rating.id),
-            complaintId: `C-${rating.complaintId}`,
-            serviceType: complaint.category || complaint.issueType || "General",
-            rating: Number(rating.score) || 0,
-            comment: rating.feedback || "No written feedback.",
-            date: rating.ratedAt || "",
-            location: complaint.location || "Unknown",
-            ownerName: `Owner #${rating.ownerId}`,
-          };
-        });
-
-        if (!cancelled) {
-          setTasks(safeTasks);
-          setFeedbackList(mappedFeedback);
-        }
-      } catch (err) {
-        console.error("Failed to load ratings:", err);
-        if (!cancelled) setError(err.message || "Failed to load ratings and feedback.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    loadRatingsFromAPI();
-    return () => {
-      cancelled = true;
-    };
-  }, [providerId]);
+  // The API exposes ratings globally to permitted roles. Only show ratings
+  // for complaints assigned to this service provider.
+  const feedbackList = useMemo(() => {
+    const taskMap = new Map(
+      tasks.map((complaint) => [Number(complaint.id), complaint]),
+    );
+    return ratings
+      .filter((rating) => taskMap.has(Number(rating.complaintId)))
+      .map((rating) => {
+        const complaint = taskMap.get(Number(rating.complaintId)) || {};
+        return {
+          id: String(rating.id),
+          complaintId: `C-${rating.complaintId}`,
+          serviceType: complaint.category || complaint.issueType || "General",
+          rating: Number(rating.score) || 0,
+          comment: rating.feedback || "No written feedback.",
+          date: rating.ratedAt || "",
+          location: complaint.location || "Unknown",
+          ownerName: `Owner #${rating.ownerId}`,
+        };
+      });
+  }, [ratings, tasks]);
 
   const overviewStats = useMemo(() => {
     const total = feedbackList.length;
@@ -188,12 +142,20 @@ export default function Ratings() {
       averageRating: average.toFixed(1),
       totalReviews: total,
       completedComplaints: tasks.filter((complaint) =>
-        ["completed", "billed", "paid", "closed", "payment_pending", "resolved"].includes(
-          String(complaint.status || "").toLowerCase()
-        )
+        [
+          "completed",
+          "billed",
+          "paid",
+          "closed",
+          "payment_pending",
+          "resolved",
+        ].includes(String(complaint.status || "").toLowerCase()),
       ).length,
       satisfactionRate: total
-        ? Math.round((feedbackList.filter((item) => item.rating >= 4).length / total) * 100)
+        ? Math.round(
+            (feedbackList.filter((item) => item.rating >= 4).length / total) *
+              100,
+          )
         : 0,
     };
   }, [feedbackList, tasks]);
@@ -201,7 +163,9 @@ export default function Ratings() {
   const ratingDistribution = useMemo(
     () =>
       [5, 4, 3, 2, 1].map((stars) => {
-        const count = feedbackList.filter((item) => item.rating === stars).length;
+        const count = feedbackList.filter(
+          (item) => item.rating === stars,
+        ).length;
         return {
           stars,
           count,
@@ -210,18 +174,20 @@ export default function Ratings() {
             : 0,
         };
       }),
-    [feedbackList]
+    [feedbackList],
   );
 
   const filteredFeedback = useMemo(
     () =>
       feedbackList.filter((item) => {
-        const matchesRating = ratingFilter === "All" || item.rating === Number(ratingFilter);
-        const matchesService = serviceFilter === "All" || item.serviceType === serviceFilter;
+        const matchesRating =
+          ratingFilter === "All" || item.rating === Number(ratingFilter);
+        const matchesService =
+          serviceFilter === "All" || item.serviceType === serviceFilter;
         const matchesDate = isWithinDateFilter(item.date, dateFilter);
         return matchesRating && matchesService && matchesDate;
       }),
-    [feedbackList, ratingFilter, serviceFilter, dateFilter]
+    [feedbackList, ratingFilter, serviceFilter, dateFilter],
   );
 
   const statCards = [
@@ -230,7 +196,16 @@ export default function Ratings() {
       value: overviewStats.averageRating,
       suffix: "/ 5.0",
       icon: (
-        <svg viewBox="0 0 24 24" style={{ width: 22, height: 22, fill: "#F59E0B", stroke: "#F59E0B", strokeWidth: 1 }}>
+        <svg
+          viewBox="0 0 24 24"
+          style={{
+            width: 22,
+            height: 22,
+            fill: "#F59E0B",
+            stroke: "#F59E0B",
+            strokeWidth: 1,
+          }}
+        >
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
       ),
@@ -241,7 +216,16 @@ export default function Ratings() {
       title: "Total Reviews",
       value: overviewStats.totalReviews,
       icon: (
-        <svg viewBox="0 0 24 24" style={{ width: 22, height: 22, stroke: "#42a443", strokeWidth: 2, fill: "none" }}>
+        <svg
+          viewBox="0 0 24 24"
+          style={{
+            width: 22,
+            height: 22,
+            stroke: "#42a443",
+            strokeWidth: 2,
+            fill: "none",
+          }}
+        >
           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
           <polyline points="22 4 12 14.01 9 11.01" />
         </svg>
@@ -252,7 +236,16 @@ export default function Ratings() {
       title: "Completed Complaints",
       value: overviewStats.completedComplaints,
       icon: (
-        <svg viewBox="0 0 24 24" style={{ width: 22, height: 22, stroke: "#42a443", strokeWidth: 2, fill: "none" }}>
+        <svg
+          viewBox="0 0 24 24"
+          style={{
+            width: 22,
+            height: 22,
+            stroke: "#42a443",
+            strokeWidth: 2,
+            fill: "none",
+          }}
+        >
           <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
           <rect x="9" y="3" width="6" height="4" rx="1" />
           <path d="M9 12h6M9 16h4" />
@@ -264,7 +257,16 @@ export default function Ratings() {
       title: "Satisfaction Rate",
       value: `${overviewStats.satisfactionRate}%`,
       icon: (
-        <svg viewBox="0 0 24 24" style={{ width: 22, height: 22, stroke: "#42a443", strokeWidth: 2, fill: "none" }}>
+        <svg
+          viewBox="0 0 24 24"
+          style={{
+            width: 22,
+            height: 22,
+            stroke: "#42a443",
+            strokeWidth: 2,
+            fill: "none",
+          }}
+        >
           <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
           <polyline points="17 6 23 6 23 12" />
         </svg>
@@ -275,10 +277,17 @@ export default function Ratings() {
 
   return (
     <div className="page-content ratings-page service-provider-app">
-      <PageHeader title="Ratings & Feedback" description="View ratings and feedback from property owners for completed services." />
+      <PageHeader
+        title="Ratings & Feedback"
+        description="View ratings and feedback from property owners for completed services."
+      />
 
       {error && (
-        <div className="update-status-error" role="alert" style={{ marginBottom: 20 }}>
+        <div
+          className="update-status-error"
+          role="alert"
+          style={{ marginBottom: 20 }}
+        >
           {error}
         </div>
       )}
@@ -298,13 +307,23 @@ export default function Ratings() {
               >
                 {card.icon}
               </div>
-              <p style={{ fontSize: "0.82rem", color: "var(--muted-foreground)", marginBottom: 4 }}>
+              <p
+                style={{
+                  fontSize: "0.82rem",
+                  color: "var(--muted-foreground)",
+                  marginBottom: 4,
+                }}
+              >
                 {card.title}
               </p>
               <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontSize: "2rem", fontWeight: 700 }}>{card.value}</span>
+                <span style={{ fontSize: "2rem", fontWeight: 700 }}>
+                  {card.value}
+                </span>
                 {card.suffix && (
-                  <span style={{ color: "var(--muted-foreground)" }}>{card.suffix}</span>
+                  <span style={{ color: "var(--muted-foreground)" }}>
+                    {card.suffix}
+                  </span>
                 )}
               </div>
               {card.extra && <div style={{ marginTop: 6 }}>{card.extra}</div>}
@@ -313,15 +332,27 @@ export default function Ratings() {
         ))}
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 24, marginBottom: 32 }}>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 24,
+          marginBottom: 32,
+        }}
+      >
         <div className="card">
           <div className="card-body">
-            <h2 style={{ fontSize: "1rem", marginBottom: 16 }}>Rating Distribution</h2>
+            <h2 style={{ fontSize: "1rem", marginBottom: 16 }}>
+              Rating Distribution
+            </h2>
             {ratingDistribution.map((item) => (
               <div className="rating-dist-row" key={item.stars}>
                 <span className="stars-label">{item.stars}★</span>
                 <div className="rating-bar-wrap">
-                  <div className="rating-bar-fill" style={{ width: `${item.percentage}%` }} />
+                  <div
+                    className="rating-bar-fill"
+                    style={{ width: `${item.percentage}%` }}
+                  />
                 </div>
                 <span className="rating-dist-count">{item.count}</span>
               </div>
@@ -331,7 +362,15 @@ export default function Ratings() {
 
         <div className="card">
           <div className="card-body">
-            <div style={{ display: "flex", flexDirection: "row", gap: 14, flexWrap: "wrap", alignItems: "flex-end" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                gap: 14,
+                flexWrap: "wrap",
+                alignItems: "flex-end",
+              }}
+            >
               <div className="filter-field" style={{ flex: 1 }}>
                 <StarIcon />
                 <select
@@ -410,9 +449,19 @@ export default function Ratings() {
             <div className="feedback-full-item" key={item.id}>
               <div className="feedback-full-header">
                 <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      marginBottom: 8,
+                    }}
+                  >
                     <span className="feedback-full-id">{item.complaintId}</span>
-                    <span className="badge badge-green" style={{ borderRadius: 999 }}>
+                    <span
+                      className="badge badge-green"
+                      style={{ borderRadius: 999 }}
+                    >
                       {item.serviceType}
                     </span>
                   </div>
@@ -423,7 +472,10 @@ export default function Ratings() {
                     </span>
                   </div>
                   <p className="feedback-full-by">
-                    by <strong style={{ color: "var(--foreground)" }}>{item.ownerName}</strong>
+                    by{" "}
+                    <strong style={{ color: "var(--foreground)" }}>
+                      {item.ownerName}
+                    </strong>
                   </p>
                   <p className="feedback-full-comment">{item.comment}</p>
                 </div>
@@ -432,7 +484,12 @@ export default function Ratings() {
                     <CalendarIcon />
                     {item.date || "Date unavailable"}
                   </div>
-                  <p style={{ fontSize: "0.82rem", color: "var(--muted-foreground)" }}>
+                  <p
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "var(--muted-foreground)",
+                    }}
+                  >
                     {item.location}
                   </p>
                 </div>
