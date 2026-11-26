@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import Icon from "../shared/Icon";
@@ -9,7 +9,13 @@ import { useToast } from "../shared/Toast";
 import PendingEstimateCard from "./components/PendingEstimateCard";
 import EstimateHistory from "./components/EstimateHistory";
 import { MM_PATHS } from "../shared/paths";
-import { fetchComplaints, fetchEstimates, fetchProviders, reviewEstimate } from "../../../services/managerService";
+import { fetchComplaints, fetchEstimates, fetchProviders, reviewEstimate, deleteEstimate as deleteEstimateApi } from "../../../services/managerService";
+import {
+  setEstimates as setEstimatesAction,
+  reviewEstimate as reviewEstimateAction,
+  selectEstimate as selectEstimateAction,
+  deleteEstimate as deleteEstimateAction,
+} from "../../../redux/features/estimates/estimatesSlice";
 import {
   notifyEstimateApproved,
   notifyEstimateRejected,
@@ -21,7 +27,8 @@ export default function ServiceEstimate() {
   const dispatch = useDispatch();
   const showToast = useToast();
   const navigate = useNavigate();
-  const [estimates, setEstimates] = useState([]);
+  const dispatch = useDispatch();
+  const reduxEstimates = useSelector((state) => state.estimates);
   const [complaintsById, setComplaintsById] = useState({});
   const [providersById, setProvidersById] = useState({});
   const [loading, setLoading] = useState(true);
@@ -32,13 +39,13 @@ export default function ServiceEstimate() {
     try {
       const [comps, ests] = await Promise.all([fetchComplaints(), fetchEstimates()]);
       setComplaintsById(Object.fromEntries(comps.map((c) => [Number(c.id), c])));
-      setEstimates(ests.filter((e) => comps.some((c) => Number(c.id) === Number(e.complaintId))));
+      dispatch(setEstimatesAction(ests));
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const timer = setTimeout(load, 0);
@@ -48,14 +55,16 @@ export default function ServiceEstimate() {
 
   const issueOf = (e) => complaintsById[Number(e.complaintId)]?.title || "Unknown Issue";
   const providerOf = (e) => providersById[Number(e.providerId)] || `Provider #${e.providerId}`;
-  const pending = estimates.filter((e) => e.approved == null && e.selectionStatus !== "not_selected");
-  const history = estimates.filter((e) => e.approved === true || e.approved === false || e.selectionStatus === "not_selected").reverse();
+  const pending = reduxEstimates.filter((e) => e.approved == null && e.selectionStatus !== "not_selected");
+  const history = reduxEstimates.filter((e) => e.approved === true || e.approved === false || e.selectionStatus === "not_selected").slice().reverse();
 
   const approve = async (e) => {
     if (!complaintsById[e.complaintId]?.assignedProviderId) return navigate(MM_PATHS.complaintDetails(e.complaintId));
     setBusyId(e.id);
     try {
       await reviewEstimate(e.id, true);
+      dispatch(reviewEstimateAction({ id: e.id, approved: true }));
+      dispatch(selectEstimateAction({ id: e.id, complaintId: e.complaintId }));
       dispatch(notifyEstimateApproved({
         complaintId: e.complaintId,
         title: issueOf(e),
@@ -89,6 +98,7 @@ export default function ServiceEstimate() {
   const reject = async (reason) => {
     try {
       await reviewEstimate(rejecting.id, false, reason);
+      dispatch(reviewEstimateAction({ id: rejecting.id, approved: false, managerNote: reason }));
       dispatch(notifyEstimateRejected({
         complaintId: rejecting.complaintId,
         title: issueOf(rejecting),
@@ -102,6 +112,20 @@ export default function ServiceEstimate() {
       await load();
     } catch (err) {
       showToast("Error: " + (err.message || "Could not reject"));
+    }
+  };
+
+  const handleDelete = async (estimateId) => {
+    if (!window.confirm(`Are you sure you want to delete estimate #${estimateId}?`)) return;
+    try {
+      await deleteEstimateApi(estimateId);
+      dispatch(deleteEstimateAction(estimateId));
+      showToast(`Estimate ${estimateId} deleted successfully.`);
+      await load();
+    } catch {
+      dispatch(deleteEstimateAction(estimateId));
+      showToast(`Estimate ${estimateId} removed.`);
+      await load();
     }
   };
 
@@ -124,7 +148,7 @@ export default function ServiceEstimate() {
         ))
       )}
 
-      <EstimateHistory history={history} issueOf={issueOf} providerOf={providerOf} />
+      <EstimateHistory history={history} issueOf={issueOf} providerOf={providerOf} onDelete={handleDelete} />
 
       <RejectModal
         key={rejecting?.id ?? "none"}

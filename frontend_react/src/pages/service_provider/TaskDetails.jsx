@@ -1,7 +1,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import "./styles.css";
+import { deleteEstimate as deleteEstimateAction } from "../../redux/features/estimates/estimatesSlice";
 
 import { API_BASE_URL as API } from "../../services/api";
 
@@ -70,6 +72,7 @@ function getTask(complaint, estimate) {
     estimateSubmitted,
     estimate: estimate
       ? {
+          id: estimate.id,
           cost: `₹${estimate.estimatedCost ?? "—"}`,
           completionTime:
             estimate.completionTime || "Awaiting manager review",
@@ -168,6 +171,7 @@ function ProgressConnector({ done }) {
 
 export default function TaskDetails() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [searchParams] = useSearchParams();
   const taskId = searchParams.get("task");
 
@@ -293,6 +297,20 @@ export default function TaskDetails() {
 
   const goToTasks = () =>
     navigate("/service-provider/assigned-tasks");
+
+  const handleDeleteEstimate = async () => {
+    if (!task?.estimate?.id || !window.confirm("Are you sure you want to delete this estimate?")) return;
+    const estId = task.estimate.id;
+    try {
+      await fetch(`${API}/estimates/${estId}`, {
+        method: "DELETE",
+        headers: { role: "service_provider", "x-user-id": String(getProviderId()) },
+      });
+    } catch {}
+    dispatch(deleteEstimateAction(estId));
+    setTask((prev) => (prev ? { ...prev, estimate: null, estimateSubmitted: false, estimateApproved: false } : null));
+    await loadTask();
+  };
 
   return (
     <div className="app-shell service-provider-app">
@@ -534,6 +552,20 @@ export default function TaskDetails() {
                         </Icon>
                         <span>{task.estimate.uploadedFile}</span>
                       </div>
+                    </div>
+
+                    <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+                      <button className="btn btn-dark" type="button" onClick={goToEstimate}>
+                        Edit Estimate & File
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        type="button"
+                        style={{ background: "#ef4444", color: "#fff" }}
+                        onClick={handleDeleteEstimate}
+                      >
+                        Delete Estimate
+                      </button>
                     </div>
                   </div>
                 </div>

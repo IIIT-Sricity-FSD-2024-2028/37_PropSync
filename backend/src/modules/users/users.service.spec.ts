@@ -1,7 +1,7 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { NotificationRecipient } from '../notifications/dto/notification.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { UserRole } from './dto/user.dto';
+import { UpdateUserDto, UserRole } from './dto/user.dto';
 import { UsersRepository } from './users.repository';
 import { SYSTEM_SUPER_USER_ID, UsersService } from './users.service';
 
@@ -71,6 +71,16 @@ describe('UsersService community approval scope', () => {
   it('does not expose administrator participant data to owners or service providers', () => {
     expect(service.findAllForActor({ id: 1, role: UserRole.Owner })).toEqual([]);
     expect(service.findAllForActor({ id: 9, role: UserRole.ServiceProvider })).toEqual([]);
+  });
+
+  it('keeps a participant in the same community after a partial profile update', () => {
+    const before = service.findById(1);
+    const patch = Object.assign(new UpdateUserDto(), { name: 'Updated Owner' });
+
+    const updated = service.update(before.id, patch);
+
+    expect(updated).toEqual({ ...before, name: 'Updated Owner' });
+    expect(service.findAllForActor({ id: 13, role: UserRole.Admin })).toContainEqual(updated);
   });
 
   it('routes an Administrator signup only to the non-repository Super User identity', () => {

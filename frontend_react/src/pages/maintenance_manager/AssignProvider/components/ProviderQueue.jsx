@@ -2,7 +2,7 @@ import ProviderQueueItem from "./ProviderQueueItem";
 import Icon from "../../shared/Icon";
 
 /* "Provider Estimates" list, or the waiting empty-state */
-export default function ProviderQueue({ providers, loading, selectedId, onSelect, onBack, onReject, busy }) {
+export default function ProviderQueue({ providers, loading, selectedId, onSelect, onUnselect, onBack, onReject, busy }) {
   const has = providers.length > 0;
   return (
     <section className="card">
@@ -26,7 +26,16 @@ export default function ProviderQueue({ providers, loading, selectedId, onSelect
       )}
 
       {providers.map((p, i) => (
-        <ProviderQueueItem key={p.id} provider={p} index={i} selected={selectedId === p.id} onSelect={onSelect} onReject={onReject} busy={busy} />
+        <ProviderQueueItem
+          key={p.id}
+          provider={p}
+          index={i}
+          selected={selectedId === p.id}
+          onSelect={onSelect}
+          onUnselect={onUnselect}
+          onReject={onReject}
+          busy={busy}
+        />
       ))}
     </section>
   );

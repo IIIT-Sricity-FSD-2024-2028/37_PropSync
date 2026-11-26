@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { useDispatch } from "react-redux";
 import { useToast } from "../../shared/Toast";
 import RejectModal from "../../shared/RejectModal";
 import ComplaintSummaryCard from "./ComplaintSummaryCard";
@@ -8,7 +9,12 @@ import DueDateCard from "./DueDateCard";
 import ProviderNotesCard from "./ProviderNotesCard";
 import ProviderQueue from "./ProviderQueue";
 import { MM_PATHS } from "../../shared/paths";
-import { assignProvider, fetchComplaint, fetchProviderQueue, reviewEstimate } from "../../../../services/managerService";
+import { assignProvider, fetchComplaint, fetchProviderQueue, reviewEstimate, deleteEstimate as deleteEstimateApi } from "../../../../services/managerService";
+import {
+  selectEstimate as selectEstimateAction,
+  reviewEstimate as reviewEstimateAction,
+  deleteEstimate as deleteEstimateAction,
+} from "../../../../redux/features/estimates/estimatesSlice";
 import {
   notifyEstimateApproved,
   notifyEstimateRejected,
@@ -17,6 +23,7 @@ import { createNotification } from "../../../../services/notificationService";
 
 export default function ProviderSelection({ complaintId, onUpdated }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const dispatch = useDispatch();
   const showToast = useToast();
   const [complaint, setComplaint] = useState(null);
@@ -52,6 +59,10 @@ export default function ProviderSelection({ complaintId, onUpdated }) {
     setBusy(true);
     try {
       await assignProvider(complaintId, selectedId, { deadline: dueDate, managerNote: notes });
+      const matched = queue.find((p) => Number(p.id) === Number(selectedId));
+      if (matched?.estimate?.id) {
+        dispatch(selectEstimateAction({ id: matched.estimate.id, complaintId, managerNote: notes }));
+      }
       dispatch(notifyEstimateApproved({
         complaintId,
         title: complaint?.title || `Complaint #${complaintId}`,
@@ -87,6 +98,7 @@ export default function ProviderSelection({ complaintId, onUpdated }) {
     setBusy(true);
     try {
       await reviewEstimate(rejecting.id, false, reason);
+      dispatch(reviewEstimateAction({ id: rejecting.id, approved: false, managerNote: reason }));
       dispatch(notifyEstimateRejected({
         complaintId: rejecting.complaintId || complaintId,
         title: complaint?.title || `Complaint #${complaintId}`,
@@ -104,11 +116,35 @@ export default function ProviderSelection({ complaintId, onUpdated }) {
     finally { lock.current = false; setBusy(false); }
   }
 
+  async function handleDeleteEstimate(estimateId) {
+    if (!window.confirm(`Are you sure you want to delete estimate #${estimateId}?`)) return;
+    try {
+      await deleteEstimateApi(estimateId);
+      dispatch(deleteEstimateAction(estimateId));
+      showToast(`Estimate #${estimateId} deleted successfully.`);
+      await load();
+      onUpdated?.();
+    } catch {
+      dispatch(deleteEstimateAction(estimateId));
+      showToast(`Estimate #${estimateId} removed.`);
+      await load();
+      onUpdated?.();
+    }
+  }
+
   return <>
     {error && <div className="card" role="alert">{error} <button className="btn btn-ghost" onClick={load}>Retry</button></div>}
     <div className="two-col-grid" style={{ alignItems: "start", marginTop: 24 }}>
-      <ProviderQueue providers={queue} loading={loading} selectedId={selectedId} onSelect={setSelectedId}
-        onReject={setRejecting} busy={busy} onBack={back} />
+      <ProviderQueue
+        providers={queue}
+        loading={loading}
+        selectedId={selectedId}
+        onSelect={(id) => setSelectedId(id)}
+        onUnselect={() => setSelectedId(null)}
+        onReject={setRejecting}
+        busy={busy}
+        onBack={back}
+      />
       <div>
         <ComplaintSummaryCard complaint={complaint} />
         {complaint?.status === "approved" && <section className="card">

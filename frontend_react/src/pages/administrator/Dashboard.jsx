@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector, useStore } from "react-redux";
+import { selectUsers } from "../../redux/features/users/usersSlice";
+import { fetchUsers } from "../../services/usersService";
 import { FiAlertTriangle, FiBriefcase, FiHome, FiRefreshCw, FiTool, FiUsers } from "react-icons/fi";
 import { formatRole, getRoleSession, roleRequest } from "../../services/roleApi";
 import "./AdminPages.css";
@@ -7,20 +10,23 @@ const CLOSED_STATUSES = new Set(["closed", "completed", "rejected", "resolved"])
 
 export default function AdministratorDashboard() {
   const session = getRoleSession("admin");
-  const [data, setData] = useState({ users: [], complaints: [], pending: [] });
+  const dispatch = useDispatch();
+  const { getState } = useStore();
+  const allUsers = useSelector((state) => selectUsers(state, session));
+  const users = allUsers.filter((user) => user.approvalStatus === "approved");
+  const [data, setData] = useState({ complaints: [], pending: [] });
   const [state, setState] = useState({ loading: true, error: "" });
   const [health, setHealth] = useState({ loading: true, error: "", server: "Checking...", database: "Checking...", latency: "—", modules: "—", checked: "—" });
 
   const load = useCallback(async () => {
     setState({ loading: true, error: "" });
     try {
-      const [users, complaints, pending] = await Promise.all([
-        roleRequest("admin", session.id, "/users"),
+      const [, complaints, pending] = await Promise.all([
+        fetchUsers({ dispatch, getState }, { session: { role: "admin", id: session.id } }),
         roleRequest("admin", session.id, "/complaints"),
         roleRequest("admin", session.id, "/users/pending"),
       ]);
       setData({
-        users: Array.isArray(users) ? users.filter((user) => user.approvalStatus === "approved") : [],
         complaints: Array.isArray(complaints) ? complaints : [],
         pending: Array.isArray(pending) ? pending : [],
       });
@@ -28,7 +34,7 @@ export default function AdministratorDashboard() {
     } catch (error) {
       setState({ loading: false, error: error.message });
     }
-  }, [session.id]);
+  }, [dispatch, getState, session.id]);
 
   const ping = useCallback(async () => {
     const started = performance.now();
@@ -58,13 +64,13 @@ export default function AdministratorDashboard() {
 
   const activeComplaints = data.complaints.filter((complaint) => !CLOSED_STATUSES.has(String(complaint.status || "").toLowerCase()));
   const metrics = [
-    { label: "Community Participants", value: data.users.length, note: "All approved roles", icon: FiUsers, tone: "purple" },
-    { label: "Property Owners", value: data.users.filter((user) => user.role === "owner").length, note: "Active accounts", icon: FiHome, tone: "blue" },
-    { label: "Maintenance Managers", value: data.users.filter((user) => user.role === "maintenance_manager").length, note: "Active accounts", icon: FiTool, tone: "green" },
-    { label: "Service Providers", value: data.users.filter((user) => user.role === "service_provider").length, note: "Active accounts", icon: FiBriefcase, tone: "orange" },
+    { label: "Community Participants", value: users.length, note: "All approved roles", icon: FiUsers, tone: "purple" },
+    { label: "Property Owners", value: users.filter((user) => user.role === "owner").length, note: "Active accounts", icon: FiHome, tone: "blue" },
+    { label: "Maintenance Managers", value: users.filter((user) => user.role === "maintenance_manager").length, note: "Active accounts", icon: FiTool, tone: "green" },
+    { label: "Service Providers", value: users.filter((user) => user.role === "service_provider").length, note: "Active accounts", icon: FiBriefcase, tone: "orange" },
     { label: "Active Complaints", value: activeComplaints.length, note: "In progress", icon: FiAlertTriangle, tone: "red" },
   ];
-  const recentUsers = [...data.users].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 4);
+  const recentUsers = [...users].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 4);
   const healthRows = [["Server Status", health.server], ["Database Connection", health.database], ["API Response Time", health.latency], ["Active Modules", health.modules], ["Last Checked", health.checked]];
 
   return <main className="role-page admin-role-page admin-dashboard">

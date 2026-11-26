@@ -15,7 +15,7 @@ import { randomUUID } from 'crypto';
 import type { Response } from 'express';
 import { appConfig } from '../../config/app.config';
 
-const estimateUploadPath = join(process.cwd(), 'uploads', 'estimates');
+const estimateUploadPath = join(appConfig.uploadsPath, 'estimates');
 const documentTypes = {
   '.pdf': 'application/pdf',
   '.doc': 'application/msword',
@@ -105,8 +105,40 @@ export class EstimatesController {
     }
   }
 
+  @Patch(':id')
+  @Roles(Role.ServiceProvider, Role.MaintenanceManager, Role.Admin, Role.SuperUser)
+  @UseInterceptors(FileInterceptor('document', {
+    storage: memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, callback) => {
+      const type = documentTypes[extname(file.originalname).toLowerCase()];
+      if (!type || type !== file.mimetype) {
+        return callback(new BadRequestException('Please upload a PDF, Word, or Excel document.'), false);
+      }
+      callback(null, true);
+    },
+  }))
+  @ApiOperation({ summary: 'Update an estimate cost, notes, or uploaded document' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: Partial<CreateEstimateDto>,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Headers('role') role: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    if (file) {
+      const filename = `${randomUUID()}${extname(file.originalname).toLowerCase()}`;
+      const path = join(estimateUploadPath, filename);
+      mkdirSync(estimateUploadPath, { recursive: true });
+      writeFileSync(path, file.buffer);
+      dto.documentName = file.originalname;
+      dto.documentUrl = `http://localhost:${appConfig.port}/uploads/estimates/${filename}`;
+    }
+    return this.estimatesService.update(id, dto, role, Number(userId));
+  }
+
   @Patch(':id/review')
-  @Roles(Role.MaintenanceManager)
+  @Roles(Role.MaintenanceManager, Role.Admin, Role.SuperUser)
   @ApiOperation({ summary: 'Select provider and approve estimate, or reject this candidate only' })
   review(@Param('id', ParseIntPipe) id: number, @Body() dto: ApproveEstimateDto,
     @Headers('x-user-id') userId: string) {
@@ -115,8 +147,14 @@ export class EstimatesController {
   }
 
   @Delete(':id')
-  @Roles(Role.Admin)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.estimatesService.remove(id);
+  @Roles(Role.Admin, Role.MaintenanceManager, Role.ServiceProvider, Role.SuperUser, Role.Owner)
+  @ApiOperation({ summary: 'Delete an estimate' })
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @Headers('role') role: string,
+    @Headers('x-user-id') userId: string,
+  ) {
+    const validUserId = Number(userId) > 0 ? Number(userId) : undefined;
+    return this.estimatesService.remove(id, role, validUserId);
   }
 }

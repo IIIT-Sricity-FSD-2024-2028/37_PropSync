@@ -22,7 +22,6 @@ export function OwnerProvider({ children }) {
   const reduxNotifications = useSelector((state) => state.notifications);
   const [complaints, setComplaints] = useState([]);
   const [notifications, setNotifications] = useState([]);
-  const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -105,21 +104,10 @@ export function OwnerProvider({ children }) {
     }
   };
 
-  const refreshPayments = async () => {
-    if (!currentUser) return;
-    try {
-      const ownerId = currentUser.id || 1;
-      const data = await getOwnerPayments(ownerId, currentUser);
-      setPayments(data || []);
-    } catch (err) {
-      console.warn('Error fetching owner payments:', err);
-    }
-  };
-
   useEffect(() => {
     if (currentUser) {
       setLoading(true);
-      Promise.all([refreshComplaints(), refreshNotifications(), refreshPayments()]).finally(() => {
+      Promise.all([refreshComplaints(), refreshNotifications()]).finally(() => {
         setLoading(false);
       });
     }
@@ -136,7 +124,6 @@ export function OwnerProvider({ children }) {
         refreshComplaints,
         removeComplaint,
         refreshNotifications,
-        refreshPayments,
         loading,
         error
       }}

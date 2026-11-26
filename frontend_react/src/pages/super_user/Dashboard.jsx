@@ -1,4 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector, useStore } from "react-redux";
+import { selectUsers } from "../../redux/features/users/usersSlice";
+import { fetchUsers } from "../../services/usersService";
 import { FiAlertTriangle, FiBriefcase, FiCheckCircle, FiClock, FiHome, FiRefreshCw, FiTool, FiUsers, FiXCircle } from "react-icons/fi";
 import { formatRole, getRoleSession, roleRequest } from "../../services/roleApi";
 import "./SuperUserPages.css";
@@ -18,24 +21,28 @@ function displayTime(value) {
 
 export default function SuperUserDashboard() {
   const session = getRoleSession("super_user");
-  const [data, setData] = useState({ users: [], complaints: [], pending: [] });
+  const dispatch = useDispatch();
+  const { getState } = useStore();
+  const allUsers = useSelector((state) => selectUsers(state, session));
+  const users = allUsers;
+  const [data, setData] = useState({ complaints: [], pending: [] });
   const [state, setState] = useState({ loading: true, error: "" });
   const [health, setHealth] = useState({ loading: true, error: "", server: "Checking…", database: "Checking…", latency: "—", modules: "—", checked: "—" });
 
   const load = useCallback(async () => {
     setState({ loading: true, error: "" });
     try {
-      const [users, complaints, pending] = await Promise.all([
-        roleRequest("super_user", session.id, "/users"),
+      const [, complaints, pending] = await Promise.all([
+        fetchUsers({ dispatch, getState }, { session: { role: "super_user", id: session.id } }),
         roleRequest("super_user", session.id, "/complaints"),
         roleRequest("super_user", session.id, "/users/pending"),
       ]);
-      setData({ users: Array.isArray(users) ? users : [], complaints: Array.isArray(complaints) ? complaints : [], pending: Array.isArray(pending) ? pending : [] });
+      setData({ complaints: Array.isArray(complaints) ? complaints : [], pending: Array.isArray(pending) ? pending : [] });
       setState({ loading: false, error: "" });
     } catch (error) {
       setState({ loading: false, error: error.message });
     }
-  }, [session.id]);
+  }, [dispatch, getState, session.id]);
 
   const ping = useCallback(async () => {
     const started = performance.now();
@@ -57,12 +64,12 @@ export default function SuperUserDashboard() {
 
   const activeComplaints = data.complaints.filter((complaint) => !CLOSED_STATUSES.has(String(complaint.status || "").toLowerCase()));
   const metricCards = [
-    { title: "Total System Participants", value: data.users.length, hint: "All Roles", icon: FiUsers, tone: "purple" },
+    { title: "Total System Participants", value: users.length, hint: "All Roles", icon: FiUsers, tone: "purple" },
     ...ROLE_METRICS.map((metric) => {
-      const group = data.users.filter((user) => user.role === metric.key);
+      const group = users.filter((user) => user.role === metric.key);
       let hintCount = 0;
       if (metric.key === "owner") {
-        hintCount = new Set(data.users.map((user) => user.communityName).filter(Boolean)).size;
+        hintCount = new Set(users.map((user) => user.communityName).filter(Boolean)).size;
       } else if (metric.key === "maintenance_manager") {
         hintCount = new Set(group.map((user) => `${user.communityName || ""}:${user.block || ""}`).filter((block) => block !== ":")).size;
       } else {
@@ -72,7 +79,7 @@ export default function SuperUserDashboard() {
     }),
     { title: "Active Complaints", value: activeComplaints.length, hint: "In Progress", icon: FiAlertTriangle, tone: "red" },
   ];
-  const recentUsers = [...data.users].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 4);
+  const recentUsers = [...users].sort((a, b) => String(b.createdAt || "").localeCompare(String(a.createdAt || ""))).slice(0, 4);
   const healthRows = [
     ["Server Status", health.server, health.server === "Operational" || health.server === "Available"],
     ["Database Connection", health.database, health.database === "Healthy" || health.database === "Connected"],

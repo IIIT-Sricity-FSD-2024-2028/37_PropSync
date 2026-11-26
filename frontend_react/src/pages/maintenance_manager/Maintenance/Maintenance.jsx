@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useDispatch } from "react-redux";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
 import ConfirmModal from "../shared/ConfirmModal";
@@ -8,9 +8,11 @@ import MaintenanceChargeForm from "./components/MaintenanceChargeForm";
 import MaintenanceStats from "./components/MaintenanceStats";
 import MaintenancePaymentsTable from "./components/MaintenancePaymentsTable";
 import { MM_PATHS } from "../shared/paths";
+import { getCurrentManager, getManagerId } from "../../../services/managerService";
 import {
-  createMaintenanceCharges, deleteMaintenancePayment, fetchMaintenancePayments, getCurrentManager, markMaintenancePaid, settlePlatformFees,
-} from "../../../services/managerService";
+  createMaintenanceCharges, fetchMaintenance, markMaintenancePaid, removeMaintenance, settleMaintenanceFees,
+} from "../../../services/maintenanceService";
+import { selectMaintenance, selectMaintenanceRequest } from "../../../redux/features/maintenance/maintenanceSlice";
 import { notifyMonthlyMaintenanceSubmitted } from "../../../redux/features/notifications/notificationsSlice";
 import { createNotification } from "../../../services/notificationService";
 
@@ -20,26 +22,22 @@ const fee = (p) => Number(p.platformFee) || Number(p.amount || 0) * 0.05;
 export default function Maintenance() {
   const dispatch = useDispatch();
   const showToast = useToast();
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const dispatch = useDispatch();
+  const { getState } = useStore();
+  const managerId = getManagerId();
+  const session = { role: "maintenance_manager", id: managerId };
+  const payments = useSelector((state) => selectMaintenance(state, session));
+  const list = useSelector((state) => selectMaintenanceRequest(state, session, "list"));
+  const loading = list.status === "idle" || list.status === "loading";
   const [toDelete, setToDelete] = useState(null);
 
-  const load = useCallback(async () => {
-    try {
-      setPayments(await fetchMaintenancePayments());
-      setError("");
-    } catch (e) {
-      setPayments([]);
-      setError(e.message || "Failed to load payments");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    load();
-  }, [load]);
+    const controller = new AbortController();
+    fetchMaintenance({ dispatch, getState }, {
+      session: { role: "maintenance_manager", id: managerId }, signal: controller.signal,
+    }).catch(() => { /* Redux exposes the request error. */ });
+    return () => controller.abort();
+  }, [dispatch, getState, managerId]);
 
   // same rules as updateMaintenanceStats() in the HTML page
   const stats = useMemo(() => {
@@ -74,7 +72,6 @@ export default function Maintenance() {
 
       const block = getCurrentManager().block;
       showToast(block ? `Maintenance charges created successfully for Block ${block} owners` : "Maintenance charges created successfully for block owners.");
-      load();
       return { text: res.message || "Maintenance charges sent to owners.", type: "success" };
     } catch (e) {
       return { text: e.message || "Failed to create charges", type: "error" };
@@ -85,7 +82,6 @@ export default function Maintenance() {
     try {
       const res = await fn();
       showToast(res?.message || okMsg);
-      load();
     } catch (e) {
       showToast(e.message || "Something went wrong");
     }
@@ -95,12 +91,12 @@ export default function Maintenance() {
     <ManagerLayout backTo={MM_PATHS.dashboard} backLabel="Back to Dashboard">
       <PageHeader title="Maintenance Payments" subtitle="Create monthly charges and track owner maintenance payment status." />
       <MaintenanceChargeForm onSubmit={createCharges} />
-      <MaintenanceStats stats={stats} onPayFee={() => run(settlePlatformFees, "Platform fee remitted to platform successfully.")} />
+      <MaintenanceStats stats={stats} onPayFee={() => run(() => settleMaintenanceFees({ dispatch, getState }, { session }), "Platform fee remitted to platform successfully.")} />
       <MaintenancePaymentsTable
         payments={payments}
         loading={loading}
-        error={error}
-        onMarkPaid={(id) => run(() => markMaintenancePaid(id), "Payment marked as paid.")}
+        error={list.error}
+        onMarkPaid={(id) => run(() => markMaintenancePaid({ dispatch, getState }, { session, id }), "Payment marked as paid.")}
         onDelete={setToDelete}
       />
       <ConfirmModal
@@ -114,7 +110,7 @@ export default function Maintenance() {
         onConfirm={() => {
           const id = toDelete;
           setToDelete(null);
-          run(() => deleteMaintenancePayment(id), "Maintenance payment deleted.");
+          run(() => removeMaintenance({ dispatch, getState }, { session, id }), "Maintenance payment deleted.");
         }}
       />
     </ManagerLayout>

@@ -2,7 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { useAuth } from '../../context/AuthContext';
 import { useOwner } from '../../context/OwnerContext';
-import { getOwnerPayments, getOwnerPaymentsSummary, submitTransactionId } from '../../services/ownerService';
+import { useDispatch, useSelector, useStore } from 'react-redux';
+import { selectMaintenance, selectMaintenanceRequest, selectMaintenanceSummary } from '../../redux/features/maintenance/maintenanceSlice';
+import { fetchMaintenance, fetchMaintenanceSummary, getOwnerMaintenanceSession, submitMaintenanceTransaction } from '../../services/maintenanceService';
 import { createNotification } from '../../services/notificationService';
 import { notifyOwnerPaymentCompleted } from '../../redux/features/notifications/notificationsSlice';
 import OwnerLayout from './components/OwnerLayout';
@@ -13,9 +15,18 @@ export default function PaymentHistory() {
   const { currentUser } = useAuth();
   const { ownerProfile, refreshNotifications } = useOwner();
 
-  const [summary, setSummary] = useState({ totalPaid: 0, pendingCount: 0, monthlyPaid: 0 });
-  const [payments, setPayments] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  const { getState } = useStore();
+  const { role, id } = getOwnerMaintenanceSession(currentUser);
+  const session = { role, id };
+  const payments = useSelector((state) => selectMaintenance(state, session));
+  const summary = useSelector((state) => selectMaintenanceSummary(state, session));
+  const list = useSelector((state) => selectMaintenanceRequest(state, session, 'list'));
+  const summaryRequest = useSelector((state) => selectMaintenanceRequest(state, session, 'summary'));
+  const mutation = useSelector((state) => selectMaintenanceRequest(state, session, 'mutation'));
+  const loading = list.status === 'idle' || list.status === 'loading';
+  const [notifying, setNotifying] = useState(false);
+  const submittingTxn = mutation.status === 'loading' || notifying;
 
   // Controlled Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,35 +35,24 @@ export default function PaymentHistory() {
   // Modal State
   const [confirmModalOpen, setConfirmModalOpen] = useState(false);
   const [scanModalOpen, setScanModalOpen] = useState(false);
-  const [activePayment, setActivePayment] = useState(null);
+  const [activePaymentId, setActivePaymentId] = useState(null);
+  const activePayment = payments.find((payment) => payment.id === activePaymentId);
   const [transactionIdInput, setTransactionIdInput] = useState('');
   const [txnError, setTxnError] = useState('');
-  const [submittingTxn, setSubmittingTxn] = useState(false);
 
   useEffect(() => {
     document.title = 'PropSync – Payment History';
   }, []);
 
-  const loadPaymentData = useCallback(async () => {
-    if (!currentUser) return;
-    try {
-      const ownerId = currentUser.id || 1;
-      const [sumData, payData] = await Promise.all([
-        getOwnerPaymentsSummary(ownerId, currentUser),
-        getOwnerPayments(ownerId, currentUser)
-      ]);
-      setSummary(sumData);
-      setPayments(payData);
-    } catch (err) {
-      console.warn('Error loading payments:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
-
   useEffect(() => {
-    loadPaymentData();
-  }, [loadPaymentData]);
+    const controller = new AbortController();
+    const options = { session: { role, id }, signal: controller.signal };
+    Promise.all([
+      fetchMaintenance({ dispatch, getState }, options),
+      fetchMaintenanceSummary({ dispatch, getState }, options),
+    ]).catch(() => { /* Redux exposes the request errors. */ });
+    return () => controller.abort();
+  }, [dispatch, getState, role, id]);
 
   // Derived progress overview
   const totalPaid = payments
@@ -84,7 +84,7 @@ export default function PaymentHistory() {
   });
 
   const handleOpenConfirm = (p) => {
-    setActivePayment(p);
+    setActivePaymentId(p.id);
     setConfirmModalOpen(true);
   };
 
@@ -96,18 +96,20 @@ export default function PaymentHistory() {
   };
 
   const handleSubmitTransactionProof = async () => {
-    if (!activePayment) return;
+    if (!activePayment || submittingTxn) return;
     const cleanId = transactionIdInput.trim();
     if (!cleanId) {
       setTxnError('Please enter a valid Transaction ID.');
       return;
     }
 
-    setSubmittingTxn(true);
     setTxnError('');
+    setNotifying(true);
 
     try {
-      await submitTransactionId(activePayment.id, cleanId, currentUser);
+      await submitMaintenanceTransaction({ dispatch, getState }, {
+        session, id: activePayment.id, transactionId: cleanId,
+      });
 
       // Notify Maintenance Manager
       const managerId = activePayment.managerId || 5;
@@ -136,11 +138,10 @@ export default function PaymentHistory() {
 
       setScanModalOpen(false);
       alert('Transaction submitted successfully! Waiting for Maintenance Manager approval.');
-      loadPaymentData();
     } catch (err) {
       setTxnError(err.message || 'Error submitting transaction.');
     } finally {
-      setSubmittingTxn(false);
+      setNotifying(false);
     }
   };
 
@@ -153,6 +154,7 @@ export default function PaymentHistory() {
 
   return (
     <OwnerLayout>
+      {(list.error || summaryRequest.error) && <p role="alert">{list.error || summaryRequest.error}</p>}
       <div className="container" style={{ maxWidth: '1100px', margin: '0 auto' }}>
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#1e293b', marginBottom: '4px' }}>
           Maintenance Payment History :
@@ -167,7 +169,7 @@ export default function PaymentHistory() {
             <div>
               <p style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, marginBottom: '6px' }}>Total Paid</p>
               <h2 id="totalPaid" style={{ fontSize: '28px', fontWeight: 700, color: '#1e293b' }}>
-                ₹{Number(summary.totalPaid || 0).toLocaleString('en-IN')}
+                ₹{Number(summary?.totalPaid || 0).toLocaleString('en-IN')}
               </h2>
             </div>
           </div>
@@ -176,7 +178,7 @@ export default function PaymentHistory() {
             <div>
               <p style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, marginBottom: '6px' }}>Pending</p>
               <h2 id="pendingCount" style={{ fontSize: '28px', fontWeight: 700, color: '#1e293b' }}>
-                {summary.pendingCount || 0}
+                {summary?.pendingCount || 0}
               </h2>
             </div>
           </div>
@@ -185,7 +187,7 @@ export default function PaymentHistory() {
             <div>
               <p style={{ fontSize: '13px', color: '#64748b', fontWeight: 500, marginBottom: '6px' }}>Monthly Paid</p>
               <h2 id="monthlyPaid" style={{ fontSize: '28px', fontWeight: 700, color: '#1e293b' }}>
-                ₹{Number(summary.monthlyPaid || 0).toLocaleString('en-IN')}
+                ₹{Number(summary?.monthlyPaid || 0).toLocaleString('en-IN')}
               </h2>
             </div>
           </div>

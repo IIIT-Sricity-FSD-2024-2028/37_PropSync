@@ -176,6 +176,19 @@ export const reviewEstimate = (estimateId, approved, managerNote) =>
     ),
   });
 
+export const updateEstimate = (estimateId, data) =>
+  request(`/estimates/${estimateId}`, {
+    method: "PATCH",
+    headers: headers(true),
+    body: JSON.stringify(data),
+  });
+
+export const deleteEstimate = (estimateId) =>
+  request(`/estimates/${estimateId}`, {
+    method: "DELETE",
+    headers: headers(),
+  });
+
 /* ================= BILLS ================= */
 export const fetchBills = () => request(`/bills`, { headers: headers() });
 
@@ -184,30 +197,3 @@ export const markBillPaid = (billId) =>
     method: "PATCH",
     headers: headers(true),
   });
-
-/* ================= MONTHLY MAINTENANCE ================= */
-export const fetchMaintenancePayments = () =>
-  request(`/maintenance`, { headers: headers() });
-
-export const createMaintenanceCharges = (month, amount) =>
-  request(`/maintenance/create`, {
-    method: "POST",
-    headers: headers(true),
-    body: JSON.stringify({ month, amount }),
-  });
-
-export const markMaintenancePaid = (id) =>
-  request(`/maintenance/${id}/mark-paid`, {
-    method: "PATCH",
-    headers: headers(true),
-  });
-
-export const settlePlatformFees = () =>
-  request(`/maintenance/settle-fee`, {
-    method: "POST",
-    headers: headers(true),
-    body: JSON.stringify({ managerId: getManagerId() }),
-  });
-
-export const deleteMaintenancePayment = (id) =>
-  request(`/maintenance/${id}`, { method: "DELETE", headers: headers(true) });
