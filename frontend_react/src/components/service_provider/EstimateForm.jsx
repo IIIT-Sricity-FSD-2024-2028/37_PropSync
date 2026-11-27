@@ -13,7 +13,6 @@ import {
   checkDuplicateEstimate as checkDuplicateEstimateAction,
 } from "../../redux/features/estimates/estimatesSlice";
 import { notifyEstimateSubmitted } from "../../redux/features/notifications/notificationsSlice";
-import { createNotification } from "../../services/notificationService";
 
 import { API_BASE_URL as API } from "../../services/api";
 
@@ -428,14 +427,14 @@ export default function EstimateForm({ complaintId, embedded = false, onCancel, 
                 </div>
 
                 <div className="card">
-                  <div className={`colored-card-header ${existingEstimate.approved === false ? "red" : "green"}`}>
+                  <div className={`colored-card-header ${existingEstimate.approved === false || existingEstimate.selectionStatus === "not_selected" ? "red" : "green"}`}>
                     <h2>Submitted Estimate</h2>
                   </div>
 
                   <div className="card-body">
-                    <div className={`alert-box ${existingEstimate.approved === false ? "red" : "green"} estimate-alert`}>
-                      <Icon type={existingEstimate.approved === false ? "warning" : "success"} />
-                      <p style={existingEstimate.approved === false ? { color: "#b91c1c", fontWeight: 600 } : undefined}>
+                    <div className={`alert-box ${existingEstimate.approved === false || existingEstimate.selectionStatus === "not_selected" ? "red" : "green"} estimate-alert`}>
+                      <Icon type={existingEstimate.approved === false || existingEstimate.selectionStatus === "not_selected" ? "warning" : "success"} />
+                      <p style={existingEstimate.approved === false || existingEstimate.selectionStatus === "not_selected" ? { color: "#b91c1c", fontWeight: 600 } : undefined}>
                         {estimateStatus(existingEstimate)}
                       </p>
                     </div>

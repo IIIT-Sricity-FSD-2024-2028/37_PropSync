@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import type { ApprovalStatus, User } from './users.service';
 import { UserRole } from './dto/user.dto';
 
+export const SYSTEM_SUPER_USER_ID = 0;
+
 @Injectable()
 export class UsersRepository {
   /** Communities available to new community-scoped accounts. */
@@ -13,6 +15,14 @@ export class UsersRepository {
 
   private users: User[] = (
     [
+      {
+        id: SYSTEM_SUPER_USER_ID,
+        name: 'Super User',
+        email: 'superuser@propsync.com',
+        password: 'superuser123',
+        role: UserRole.SuperUser,
+        createdAt: '2024-01-01',
+      },
       {
         id: 1,
         name: 'Raj Kumar',

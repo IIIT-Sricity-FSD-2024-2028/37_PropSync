@@ -625,135 +625,165 @@ function AvailableComplaints() {
                       </div>
 
                       <div className="modal-action-area">
-                        {selectedComplaint.assignedProviderId ||
-                        applications.some(
-                          (a) =>
-                            a.estimate.complaintId === selectedComplaint.id &&
-                            a.estimate.approved === false,
-                        ) ? (
-                          <div
-                            className={`modal-accepted ${applications.some((a) => a.estimate.complaintId === selectedComplaint.id && a.estimate.approved === false) ? "rejected" : ""}`}
-                          >
-                            <p>
-                              {estimateStatus(
-                                applications.find(
-                                  (a) =>
-                                    a.estimate.complaintId ===
-                                    selectedComplaint.id,
-                                )?.estimate || {},
+                        {(() => {
+                          const currentApp = applications.find(
+                            (a) => String(a.estimate.complaintId) === String(selectedComplaint.id),
+                          );
+                          const currentEstimate = currentApp?.estimate;
+                          const isRejected =
+                            currentEstimate?.approved === false ||
+                            currentEstimate?.selectionStatus === "not_selected";
+                          const isAssigned = Boolean(selectedComplaint.assignedProviderId);
+
+                          if (isAssigned || isRejected) {
+                            return (
+                              <div
+                                className={`modal-accepted ${isRejected ? "rejected" : ""}`}
+                                style={
+                                  isRejected
+                                    ? {
+                                        background: "#fef2f2",
+                                        border: "2px solid #dc2626",
+                                        borderRadius: 10,
+                                        padding: 16,
+                                        textAlign: "center",
+                                        color: "#dc2626",
+                                      }
+                                    : undefined
+                                }
+                              >
+                                <p
+                                  style={
+                                    isRejected
+                                      ? {
+                                          color: "#dc2626",
+                                          fontWeight: 700,
+                                          marginBottom: 8,
+                                        }
+                                      : undefined
+                                  }
+                                >
+                                  {estimateStatus(currentEstimate || {})}
+                                </p>
+                                <button
+                                  className="btn btn-ghost"
+                                  onClick={() => setEstimateOpen(true)}
+                                >
+                                  View Submitted Estimate
+                                </button>
+                              </div>
+                            );
+                          }
+
+                          if (alreadyInterested && currentApp) {
+                            return (
+                              <div className="modal-accepted">
+                                <p
+                                  className="main"
+                                  style={{
+                                    color: "#1a0dab",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  ✓ Estimate Submitted — Awaiting Manager Selection
+                                </p>
+                                <p className="sub" style={{ marginTop: 6 }}>
+                                  Your estimate has been submitted for manager
+                                  selection.
+                                </p>
+                                <p className="sub" style={{ marginTop: 4 }}>
+                                  {selectedComplaint.interestedProviders?.length ||
+                                    1}{" "}
+                                  provider(s) in queue. The Maintenance Manager will
+                                  select one.
+                                </p>
+                                <button
+                                  className="btn btn-ghost btn-full"
+                                  onClick={() => setEstimateOpen(true)}
+                                >
+                                  View Submitted Estimate
+                                </button>
+                              </div>
+                            );
+                          }
+
+                          if (alreadyRejected) {
+                            return (
+                              <div
+                                className="modal-accepted"
+                                style={{
+                                  background: "#fee2e2",
+                                  border: "1px solid #fecaca",
+                                  borderRadius: 8,
+                                  padding: 12,
+                                }}
+                              >
+                                <p
+                                  className="main"
+                                  style={{
+                                    color: "#dc2626",
+                                    fontWeight: 700,
+                                  }}
+                                >
+                                  ✕ Complaint Declined
+                                </p>
+                                <p
+                                  className="sub"
+                                  style={{
+                                    marginTop: 6,
+                                    color: "#991b1b",
+                                  }}
+                                >
+                                  You have declined this complaint.
+                                </p>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 12,
+                              }}
+                            >
+                              {actionError && (
+                                <p role="alert" style={{ color: "#B91C1C" }}>
+                                  {actionError}
+                                </p>
                               )}
-                            </p>
-                            <button
-                              className="btn btn-ghost"
-                              onClick={() => setEstimateOpen(true)}
-                            >
-                              View Submitted Estimate
-                            </button>
-                          </div>
-                        ) : alreadyInterested &&
-                          applications.some(
-                            (a) =>
-                              a.estimate.complaintId === selectedComplaint.id,
-                          ) ? (
-                          <div className="modal-accepted">
-                            <p
-                              className="main"
-                              style={{
-                                color: "#1a0dab",
-                                fontWeight: 700,
-                              }}
-                            >
-                              ✓ Estimate Submitted — Awaiting Manager Selection
-                            </p>
-                            <p className="sub" style={{ marginTop: 6 }}>
-                              Your estimate has been submitted for manager
-                              selection.
-                            </p>
-                            <p className="sub" style={{ marginTop: 4 }}>
-                              {selectedComplaint.interestedProviders?.length ||
-                                1}{" "}
-                              provider(s) in queue. The Maintenance Manager will
-                              select one.
-                            </p>
-                            <button
-                              className="btn btn-ghost btn-full"
-                              onClick={() => setEstimateOpen(true)}
-                            >
-                              View Submitted Estimate
-                            </button>
-                          </div>
-                        ) : alreadyRejected ? (
-                          <div
-                            className="modal-accepted"
-                            style={{
-                              background: "#fee2e2",
-                              border: "1px solid #fecaca",
-                              borderRadius: 8,
-                              padding: 12,
-                            }}
-                          >
-                            <p
-                              className="main"
-                              style={{
-                                color: "#dc2626",
-                                fontWeight: 700,
-                              }}
-                            >
-                              ✕ Complaint Declined
-                            </p>
-                            <p
-                              className="sub"
-                              style={{
-                                marginTop: 6,
-                                color: "#991b1b",
-                              }}
-                            >
-                              You have declined this complaint.
-                            </p>
-                          </div>
-                        ) : (
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "column",
-                              gap: 12,
-                            }}
-                          >
-                            {actionError && (
-                              <p role="alert" style={{ color: "#B91C1C" }}>
-                                {actionError}
-                              </p>
-                            )}
 
-                            <button
-                              className="btn btn-accent btn-full"
-                              disabled={
-                                Boolean(actionLoading) ||
-                                estimateBusy ||
-                                estimateOpen
-                              }
-                              onClick={() => handleDecision("accept")}
-                            >
-                              {actionLoading === "accept"
-                                ? "Submitting Estimate..."
-                                : "Accept Complaint"}
-                            </button>
+                              <button
+                                className="btn btn-accent btn-full"
+                                disabled={
+                                  Boolean(actionLoading) ||
+                                  estimateBusy ||
+                                  estimateOpen
+                                }
+                                onClick={() => handleDecision("accept")}
+                              >
+                                {actionLoading === "accept"
+                                  ? "Submitting Estimate..."
+                                  : "Accept Complaint"}
+                              </button>
 
-                            <button
-                              className="btn btn-red btn-full"
-                              disabled={
-                                Boolean(actionLoading) ||
-                                estimateBusy ||
-                                estimateOpen
-                              }
-                              onClick={() => handleDecision("reject")}
-                            >
-                              {actionLoading === "reject"
-                                ? "Recording Rejection..."
-                                : "Reject Complaint"}
-                            </button>
-                          </div>
-                        )}
+                              <button
+                                className="btn btn-red btn-full"
+                                disabled={
+                                  Boolean(actionLoading) ||
+                                  estimateBusy ||
+                                  estimateOpen
+                                }
+                                onClick={() => handleDecision("reject")}
+                              >
+                                {actionLoading === "reject"
+                                  ? "Recording Rejection..."
+                                  : "Reject Complaint"}
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

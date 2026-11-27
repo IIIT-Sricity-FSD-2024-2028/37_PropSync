@@ -60,25 +60,36 @@ export const fetchEstimateById = createAsyncThunk(
 // CREATE – dispatch(createEstimate({ viewer, data: FormData }))
 export const createEstimate = createAsyncThunk(
   "estimates/create",
-  ({ viewer, data }) => postEstimate({ viewer, data }),
+  async (arg) => {
+    if (arg && arg.viewer && arg.data) return postEstimate(arg);
+    return arg;
+  },
 );
 
 // UPDATE – dispatch(updateEstimate({ viewer, id, data }))
 export const updateEstimate = createAsyncThunk(
   "estimates/update",
-  ({ viewer, id, data }) => patchEstimate({ viewer, id, data }),
+  async (arg) => {
+    if (arg && arg.viewer && arg.id && arg.data) return patchEstimate(arg);
+    return arg;
+  },
 );
 
 // UPDATE – dispatch(reviewEstimate({ viewer, id, approved, managerNote? }))
-export const reviewEstimate = createAsyncThunk("estimates/review", (arg) =>
-  patchEstimateReview(arg),
-);
+export const reviewEstimate = createAsyncThunk("estimates/review", (arg) => {
+  if (arg && arg.viewer && arg.id) return patchEstimateReview(arg);
+  return arg;
+});
 
 // DELETE – dispatch(deleteEstimate({ viewer, id }))
 export const deleteEstimate = createAsyncThunk(
   "estimates/delete",
-  async ({ viewer, id }) => {
-    await deleteEstimateById({ viewer, id });
+  async (arg) => {
+    const id = typeof arg === "object" ? arg.id : arg;
+    const viewer = typeof arg === "object" ? arg.viewer : undefined;
+    if (viewer) {
+      await deleteEstimateById({ viewer, id });
+    }
     return id;
   },
 );
@@ -107,6 +118,40 @@ const estimatesSlice = createSlice({
   reducers: {
     clearEstimatesError: (state) => {
       state.mutation = idle;
+    },
+    setEstimates: (state, action) => {
+      const list = Array.isArray(action.payload) ? action.payload : [];
+      list.forEach((e) => upsert(state, e));
+    },
+    checkDuplicateEstimate: (state, action) => {
+      const { complaintId, providerId, id } = action.payload || {};
+      const exists = Object.values(state.entities).some(
+        (e) =>
+          String(e.complaintId) === String(complaintId) &&
+          String(e.providerId) === String(providerId) &&
+          (id === undefined || String(e.id) !== String(id))
+      );
+      if (exists) {
+        console.warn("Duplicate estimate detected:", complaintId, providerId);
+      }
+    },
+    selectEstimate: (state, action) => {
+      const { id, complaintId, managerNote } = action.payload || {};
+      Object.values(state.entities).forEach((estimate) => {
+        if (complaintId && String(estimate.complaintId) === String(complaintId)) {
+          if (String(estimate.id) === String(id)) {
+            estimate.approved = true;
+            estimate.selectionStatus = "selected";
+            if (managerNote) estimate.managerNote = managerNote;
+          } else if (estimate.selectionStatus === "candidate") {
+            estimate.selectionStatus = "not_selected";
+          }
+        } else if (String(estimate.id) === String(id)) {
+          estimate.approved = true;
+          estimate.selectionStatus = "selected";
+          if (managerNote) estimate.managerNote = managerNote;
+        }
+      });
     },
   },
   extraReducers: (builder) => {
@@ -138,7 +183,7 @@ const estimatesSlice = createSlice({
       upsert(state, payload),
     );
 
-    for (const thunk of [createEstimate, updateEstimate, reviewEstimate]) {
+    for (const thunk of [createEstimate, reviewEstimate]) {
       builder
         .addCase(thunk.pending, (state) => {
           state.mutation = { status: "loading", error: null };
@@ -151,6 +196,24 @@ const estimatesSlice = createSlice({
           state.mutation = { status: "failed", error: error.message };
         });
     }
+
+    builder
+      .addCase(updateEstimate.pending, (state) => {
+        state.mutation = { status: "loading", error: null };
+      })
+      .addCase(updateEstimate.fulfilled, (state, { payload }) => {
+        if (payload?.id) {
+          const existing = state.entities[payload.id];
+          if (existing && (existing.approved === true || existing.selectionStatus === "selected")) {
+            return;
+          }
+        }
+        upsert(state, payload);
+        state.mutation = { status: "succeeded", error: null };
+      })
+      .addCase(updateEstimate.rejected, (state, { error }) => {
+        state.mutation = { status: "failed", error: error.message };
+      });
 
     builder
       .addCase(deleteEstimate.pending, (state) => {
@@ -166,7 +229,12 @@ const estimatesSlice = createSlice({
   },
 });
 
-export const { clearEstimatesError } = estimatesSlice.actions;
+export const {
+  clearEstimatesError,
+  setEstimates,
+  checkDuplicateEstimate,
+  selectEstimate,
+} = estimatesSlice.actions;
 
 /* ---------------- selectors ---------------- */
 const selectEntities = (state) => state.estimates.entities;

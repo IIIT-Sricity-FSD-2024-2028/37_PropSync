@@ -33,8 +33,8 @@ export interface RequestActor {
   role: UserRole;
 }
 
-/** The Super User is a platform identity, deliberately not a repository user. */
-export const SYSTEM_SUPER_USER_ID = 0;
+export { SYSTEM_SUPER_USER_ID } from './users.repository';
+import { SYSTEM_SUPER_USER_ID } from './users.repository';
 
 @Injectable()
 export class UsersService {
@@ -51,16 +51,6 @@ export class UsersService {
   }
 
   findById(id: number): Omit<User, 'password'> {
-    if (id === SYSTEM_SUPER_USER_ID) {
-      return {
-        id: SYSTEM_SUPER_USER_ID,
-        name: 'Super User',
-        email: 'superuser@propsync.com',
-        role: UserRole.SuperUser,
-        approvalStatus: 'approved',
-        createdAt: '2024-01-01',
-      };
-    }
     const user = this.usersRepository.findById(id);
     if (!user) throw new NotFoundException(`User with id ${id} not found`);
     const { password, ...rest } = user;
@@ -99,17 +89,6 @@ export class UsersService {
   }
 
   findRawById(id: number): User | undefined {
-    if (id === SYSTEM_SUPER_USER_ID) {
-      return {
-        id: SYSTEM_SUPER_USER_ID,
-        name: 'Super User',
-        email: 'superuser@propsync.com',
-        password: 'superuser123',
-        role: UserRole.SuperUser,
-        approvalStatus: 'approved',
-        createdAt: '2024-01-01',
-      };
-    }
     return this.usersRepository.findById(id);
   }
 
@@ -123,35 +102,12 @@ export class UsersService {
       ? 'brightspark.electrical@propsync.com'
       : emailLower;
 
-    if (
-      emailLower === 'superuser@propsync.com' ||
-      emailLower === 'superuser@propsync.platform'
-    ) {
-      if (dto.role && dto.role !== UserRole.SuperUser) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-      if (
-        dto.password !== 'superuser123' &&
-        dto.password !== 'admin123' &&
-        dto.password !== 'password123'
-      ) {
-        throw new UnauthorizedException('Invalid credentials');
-      }
-      return {
-        id: SYSTEM_SUPER_USER_ID,
-        name: 'Super User',
-        email: 'superuser@propsync.com',
-        role: UserRole.SuperUser,
-        approvalStatus: 'approved',
-        createdAt: '2024-01-01',
-      };
-    }
-
     const user = this.usersRepository
       .findAll()
       .find((item) => {
         const matchesEmail =
-          item.email.toLowerCase() === lookupEmail;
+          item.email.toLowerCase() === lookupEmail ||
+          (item.role === UserRole.SuperUser && lookupEmail === 'superuser@propsync.platform');
         return dto.role ? matchesEmail && item.role === dto.role : matchesEmail;
       });
 
@@ -307,17 +263,6 @@ export class UsersService {
   }
 
   private getApprovedRequester(actor: RequestActor): User {
-    if (actor.role === UserRole.SuperUser && actor.id === SYSTEM_SUPER_USER_ID) {
-      return {
-        id: SYSTEM_SUPER_USER_ID,
-        name: 'Super User',
-        email: 'superuser@propsync.platform',
-        password: '',
-        role: UserRole.SuperUser,
-        approvalStatus: 'approved',
-        createdAt: '',
-      };
-    }
     const requester = this.usersRepository.findById(actor.id);
     if (!requester || requester.role !== actor.role || requester.approvalStatus !== 'approved') {
       throw new UnauthorizedException('Invalid or inactive requesting user');
