@@ -3,8 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import ManagerLayout from "../shared/ManagerLayout";
 import PageHeader from "../shared/PageHeader";
-import ProviderSelection from "../AssignProvider/components/ProviderSelection";
-import PendingEstimateCard from "../ServiceEstimate/components/PendingEstimateCard";
 import ComplaintStepper from "./components/ComplaintStepper";
 import ComplaintInfoCard from "./components/ComplaintInfoCard";
 import LifecycleCard from "./components/LifecycleCard";
@@ -26,7 +24,6 @@ import {
   selectComplaintById,
 } from "../../../redux/features/complaints/complaintsSlice";
 import {
-  deleteEstimate,
   fetchEstimates,
   selectEstimatesForComplaint,
 } from "../../../redux/features/estimates/estimatesSlice";
@@ -53,26 +50,6 @@ export default function ComplaintDetails() {
   );
   const { providers } = useServiceProviders();
   const [error, setError] = useState("");
-
-  // DELETE: the estimate leaves Redux only after the backend deletes it
-  const handleDeleteEstimate = async (estimateId) => {
-    if (
-      !window.confirm(
-        `Are you sure you want to delete estimate #${estimateId}?`,
-      )
-    )
-      return;
-    try {
-      await dispatch(
-        deleteEstimate({ viewer: getManagerViewer(), id: estimateId }),
-      ).unwrap();
-    } catch (e) {
-      window.alert(
-        `Could not delete estimate #${estimateId}: ${e.message || "Unknown error"}`,
-      );
-    }
-    await load();
-  };
 
   // READ: backend -> Redux
   const load = useCallback(async () => {
@@ -163,22 +140,6 @@ export default function ComplaintDetails() {
         </div>
         <LifecycleCard status={c.status} submittedAt={c.submittedAt} />
       </div>
-      {c.status === "approved" ? (
-        <ProviderSelection complaintId={id} onUpdated={load} />
-      ) : (
-        estimates.map((e) => (
-          <PendingEstimateCard
-            key={e.id}
-            estimate={e}
-            issue={c.title}
-            provider={
-              providers.find((p) => p.id === e.providerId)?.name ||
-              `Provider #${e.providerId}`
-            }
-            onDelete={() => handleDeleteEstimate(e.id)}
-          />
-        ))
-      )}
       {modals}
     </ManagerLayout>
   );
